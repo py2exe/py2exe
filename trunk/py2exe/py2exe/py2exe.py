@@ -7,7 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.1.1a"
+__version__ = "0.1.2"
 
 # ToDo:
 #
@@ -62,6 +62,8 @@ class py2exe (Command):
          "Create a Window application"),
         ('console', 'c',
          "Create a Console application"),
+        ("excludes=", 'e',
+         "comma-separated list of modules to exclude"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -75,6 +77,7 @@ class py2exe (Command):
         self.debug = None
         self.windows = None
         self.console = None
+        self.excludes = None
 
     # initialize_options()
 
@@ -99,6 +102,11 @@ class py2exe (Command):
                 assert 0 <= self.optimize <= 2
             except (ValueError, AssertionError):
                 raise DistutilsOptionError, "optimize must be 0, 1, or 2"
+
+        if self.excludes:
+            self.excludes = string.split(self.excludes, ',')
+        else:
+            self.excludes = []
 
     # finalize_options()
 
@@ -147,7 +155,7 @@ class py2exe (Command):
         for script in self.distribution.scripts:
 
             excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
-                        "MACFS", "pwd"]
+                        "MACFS", "pwd"] + self.excludes
 
             # Use the modulefinder to find dependend modules.
             #
@@ -158,6 +166,7 @@ class py2exe (Command):
             m = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
+
             for f in self.support_modules():
                 m.load_file(f)
             m.run_script(script)
@@ -309,6 +318,8 @@ class py2exe (Command):
         "shlwapi.dll",
         "user32.dll",
         "winmm.dll",
+        "ws2_32.dll",
+        "ws2help.dll",
         "wsock32.dll",
         )
 
