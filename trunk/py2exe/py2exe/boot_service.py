@@ -139,12 +139,16 @@ if opts:
     if do_install:
         for k in service_klasses:
             svc_display_name = getattr(k, "_svc_display_name_", k._svc_name_)
-            win32serviceutil.InstallService(None, k._svc_name_, svc_display_name,
+            svc_deps = getattr(k, "_svc_deps_", None)
+            win32serviceutil.InstallService(None,
+                                            k._svc_name_,
+                                            svc_display_name,
                                             exeName = sys.executable,
                                             userName = userName,
                                             password = password,
                                             startType = startType,
                                             bRunInteractive = bRunInteractive,
+                                            serviceDeps = svc_deps
                                             )
         done = True
 

@@ -1,5 +1,8 @@
 2004-06-08  Thomas Heller  <theller@python.net>
 
+	* py2exe\boot_service.py: Register service dependencies when a
+	service is started with the -install flag.
+
 	* source\start.c (run_script): Triple-quote sys.path with double
 	quotes to avoid problems if the directory contains single quotes
 	(double quotes are impossible on Windows).
