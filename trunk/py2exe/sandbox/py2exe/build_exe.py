@@ -267,9 +267,8 @@ class py2exe(Command):
         # make_archive appends ".zip", but we already have it.
         if os.path.splitext(archive_name)[1]==".zip":
             archive_name = os.path.splitext(archive_name)[0]
-        arcname = self.make_archive(archive_name, "zip",
-                                    root_dir=self.collect_dir)
-
+        arcname = make_lib_archive(archive_name, self.collect_dir,
+                                   self.verbose, self.dry_run)
 
         # find and copy binary dependencies
         dlls = [item.__file__ for item in extensions]
@@ -778,6 +777,27 @@ byte_compile(files, optimize=%s, force=%s,
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
 # byte_compile()
+
+# Like "make_archive", except we use ZIP_STORED to keep the perf of
+# the runtime up
+def make_lib_archive(base_name, base_dir, verbose=0, dry_run=0):
+    from distutils.dir_util import mkpath
+    import zipfile
+    zip_filename = base_name + ".zip"
+    mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
+    def visit (z, dirname, names):
+        for name in names:
+            path = os.path.normpath(os.path.join(dirname, name))
+            if os.path.isfile(path):
+                z.write(path, path)
+
+    if not dry_run:
+        z = zipfile.ZipFile(zip_filename, "w",
+                            compression=zipfile.ZIP_STORED)
+        os.path.walk(base_dir, visit, z)
+        z.close()
+
+    return zip_filename
 
 # win32com makepy helper.
 def collect_win32com_genpy(path, typelibs):
