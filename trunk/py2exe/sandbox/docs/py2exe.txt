@@ -1,10 +1,20 @@
 .. image:: py2exe.jpg
    :align: center
 
+.. _license: LICENSE.TXT
+
+.. _distutils:  http://www.python.org/doc/current/dist/
+
+.. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
+
+.. _py2exe-0.5.0.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.0.win32-py2.3.exe?download
+
+.. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
+
 Convert python scripts into standalone windows programs
 =======================================================
 
-Copyright (c) 2001, 2002, 2003 Thomas Heller, Mark Hammond.
+Copyright (c) 2001, 2002, 2003, 2004 Thomas Heller, Mark Hammond.
 
 Abstract
 --------
@@ -18,19 +28,19 @@ win32com client and server modules and other standalone programs.
 
 **py2exe** is distributed under an open-source license_.
 
-.. _license: LICENSE.TXT
-
-.. _distutils:  http://www.python.org/doc/current/dist/
-
 News
 ----
 
-XXX
+**py2exe 0.5.0** released.
+
+Python 2.3 is required, because the new zipimport feature is used.
+
+It builds a single directory from your script(s), containing one
+or more related executables files, a single zipfile containing the
+Python modules needed, the Python dll, and the Python extension modules.
 
 Using py2exe
 ------------
-
-.. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
 Assuming you have written a python script ``myscript.py`` which you
 want to convert into an executable windows program, able to run on
@@ -101,6 +111,49 @@ This would create a subdirectory ``dist\bitmaps``, containing the two
 ``.gif`` files, and a subdirectory ``dist\fonts``, containing all the
 ``.fnt`` files.
 
+Windows NT services
+-------------------
+
+You can build Windows NT services by passing a ``service`` keyword
+argument to the ``setup`` function, the value must be a list of Python
+module names containing a service class (identified by the ``_svc_name_``
+attribute)::
+
+  # setup.py
+  from distutils.core import setup
+  import py2exe
+	
+  setup(service=["MyService"])
+
+The build service executable are able to install and remove themselves
+by calling them with certain command line flags, run the exe with the
+``-help`` argument to find out more.
+
+COM servers
+-----------
+
+COM servers are built by passing a ``com_server`` keyword argument to
+the setup function, again the value must be a list of Python module
+names containing one or more COM server classes (identified by their
+``_reg_progid_`` attribute)::
+
+  # setup.py
+  from distutils.core import setup
+  import py2exe
+	
+  setup(com_server=["win32com.server.interp"])
+
+By default both DLL and EXE servers are built, you should simply
+delete those you don't need.
+
+Advanced features
+-----------------
+
+So far, you have to look into the supplied samples.
+
+There is also a wiki_ now where you can look for information, or
+publish your tips.
+
 How does it work?
 -----------------
 
@@ -131,17 +184,17 @@ Installing py2exe
 -----------------
 
 Download and run the installer
-py2exe-0.5.0a7.win32-py2.3.exe_.
-
-.. _py2exe-0.5.0a7.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.0a7.win32-py2.3.exe?download.
+py2exe-0.5.0.win32-py2.3.exe_.
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
 
-For Windows 95/98/Me, you additionally need the *Microsoft Layer for
-Unicode on Windows 95/98/ME Systems (MSLU)* dll from here_.  Run the
-self-extracting ``unicows.exe`` file, and copy the unpacked
-``unicows.dll`` file in the directory which contains your
+For **Windows 95/98/Me**, you need the *Microsoft Layer for Unicode on
+Windows 95/98/ME Systems (MSLU)* dll from here_ (Internet Explorer is
+required to download it: Scroll down to the Win95/98/Me section).
+
+Download and run the self-extracting ``unicows.exe`` file, and copy
+the unpacked ``unicows.dll`` file in the directory which contains your
 ``python.exe``.  Note that this is only needed on the machine where
 you want to build executables with **py2exe**, it is not required on
 the machine where you want to run the created programs.
