@@ -13,12 +13,12 @@
 import win32serviceutil
 import win32service
 import win32event
-import win32api
 import win32evtlogutil
 
 class MyService(win32serviceutil.ServiceFramework):
     _svc_name_ = "MyService"
     _svc_display_name_ = "My Service"
+    _svc_deps_ = ["EventLog"]
     def __init__(self, args):
         import sys
         # The exe-file has messages for the Event Log Viewer.
