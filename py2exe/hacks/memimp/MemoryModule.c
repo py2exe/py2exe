@@ -301,16 +301,19 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 
 	// reserve memory for image of library
 	code = (unsigned char *)VirtualAlloc((LPVOID)(old_header->OptionalHeader.ImageBase),
-		old_header->OptionalHeader.SizeOfImage,
-		MEM_RESERVE,
-		PAGE_READWRITE);
+					     old_header->OptionalHeader.SizeOfImage,
+					     MEM_RESERVE,
+					     PAGE_READWRITE);
 
-    if (code == NULL)
-        // try to allocate memory at arbitrary position
-        code = (unsigned char *)VirtualAlloc(NULL,
-            old_header->OptionalHeader.SizeOfImage,
-            MEM_RESERVE,
-            PAGE_READWRITE);
+	if (code == NULL) {
+		// try to allocate memory at arbitrary position
+		code = (unsigned char *)VirtualAlloc(NULL,
+						     old_header->OptionalHeader.SizeOfImage,
+						     MEM_RESERVE,
+						     PAGE_READWRITE);
+//		fprintf(stderr, "allocate mem at %p instead of %p\n", code, old_header->OptionalHeader.ImageBase);
+	}
+//	else fprintf(stderr, "allocated mem at image base %p \n", old_header->OptionalHeader.ImageBase);
     
 	if (code == NULL)
 	{
@@ -327,17 +330,17 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 	result->initialized = 0;
 
 	// XXX: is it correct to commit the complete memory region at once?
-    //      calling DllEntry raises an exception if we don't...
+	//      calling DllEntry raises an exception if we don't...
 	VirtualAlloc(code,
-		old_header->OptionalHeader.SizeOfImage,
-		MEM_COMMIT,
-		PAGE_READWRITE);
+		     old_header->OptionalHeader.SizeOfImage,
+		     MEM_COMMIT,
+		     PAGE_READWRITE);
 
 	// commit memory for headers
 	headers = (unsigned char *)VirtualAlloc(code,
-		old_header->OptionalHeader.SizeOfHeaders,
-		MEM_COMMIT,
-		PAGE_READWRITE);
+						old_header->OptionalHeader.SizeOfHeaders,
+						MEM_COMMIT,
+						PAGE_READWRITE);
 	
 	// copy PE header to code
 	memcpy(headers, dos_header, dos_header->e_lfanew + old_header->OptionalHeader.SizeOfHeaders);
@@ -388,7 +391,7 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 
 	return (HMEMORYMODULE)result;
 
-error:
+  error:
 	// cleanup
 	MemoryFreeLibrary(result);
 	return NULL;
