@@ -87,7 +87,7 @@ def _try_registry(name):
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes = [], replace_paths = [],
-                 scan_extdeps=0):
+                 aggressive=0):
         if path is None:
             path = sys.path
         self.path = path
@@ -101,7 +101,7 @@ class ModuleFinder:
         self.excludes = excludes
         self.replace_paths = replace_paths
         self.processed_paths = []   # Used in debugging only
-        self.scan_extdeps = scan_extdeps
+        self.aggressive = aggressive
         self.os_path = os.environ['PATH'] # save this
 
     def msg(self, level, str, *args):
@@ -395,7 +395,7 @@ class ModuleFinder:
         return result
 
     def find_extdeps(self, name, path=None):
-        if not self.scan_extdeps:
+        if not self.aggressive:
             return
         if not path:
             path = []
@@ -434,20 +434,19 @@ class ModuleFinder:
         os.environ['PATH'] = self.os_path
 
         for line in err.readlines():
-            result = imp_pat.match(line)
-            if result:
-                needed = result.groups()[0]
-                if needed != name:
-                    self.import_hook(needed)
-                    if not self.neededby.has_key(needed):
-                        self.neededby[needed] = {}
-                    self.neededby[needed][name] = None
-            result = mod_pat.match(line)
-            if result:
-                name = result.groups()[0]
-                self.excludes.append(name)
-                
-                
+            imported = imp_pat.match(line)
+            if imported:
+                modname = imported.groups()[0]
+                if modname != name:
+                    self.import_hook(modname)
+                    if not self.neededby.has_key(modname):
+                        self.neededby[modname] = {}
+                    self.neededby[modname][name] = None
+            cleaned = mod_pat.match(line)
+            if cleaned:
+                modname = cleaned.groups()[0]
+                if modname not in (name, 'signal', 'exceptions'):
+                    self.excludes.append(modname)
 
     def report(self):
         print
