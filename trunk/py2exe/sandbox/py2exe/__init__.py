@@ -1,21 +1,26 @@
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
+_KEYWORDS = "com_server service windows console".split()
+
 class Distribution(distutils.dist.Distribution):
-    keywords = "com_dll com_exe service windows console dll".split()
 
     def __init__(self, attrs):
-        self.com_dll = None
-        self.com_exe = None
+        self.com_server = None
         self.service = None
         self.windows = None
         self.console = None
-        self.dll = None
 
-        for name in self.keywords:
+        for name in _KEYWORDS:
             val = attrs.get(name, None)
             setattr(self, name, val or [])
             if val is not None:
                 del attrs[name]
+
+        self.zipfile = attrs.get("zipfile", "library.zip")
+        try:
+            del attrs["zipfile"]
+        except KeyError:
+            pass
 
         distutils.dist.Distribution.__init__(self, attrs)
 

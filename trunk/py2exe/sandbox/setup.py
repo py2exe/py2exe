@@ -277,22 +277,24 @@ class deinstall(Command):
 
 run = Interpreter("py2exe.run",
                   ["source/run.c", "source/start.c", "source/icon.rc"],
-##                  include_dirs=["source/zlib"],
-##                  libraries=["zlibstat"],
-##                  library_dirs=["source/zlib/static32"],
                   extra_link_args=["/NOD:LIBC"],
                   define_macros=[("_WINDOWS", None)],
-##                  define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                   )
 
-##run_w = Interpreter("py2exe.run_w",
-##                    ["source/run_w.c", "source/start.c", "source/icon.rc"],
-##                    include_dirs=["source/zlib"],
-##                    libraries=["zlibstat", "user32"],
-##                    library_dirs=["source/zlib/static32"],
-##                    extra_link_args=["/NOD:LIBC"],
-##                    define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
-##                    )
+run_w = Interpreter("py2exe.run_w",
+                    ["source/run_w.c", "source/start.c", "source/icon.rc"],
+                    libraries=["user32"],
+                    extra_link_args=["/NOD:LIBC"],
+                    define_macros=[("_WINDOWS", None)],
+                    )
+
+run_dll = Interpreter("py2exe.run_dll",
+                    ["source/run_dll.c", "source/start.c", "source/icon.rc"],
+                    libraries=["user32"],
+                    extra_link_args=["/NOD:LIBC", "/def:source/run_dll.def"],
+                    define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
+                    target_desc = "shared_library",
+                    )
 
 ##msg = """PYWIN32DIR invalid.
 
@@ -399,7 +401,7 @@ setup(name="py2exe",
                                libraries=["imagehlp"]),
                     ],
 ##      interpreters = [run, run_w, run_svc, run_dll],
-      interpreters = [run],
+      interpreters = [run, run_w, run_dll],
 ##      packages=['py2exe', 'py2exe.resources', 'py2exe.tools'],
       packages=['py2exe'],
       )
