@@ -261,11 +261,16 @@ setup(name="py2exe",
       cmdclass = {'build_interpreters': BuildInterpreters,
                   'deinstall': deinstall},
 
+      ext_modules = [Extension("py2exe_util",
+                               sources=["source/py2exe_util.c"],
+                               libraries=["imagehlp"]),
+                    ],
+      
       interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],
       package_dir={'py2exe.tools': "tools" + sys.version[:3]},
       )
 
 # Local Variables:
-# compile-command: "setup.py install"
+# compile-command: "py20 setup.py build_ext"
 # End:
