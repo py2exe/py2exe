@@ -105,7 +105,9 @@ class _MyImporter(imputil.Importer):
             dict['__file__'] = pathname
             return 0, imp.load_module(fqname, fp, pathname, desc), dict
 
-        name = strop.replace(fqname, '.', '\\') + _pyc_suffix[0]
+        fqname = strop.replace(fqname, '.', '\\')
+
+        name = fqname + _pyc_suffix[0]
         try:
             code = get_code(name)
         except KeyError:
