@@ -1,6 +1,7 @@
+MANIFEST
 MANIFEST.in
 README.txt
-C:\sf\py2exe\setup.py
+setup.py
 docs\index.html
 docs\py2exe.css
 py2exe\__init__.py
