@@ -84,10 +84,12 @@ int init_with_instance(HMODULE hmod)
  * PYTHONPATH entries will be inserted in front of the
  * standard python path.
  */
+    /* Todo: Read the zipfile name from the structure at the beginning
+       of the script resource or in a separate resource
+    */
 	sprintf(buffer, "PYTHONPATH=%s\\library.zip", dirname);
 	_putenv (buffer);
-	fprintf(stderr, "SETENV %s\n", buffer);
-
+//	fprintf(stderr, "SETENV %s\n", buffer);
 	_putenv ("PYTHONSTARTUP=");
 	_putenv ("PYTHONOPTIMIZE=");
 	_putenv ("PYTHONVERBOSE=");
@@ -96,24 +98,27 @@ int init_with_instance(HMODULE hmod)
 	_putenv ("PYTHONDEBUG=");
     }
 
-
-
-    /* Other useful flags? UNBUFFERED? */
     Py_NoSiteFlag = 1;
+    /* Todo: Read useful flags from a structure which either is at the beginning
+       of the script resource or in a separate resource
+    */
 //    Py_VerboseFlag = p_script_info->verbose;
 //    Py_OptimizeFlag = p_script_info->optimize;
 /*
-PyAPI_DATA(int) Py_DebugFlag;
-PyAPI_DATA(int) Py_VerboseFlag;
-PyAPI_DATA(int) Py_InteractiveFlag;
-PyAPI_DATA(int) Py_OptimizeFlag;
-PyAPI_DATA(int) Py_NoSiteFlag;
-PyAPI_DATA(int) Py_UseClassExceptionsFlag;
-PyAPI_DATA(int) Py_FrozenFlag;
-PyAPI_DATA(int) Py_TabcheckFlag;
-PyAPI_DATA(int) Py_UnicodeFlag;
-PyAPI_DATA(int) Py_IgnoreEnvironmentFlag;
-PyAPI_DATA(int) Py_DivisionWarningFlag;
+potentially useful:
+(int) Py_VerboseFlag;
+(int) Py_InteractiveFlag;
+(int) Py_OptimizeFlag;
+(int) Py_NoSiteFlag;
+(int) Py_DivisionWarningFlag;
+(int) Py_IgnoreEnvironmentFlag;
+not useful imo:
+(int) Py_TabcheckFlag;
+(int) Py_DebugFlag;
+(int) Py_UseClassExceptionsFlag;
+dont know what these do:
+(int) Py_UnicodeFlag;
+(int) Py_FrozenFlag;
 */
     Py_SetProgramName(modulename);
 
