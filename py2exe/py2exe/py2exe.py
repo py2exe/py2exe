@@ -412,9 +412,7 @@ class py2exe (Command):
         "comctl32.dll",
         "gdi32.dll",
         "kernel32.dll",
-        "msvcirt.dll",  # ???
-        "msvcrt.dll",   # normally redistributable
-        "msvcrtd.dll",  # not redistributable
+        "msvcrtd.dll",  # not redistributable ??
         "ntdll.dll",
         "ole32.dll",
         "oleaut32.dll",
