@@ -22,6 +22,14 @@
 ##
 
 # $Log$
+# Revision 1.8  2002/06/20 18:50:22  theller
+# New command-line flag for early binding CM support: --progids.
+#
+# Now it is possible to specify sub-packages to the --packages command
+# line flag (like --packages win32com.gen_py).
+#
+# Version 0.3.4.
+#
 # Revision 1.7  2002/05/07 17:49:52  theller
 # Support _svc_deps_ for services - thanks to Matthew King for the patches.
 #
@@ -141,6 +149,7 @@ def progid_to_modname(progid):
         typelibCLSID, lcid, major, minor = clsidToTypelib[str(clsid)]
     except KeyError:
         print "Please run makepy first on '%s'" % progid
+        raise
 
     return "win32com.gen_py.%sx%xx%xx%x" % (str(typelibCLSID)[1:-1], lcid, major, minor)
 
@@ -303,7 +312,7 @@ class py2exe (Command):
         if not self.distribution.scripts:
             # nothing to do
             # should raise an error!
-            raise "Error", "Nothing to do"
+            raise DistutilsError, "Nothing to do"
             return
 
         # XXX Should "import resources.StringTables"
@@ -661,6 +670,15 @@ class py2exe (Command):
             self.copy_dlls(final_dir, dlls)
 
 
+            # rebuild the COM cache in the final directory
+            if self.progids:
+                from tools.build_comcache import Rebuild
+                Rebuild(os.path.join(self.collect_dir, 'win32com\\gen_py'),
+                        "*.pyc", self.verbose)
+                self.mkpath(os.path.join(final_dir, "gen_py"))
+                self.copy_file(os.path.join(self.collect_dir, 'win32com\\gen_py\\dicts.dat'),
+                               os.path.join(final_dir, "gen_py\\dicts.dat"))
+                
             # Print warnings
 
             # remove those unfriendly dlls which are known to us
@@ -832,7 +850,6 @@ class py2exe (Command):
             file.close()
 
             delete = 1 # delete existing resources
-            delete = 0 # don't delete existing resources
 
             if self.icon:
                 from py2exe_util import update_icon
