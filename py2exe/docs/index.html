@@ -1,0 +1,340 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <title>py2exe</title>
+<link REL="STYLESHEET" HREF="py2exe.css">
+</head>
+<body>
+
+<!--...............................................................................-->
+
+<h1>py2exe</h1>
+
+<!--...............................................................................-->
+
+<h2>Convert python scripts into standalone windows programs</h2>
+
+<p>Copyright (C) 2001, <a href="mailto:theller@python.net">Thomas Heller</a>
+
+<!--...............................................................................-->
+
+<h2>Abstract</h2>
+
+<p><b>py2exe</b> is a distutils extension to convert python scripts into executable
+windows programs.
+
+<!--...............................................................................-->
+
+<h2>News</h2>
+
+<dl>
+<dt><b>2001/02/08</b></dt>
+<dd><i>Release 0.2.2: New command line flags to fine-tune the building process, several bugfixes. <b>py2exe</b> can now copy additional files into the dist directory.</i>
+</dd>
+
+<dt><b>2001/02/02</b></dt>
+<dd><i>Release 0.2.1: </i><tt>--includes</tt><i> now understands
+	  hierachical (dotted) module names, fixed the</i>
+	<tt>AttributeError: __ispkg__</tt> <i>bug, which prevented
+	  running the built executables in rare cases.</i>
+</dd>
+
+<dt><b>2001/01/31</b></dt>
+<dd><i>Release 0.2.0 finds needed dlls automatically, has new
+	  command-line options, can build programs containing modules
+	  imported via the registry (pythoncom, pywintypes).</i>
+</dd>
+
+<dt><b>2001/01/24</b></dt>
+<dd><i>Release 0.1.1 fixes the bugs of the first beta-release and
+	  should work as advertised.</i></dd>
+
+<dt><b>2001/01/19</b></dt>
+
+<dd><i>First public beta-version released and announced on
+	  comp.lang.python.</i>
+</dd>
+</dl>
+
+<!--...............................................................................-->
+
+<h2>Using <b>py2exe</b></h2>
+<p>
+Assuming you have a python script <tt>myscript.py</tt> which you want to
+convert into an executable windows program. If you don't already have written
+a <i>distutils</i> setup-script, write one, and insert the statement <tt>import&nbsp;py2exe</tt> before calling the setup function.
+</p>
+<p>Here's a simple one:
+<pre>
+
+         # setup.py
+         from distutils.core import setup
+         import py2exe
+
+         setup(name="myscript",
+               scripts=["myscript.py"],
+         )
+
+</pre>
+<p>Running:
+<pre>
+
+        python setup.py py2exe --help
+
+</pre>
+<p>will display all available command-line flags for the <b>py2exe</b> command.
+<p>Now you can call the setup script like this:
+<pre>
+
+         python setup.py py2exe
+
+</pre>
+<p>and a sub-directory <tt>dist\myscript</tt> will be created, containing
+the files <tt>myscript.exe</tt> and <tt>python20.dll</tt>. If your script
+uses compiled c-extension modules, they will be copied here as well, also
+all dlls needed at runtime.
+<p>These files include everything that is needed for your program, even
+if the target computer doesn't have python installed.
+
+
+<!--...............................................................................-->
+
+<h2>Specifying additional files</b></h2>
+<p>
+Some applications need additional files at runtime, this maybe configuration
+files, fonts, bitmaps, whatever.
+<p>
+<b>py2exe</b> now can copy these files into the <tt>dist\myscript</tt> directory
+if they are specified in the setup script with the <tt>data_files</tt> option.
+<tt>data_files</tt> should contain a sequence of <tt>(target-dir, files)</tt> tuples,
+where files is a sequence of files to be copied.
+<p>
+Here's an example:
+<pre>
+
+         # setup.py
+         from distutils.core import setup
+         import glob
+         import py2exe
+
+         setup(name="myscript",
+               scripts=["myscript.py"],
+               data_files=[("bitmaps",
+                            ["bm/large.gif", "bm/small.gif"]),
+                           ("fonts",
+                            glob("fonts\\*.fnt"))],
+         )
+
+</pre>
+<p>
+This would create a subdirectory <tt>bitmaps</tt> in <tt>dist\myscript</tt>,
+containing the two bitmaps, and a subdirectory <tt>fonts</tt>, containing
+all the <tt>*.fnt</tt> files.
+
+<!--...............................................................................-->
+
+
+<h2>How does it work?</h2>
+<p><b>py2exe</b> uses python's modulefinder to load your script and find all
+python and extension modules needed to run it. Pure python modules are
+compiled into <tt>.pyc</tt> or <tt>.pyo</tt> files in a temporary directory.
+Compiled extension modules (<tt>.pyd</tt>) are also found and parsed for
+binary dependencies.
+<p>A zip-compatible archive will be built, containing all files from this
+directory as well as your script, and appended to a custom python interpreter
+supplied with <b>py2exe</b>.
+<p>Running this custom python interpreter, now called <tt>myscript.exe</tt>,
+will install an import hook so that the modules needed can be imported
+from the zip-archive, and your script will be started.
+<p>In simple cases, only <tt>pythonxx.dll</tt> is needed in addition to
+<tt>myscript.exe</tt>. If, however, your script needs extension modules,
+unfortunately those cannot be included or imported from the zip-archive,
+so they are needed as separate files (and are copied into the <tt>dist\myscript</tt>
+directory).
+<p><i>Attention:</i> <b>py2exe</b> tries to track down <u>all</u> binary
+dependencies for all pyd's and dll's copied to the dist directory recursively,
+and copies all these dependend files into the dist directory. <b>py2exe</b>
+has a build in list of some system dlls which are not copied, but this
+list can never be complete. Before distributing these files please make
+sure that you have the rights to do so.
+<p>Also make sure that you observe the requirements for installing/replacing
+system dlls on the target system: usually these dlls must only be updated
+with proper version checking and into the correct location, so that your
+application as well as other ones work and continue to work correctly.
+
+<!--...............................................................................-->
+
+<h2>Reference</h2>
+
+<p>Command line flags for the <b>py2exe</b> command (run <tt>python setup.py
+py2exe --help</tt> for an up-to-date list):
+
+<dl>
+<dt><b>--debug</b> or <b>-g</b></dt>
+<dd>
+Create runtime with debugging information. Default is to create a
+	release runtime binary. Note that for debug builds, <i>all</i>
+	extension modules must be available in debug versions.
+</dd>
+
+<dt><b>--optimize</b> or <b>-O</b> <i>0|1|2</i></dt>
+
+<dd>optimization level: -O1 for "python -O", -O2 for "python -OO" and
+	-O0 to disable (default: -O0)
+</dd>
+
+<dt><b>--dist-dir</b> or <b>-d</b> <i>directory</i></dt>
+
+<dd>directory to put the final files in</dd>
+
+<dt><b>--force</b> or <b>-f</b></dt>
+
+<dd>force a rebuild of everything</dd>
+
+<dt><b>--keep-temp</b> or <b>-k</b></dt>
+
+<dd>keep the pseudo installation tree around after creating the
+	distribution files</dd>
+
+<dt><b>--console</b> or <b>-c</b></dt>
+
+<dd>build a console application, similar to running the script with
+	<tt>python.exe</tt>. The default is to create a console
+	application if the script has the extension <tt>.py</tt>, a
+	console-less GUI application if the script has the extension
+	<tt>.pyw</tt>
+</dd>
+
+<dt><b>--windows</b> or <b>-w</b></dt>
+
+<dd>build a windows application, similar to running the script with
+	<tt>pythonw.exe</tt></dd>
+<dt><b>--excludes</b> or <b>-e</b> <i>list</i></dt>
+
+<dd>comma separated list of modules to exclude</dd>
+
+<dt><b>--includes</b> or <b>-i</b> <i>list</i></dt>
+
+<dd>comma separated list of modules to include. Note that
+	<i>includes</i> overrides <i>excludes</i>.</dd>
+
+<dt><b>--packages</b> or <b>-i</b> <i>list</i></dt>
+
+<dd>comma separated list of packages to include.</dd>
+
+<dt><b>--force-imports</b> or <b>-i</b> <i>list</i></dt>
+
+<dd>comma separated list of modules to inject into sys.modules before
+running the script.</dd>
+
+</dl>
+
+<p>The following flags are not yet implemented:
+<dl>
+<dt><b>--unbuffered</b> or <b>-u</b></dt>
+
+<dd>unbuffered binary <i>stdout</i> and <i>stderr</i></dd>
+
+<dt><b>--unicode</b> or <b>-U</b></dt>
+
+<dd>treat string literals as unicode</dd></dl>
+<p><i>Note that you can supply these options to</i> <b>py2exe</b> <i>on the
+command line, or put them into a setup configuration file</i> <tt>setup.cfg</tt><i>.</i>
+
+<p>Details about configuration files are available in the <a href="http://www.python.org/doc/current/dist/setup-config.html">distutils
+documentation</a>.
+
+<!--...............................................................................-->
+
+<h2>Requirements for using <b>py2exe</b></h2>
+
+<h3>
+Python 1.5</h3>
+<p><a href="http://www.python.org/sigs/distutils-sig/">Distutils</a> is
+required. It is included in Python 1.6 and later, if you are using python
+1.5 you can download and install the latest release from <a href="http://www.python.org/sigs/distutils-sig/download.html">python.org</a>.
+<p>To build the zip-compatible archive <b>py2exe</b> needs either a <tt>zip.exe</tt>
+utility somewhere on the PATH, or Jim Ahlstrom's zipfile-module.
+<h3>
+Python 1.6 and later</h3>
+<p>Everything is already included in the python distribution.
+
+<!--...............................................................................-->
+
+<h2>Download and project information</h2>
+
+<h3>Binaries (windows installer)</h3>
+<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.win32-py1.5.exe">py2exe-0.2.2.win32-py1.5.exe</a>.
+<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.win32-py2.0.exe">py2exe-0.2.2.win32-py2.0.exe</a>.
+<h3>
+Source code</h3>
+<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.zip">py2exe-0.2.2.zip</a>.
+<h3>
+Project hosting</h3>
+<p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
+
+<!--...............................................................................-->
+
+<h2>Feedback</h2>
+<p>This is still an early release. <font color="#FF0000">I need feedback!</font>
+<p>If this works for you, or if it doesn't work at all, please drop <a href="mailto:theller@python.net">me</a>
+a note.
+<p>For bug reports it is most useful to include information about the python
+and windows version you use and the output of the "python setup.py py2exe"
+command.
+
+<!--...............................................................................-->
+
+<h2>Future plans</h2>
+
+<p>Provide a way to require even less files: provide more custom prebuilt
+interpreters, so that eventually everything can be packed into a <i>single</i>
+file (which can be run without unpacking anything).
+
+<p>Provide a possibility to copy a set of additional files and/or directories
+to the dist directory.
+
+<p>Pack Tkinter programs?
+
+<p>Pack COM servers written in python?
+
+<!--...............................................................................-->
+
+<h2>Related work</h2>
+
+<p>Gordon McMillan's <a href="http://www.mcmillan-inc.com/install1.html">installer</a>
+is similar to <b>py2exe</b>, but more mature. Gordon goes in great detail
+explaining his (and this) approach, and also discusses other solutions.
+
+<p><b>py2exe</b> compared to <b>installer</b>
+
+<p>Advantages:
+<ul>
+<li>Builds also debug versions of your programs.</li>
+<li>Complete control
+ over python's optimization (-O and -OO flags) and buffering
+	  of stdout and stderr (-u flag) in the resulting executable.
+</li>
+<li>
+	The sourcecode is distributed with a distutils setup script,
+	so you can easily rebuild it yourself (C-compiler
+	required).</li></ul>
+
+<p>Disadvantages:
+<ul>
+<li><b>py2exe</b> only creates what Gordon calls <tt>standalone</tt> programs.</li>
+<li>Since I do not use Tkinter, I did not care about that.</li>
+</ul>
+
+<hr><!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" --><script type="text/javascript" language="JavaScript">var site="sm5py2exe"</script>
+<script type="text/javascript" language="JavaScript1.2" src="http://sm5.sitemeter.com/js/counter.js?site=sm5py2exe">
+</script>
+<noscript><a href="http://sm5.sitemeter.com/stats.asp?site=sm5py2exe" target="_top"><img SRC="meter.asp" ALT="Site Meter" BORDER=0 ></a></noscript>
+<!-- Copyright (c)2000 Site Meter -->
+<!--WEBBOT bot="HTMLMarkup" Endspan -->
+<a href="http://sourceforge.net">
+  <img SRC="sflogo.php" ALT="SourceForge Logo" BORDER=0 height=31 width=88>
+</a>
+</body>
+</html>
