@@ -16,11 +16,14 @@ import zipfile
 import sets
 import tempfile
 
-import imp
-is_debug_build = False
-for ext, _, _ in imp.get_suffixes():
-    if ext == "_d.pyd":
-        is_debug_build = True
+
+def _is_debug_build():
+    for ext, _, _ in imp.get_suffixes():
+        if ext == "_d.pyd":
+            return True
+    return False
+
+is_debug_build = _is_debug_build()
 
 if is_debug_build:
     python_dll = "python%d%d_d.dll" % sys.version_info[:2]
@@ -133,12 +136,16 @@ class py2exe(Command):
          "comma-separated list of packages to include"),
 
         ("compressed", 'c',
-         "create a compressed zipfile")
+         "create a compressed zipfile"),
+
+        ("xref", 'x',
+         "create and show a module crosss reference")
         ]
 
-    boolean_options = ["compressed"]
+    boolean_options = ["compressed", "xref"]
 
     def initialize_options (self):
+        self.xref =0
         self.compressed = 0
         self.unbuffered = 0
         self.optimize = 0
@@ -216,6 +223,9 @@ class py2exe(Command):
         print "*** parsing results ***"
         py_files, extensions = self.parse_mf_results(mf)
 
+        if self.xref:
+            mf.create_xref()
+
         print "*** finding dlls needed ***"
         dlls = self.find_dlls(extensions)
         self.plat_finalize(mf.modules, py_files, extensions, dlls)
@@ -233,79 +243,9 @@ class py2exe(Command):
         from modulefinder import ModuleFinder, ReplacePackage
         ReplacePackage("_xmlplus", "xml")
 
-        if sys.version_info >= (2, 4): 
-            return ModuleFinder(excludes=self.excludes)
-        # Up to Python 2.3, Modulefinder does not always find
-        # extension modules from packages, so we override the method
-        # in charge here.
-        class FixedModuleFinder(ModuleFinder):
+        from py2exe.mf import ModuleFinder
 
-            def import_module(self, partname, fqname, parent):
-                # And another fix: unbounded recursion in ModuleFinder,
-                # see http://python.org/sf/876278
-                self.msgin(3, "import_module", partname, fqname, parent)
-                try:
-                    m = self.modules[fqname]
-                except KeyError:
-                    pass
-                else:
-                    self.msgout(3, "import_module ->", m)
-                    return m
-                if self.badmodules.has_key(fqname):
-                    self.msgout(3, "import_module -> None")
-                    return None
-                # start fix...
-                if parent and parent.__path__ is None:
-                    self.msgout(3, "import_module -> None")
-                    return None
-                # ...end fix
-                try:
-                    fp, pathname, stuff = self.find_module(partname,
-                                                           parent and parent.__path__, parent)
-                except ImportError:
-                    self.msgout(3, "import_module ->", None)
-                    return None
-                try:
-                    m = self.load_module(fqname, fp, pathname, stuff)
-                finally:
-                    if fp: fp.close()
-                if parent:
-                    setattr(parent, partname, m)
-                self.msgout(3, "import_module ->", m)
-                return m
-
-            def find_all_submodules(self, m):
-                if not m.__path__:
-                    return
-                modules = {}
-                # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
-                # But we must also collect Python extension modules - although
-                # we cannot separate normal dlls from Python extensions.
-                suffixes = []
-                for triple in imp.get_suffixes():
-                    suffixes.append(triple[0])
-                if not ".pyc" in suffixes:
-                    suffixes.append(".pyc")
-                if not ".pyo" in suffixes:
-                    suffixes.append(".pyo")
-                for dir in m.__path__:
-                    try:
-                        names = os.listdir(dir)
-                    except os.error:
-                        self.msg(2, "can't list directory", dir)
-                        continue
-                    for name in names:
-                        mod = None
-                        for suff in suffixes:
-                            n = len(suff)
-                            if name[-n:] == suff:
-                                mod = name[:-n]
-                                break
-                        if mod and mod != "__init__":
-                            modules[mod] = mod
-                return modules.keys()
-
-        return FixedModuleFinder(excludes=self.excludes)
+        return ModuleFinder(excludes=self.excludes)
 
     def fix_badmodules(self, mf):
         # This dictionary maps additional builtin module names to the
@@ -601,10 +541,7 @@ class py2exe(Command):
         # services still need a little thought.  It should be possible
         # to host many modules in a single service - but pythonservice.exe
         # isn't really there yet.
-        from py2exe_util import add_resource
-        module_names = target.modules
         assert len(target.modules)==1, "We only support one service module"
-        module_name = target.modules[0]
 
         vars = {"service_module_names" : target.modules}
         boot = self.get_boot_script("service")
@@ -1279,7 +1216,7 @@ byte_compile(files, optimize=%s, force=%s,
                 if not dry_run:
                     mkpath(os.path.dirname(cfile))
                     suffix = os.path.splitext(file.__file__)[1]
-                    if suffix == ".py":
+                    if suffix in (".py", ".pyw"):
                         compile(file.__file__, cfile, dfile)
                     elif suffix in _py_suffixes:
                         # Minor problem: This will happily copy a file
