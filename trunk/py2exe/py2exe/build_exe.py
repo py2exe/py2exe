@@ -385,6 +385,13 @@ class py2exe(Command):
 
             self.lib_files.extend(install_data.get_outputs())
 
+        # Patch the Python DLL - we could try and get smart and do it
+        # only when newly copied to the dest directory, but that is fragile
+        # should it fail that first time, or anything else go wrong.
+        # So do it always (the function restores the file times so
+        # dependencies still work correctly.)
+        self.patch_python_dll_winver(os.path.join(self.exe_dir, python_dll))
+
         # build the executables
         for target in dist.console:
             dst = self.build_executable(target, self.get_console_template(),
@@ -618,6 +625,38 @@ class py2exe(Command):
                           product_version = version)
         from py2exe_util import add_resource
         add_resource(unicode(exe_path), version.resource_bytes(), RT_VERSION, 1, False)
+
+    def patch_python_dll_winver(self, dll_name, new_winver = None):
+        from py2exe.resources.StringTables import StringTable, RT_STRING
+        from py2exe_util import add_resource
+
+        new_winver = new_winver or self.distribution.metadata.name or "py2exe"
+        if self.verbose:
+            print "setting sys.winver for '%s' to '%s'" % (dll_name, new_winver)
+        if self.dry_run:
+            return
+
+        # We preserve the times on the file, so the dependency tracker works.
+        st = os.stat(dll_name)
+        # and as the resource functions silently fail if the open fails,
+        # check it explicitly.
+        os.chmod(dll_name, stat.S_IREAD | stat.S_IWRITE)
+        try:
+            f = open(dll_name, "a+b")
+            f.close()
+        except IOError, why:
+            print "WARNING: File %s could not be opened - %s" % (dll_name, why)
+        # OK - do it.
+        s = StringTable()
+        # 1000 is the resource ID Python loads for its winver.
+        s.add_string(1000, new_winver)
+        delete = True
+        for id, data in s.binary():
+            add_resource(unicode(dll_name), data, RT_STRING, id, delete)
+            delete = False        
+
+        # restore the time.
+        os.utime(dll_name, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
 
     def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
         import py2exe_util
