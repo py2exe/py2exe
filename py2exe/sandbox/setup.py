@@ -38,6 +38,9 @@ from distutils.sysconfig import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.errors import *
 
+if sys.version_info < (2, 3):
+    raise DistutilsError, "This package requires Python 2.3 or later"
+
 class Interpreter(Extension):
     def __init__(self, *args, **kw):
         # Add a custom 'target_desc' option, which matches CCompiler
