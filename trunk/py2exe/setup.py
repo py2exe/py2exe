@@ -26,7 +26,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.2.6"
+__version__ = "0.2.7a"
 
 # $Id$
 
@@ -279,21 +279,6 @@ run_w = Interpreter("py2exe.run_w",
                     define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                     )
 
-version = string.join(string.split(sys.winver, '.'), '')
-
-##run_dll = Interpreter("py2exe.run_dll",
-##                      ["source/run_dll.c", "source/icon.rc"],
-##                      include_dirs=["."],
-##                      libraries=["user32", "kernel32", "pythoncom" + version],
-##                      library_dirs=["source"],
-##                      extra_compile_args=["/LD"],
-##                      extra_link_args=["/NOD:LIBC", "/DLL", "/def:source/run_dll.def"],
-##                      define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
-##                      )
-
-from distutils import sysconfig
-pythoninc = sysconfig.get_python_inc()
-
 setup(name="py2exe",
       version=__version__,
       description="Build standalone executables for windows",
@@ -312,21 +297,10 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
-
-## XXX clib has a bug: build_clib.get_source_files() method is missing!
-##      libraries = [
-##                   ("mylib",
-##                    {"sources": ["source/start.c"],
-##                     "include_dirs": [pythoninc, "source/zlib"],
-##                     "macros": [("ZLIB_DLL", None), ("_WINDOWS", None)],
-##                     },
-##                   ),
-##                   ],
-      interpreters = [run, run_w], #run_dll],
+      interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],
-      package_dir={'py2exe.tools': "tools" + sys.version[:3]},
       )
 
 # Local Variables:
-# compile-command: "py20 setup.py install"
+# compile-command: "setup.py install"
 # End:
