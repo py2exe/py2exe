@@ -1,5 +1,5 @@
 /*
- *	   Copyright (c) 2000, 2001 Thomas Heller
+ *	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -27,6 +27,10 @@
 
 static char module_doc[] =
 "Utility functions for the py2exe package";
+
+HANDLE (__stdcall *pfn_BeginUpdateResource)(LPCWSTR, BOOL);
+BOOL (__stdcall* pfn_EndUpdateResource)(HANDLE, BOOL);
+BOOL (__stdcall* pfn_UpdateResource)(HANDLE, LPCWSTR, LPCWSTR, WORD, LPVOID, DWORD);
 
 static char *FormatError(DWORD code)
 {
@@ -60,14 +64,14 @@ static PyObject *SystemError(int code, char *msg)
     return NULL;
 }
 
-char *PyObject_AsRESOURCEID(PyObject *py_res_type)
+Py_UNICODE *PyObject_AsRESOURCEID(PyObject *py_res_type)
 {
     if (PyInt_Check(py_res_type))
-        return MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
-    if (PyString_Check(py_res_type))
-        return PyString_AS_STRING(py_res_type);
+        return (Py_UNICODE *)MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
+    if (PyUnicode_Check(py_res_type))
+	    return PyUnicode_AS_UNICODE(py_res_type);
     PyErr_Format(PyExc_ValueError,
-        "resource argument must be int or string (not '%s')",
+        "resource argument must be int or unicode (not '%s')",
         py_res_type->ob_type->tp_name);
     return NULL;
 }
@@ -129,29 +133,29 @@ typedef struct {
  *
  * Pointer returned must be freed with UnmapViewOfFile().
  */
-static char *MapExistingFile (char *pathname, DWORD *psize)
+static char *MapExistingFile (Py_UNICODE *pathname, DWORD *psize)
 {
     HANDLE hFile, hFileMapping;
     DWORD nSizeLow, nSizeHigh;
     char *data;
 
-    hFile = CreateFile (pathname,
-	GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-	FILE_ATTRIBUTE_NORMAL, NULL);
+    hFile = CreateFileW(pathname,
+			GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
 	return NULL;
-    nSizeLow = GetFileSize (hFile, &nSizeHigh);
-    hFileMapping = CreateFileMapping (hFile,
-	NULL, PAGE_READONLY, 0, 0, NULL);
+    nSizeLow = GetFileSize(hFile, &nSizeHigh);
+    hFileMapping = CreateFileMapping(hFile,
+				     NULL, PAGE_READONLY, 0, 0, NULL);
     CloseHandle (hFile);
 
     if (hFileMapping == INVALID_HANDLE_VALUE)
 	return NULL;
     
-    data = MapViewOfFile (hFileMapping,
+    data = MapViewOfFile(hFileMapping,
 	FILE_MAP_READ, 0, 0, 0);
 
-    CloseHandle (hFileMapping);
+    CloseHandle(hFileMapping);
     *psize = nSizeLow;
     return data;
 }
@@ -186,7 +190,7 @@ static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh, int icoid)
     return pgidh;
 }
 
-static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelete)
+static PyObject* do_add_icon(Py_UNICODE *exename, Py_UNICODE *iconame, int icoid, BOOL bDelete)
 {
     /* from the .ico file */
     ICONDIRHEADER *pidh;
@@ -209,30 +213,38 @@ static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelet
     pgidh = CreateGrpIconDirHeader(pidh, icoid);
     gidh_size = sizeof(GRPICONDIRHEADER) + sizeof(GRPICONDIRENTRY) * pgidh->idCount;
 
-    hUpdate = BeginUpdateResource(exename, bDelete);
+    if (pfn_BeginUpdateResource == NULL
+	|| pfn_UpdateResource == NULL
+	|| pfn_EndUpdateResource == NULL) {
+	PyErr_SetString(PyExc_RuntimeError,
+			"this function requires unicows.dll in the Python directory on Win 95/98/Me");
+	return NULL;
+    }
+
+    hUpdate = pfn_BeginUpdateResource(exename, bDelete);
     if (!hUpdate) {
 	SystemError(GetLastError(), "BeginUpdateResource");
 	goto failed;
     }
 
-    if (!UpdateResource(hUpdate,
-			MAKEINTRESOURCE(RT_GROUP_ICON),
-			MAKEINTRESOURCE(icoid),
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-			pgidh,
-			gidh_size)) {
+    if (!pfn_UpdateResource(hUpdate,
+			    (Py_UNICODE *)MAKEINTRESOURCE(RT_GROUP_ICON),
+			    (Py_UNICODE *)MAKEINTRESOURCE(icoid),
+			    MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+			    pgidh,
+			    gidh_size)) {
 	SystemError(GetLastError(), "UpdateResource");
 	goto failed;
     }
     for (i = 0; i < pidh->idCount; ++i) {
         char *cp = &icodata[pidh->idEntries[i].dwImageOffset];
         int cBytes = pidh->idEntries[i].dwBytesInRes;
-        if (!UpdateResource(hUpdate,
-                    MAKEINTRESOURCE(RT_ICON),
-                    MAKEINTRESOURCE(i+icoid),
-                    MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-                    cp,
-                    cBytes)) {
+        if (!pfn_UpdateResource(hUpdate,
+				(Py_UNICODE *)MAKEINTRESOURCE(RT_ICON),
+				(Py_UNICODE *)MAKEINTRESOURCE(i+icoid),
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+				cp,
+				cBytes)) {
             SystemError(GetLastError(), "UpdateResource");
             goto failed;
         }
@@ -241,7 +253,7 @@ static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelet
     free(pgidh);
     UnmapViewOfFile(icodata);
 
-    if (!EndUpdateResource(hUpdate, FALSE))
+    if (!pfn_EndUpdateResource(hUpdate, FALSE))
         return SystemError(GetLastError(), "EndUpdateResource");
     Py_INCREF(Py_None);
     return Py_None;
@@ -250,7 +262,7 @@ static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelet
     if (pgidh)
         free(pgidh);
     if (hUpdate)
-        EndUpdateResource(hUpdate, TRUE);
+        pfn_EndUpdateResource(hUpdate, TRUE);
     if (icodata)
         UnmapViewOfFile(icodata);
     return NULL;
@@ -258,23 +270,23 @@ static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelet
 
 static PyObject *update_icon(PyObject *self, PyObject *args)
 {
-    char *exename;
-    char *iconame;
+    Py_UNICODE *exename;
+    Py_UNICODE *iconame;
     BOOL bDelete = 0;
 
-    if (!PyArg_ParseTuple(args, "ss|i", &exename, &iconame, &bDelete))
+    if (!PyArg_ParseTuple(args, "uu|i", &exename, &iconame, &bDelete))
         return NULL;
     return do_add_icon(exename, iconame, 1, bDelete);
 }
 
 static PyObject *add_icon(PyObject *self, PyObject *args)
 {
-    char *exename;
-    char *iconame;
+    Py_UNICODE *exename;
+    Py_UNICODE *iconame;
     int resid;
     BOOL bDelete = 0;
 
-    if (!PyArg_ParseTuple(args, "ssi|i", &exename, &iconame, &resid, &bDelete))
+    if (!PyArg_ParseTuple(args, "uui|i", &exename, &iconame, &resid, &bDelete))
         return NULL;
 
     return do_add_icon(exename, iconame, resid, bDelete);
@@ -282,19 +294,27 @@ static PyObject *add_icon(PyObject *self, PyObject *args)
 
 static PyObject *add_resource(PyObject *self, PyObject *args)
 {
-    char *exename;
+    Py_UNICODE *exename;
     HANDLE hUpdate = NULL;
     BOOL bDelete = 0;
     char *res_data;
     int res_size;
     PyObject *py_res_type, *py_res_id;
-    char *res_type;
-    char *res_id;
+    Py_UNICODE *res_type;
+    Py_UNICODE *res_id;
 
-    if (!PyArg_ParseTuple(args, "ss#OO|i",
+    if (!PyArg_ParseTuple(args, "us#OO|i",
 			  &exename, &res_data, &res_size,
 			  &py_res_type, &py_res_id, &bDelete))
 	return NULL;
+
+    if (pfn_BeginUpdateResource == NULL
+	|| pfn_UpdateResource == NULL
+	|| pfn_EndUpdateResource == NULL) {
+	PyErr_SetString(PyExc_RuntimeError,
+			"this function requires unicows.dll in the Python directory on Win 95/98/Me");
+	return NULL;
+    }
 
     res_type = PyObject_AsRESOURCEID(py_res_type);
     if (res_type==NULL)
@@ -304,13 +324,13 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
     if (res_id==NULL)
         return NULL;
 
-    hUpdate = BeginUpdateResource(exename, bDelete);
+    hUpdate = pfn_BeginUpdateResource(exename, bDelete);
     if (!hUpdate) {
 	SystemError(GetLastError(), "BeginUpdateResource");
 	goto failed;
     }
 
-    if (!UpdateResource(hUpdate,
+    if (!pfn_UpdateResource(hUpdate,
 			res_type,
 			res_id,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
@@ -320,14 +340,14 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
 	goto failed;
     }
 
-    if (!EndUpdateResource(hUpdate, FALSE))
+    if (!pfn_EndUpdateResource(hUpdate, FALSE))
 	return SystemError(GetLastError(), "EndUpdateResource");
     Py_INCREF(Py_None);
     return Py_None;
 
   failed:
     if (hUpdate)
-	EndUpdateResource(hUpdate, TRUE);
+	pfn_EndUpdateResource(hUpdate, TRUE);
     return NULL;
 }
 
@@ -414,7 +434,8 @@ static PyObject *depends(PyObject *self, PyObject *args)
 			"imagehlp.dll not found");
 	return NULL;
     }
-    pBindImageEx = (FARPROC)GetProcAddress(hLib, "BindImageEx");
+    pBindImageEx = (BOOL(__stdcall *)(DWORD, LPSTR, LPSTR, LPSTR, PIMAGEHLP_STATUS_ROUTINE))
+	GetProcAddress(hLib, "BindImageEx");
     if (!pBindImageEx) {
 	PyErr_SetString(PyExc_SystemError,
 			"imagehlp.dll does not export BindImageEx function");
@@ -490,11 +511,27 @@ DL_EXPORT(void)
 initpy2exe_util(void)
 {
     PyObject *m, *d;
+    HMODULE hmod = NULL;
 
+    if (GetVersion() & 0x80000000)
+	/* Win 95, 98, Me */
+	/* We don't check *here* if this fails. We check later! */
+	hmod = LoadLibrary("unicows.dll");
+    else
+	/* Win NT, 2000, XP */
+	hmod = LoadLibrary("kernel32.dll");
+
+    pfn_BeginUpdateResource = (HANDLE (__stdcall *)(LPCWSTR, BOOL))
+	GetProcAddress(hmod, "BeginUpdateResourceW");
+    pfn_EndUpdateResource = (BOOL (__stdcall*)(HANDLE, BOOL))
+	GetProcAddress(hmod, "EndUpdateResourceW");
+    pfn_UpdateResource = (BOOL (__stdcall*)(HANDLE, LPCWSTR, LPCWSTR, WORD, LPVOID, DWORD))
+	GetProcAddress(hmod, "UpdateResourceW");
+    
     m = Py_InitModule3("py2exe_util", methods, module_doc);
     if (m) {
 	d = PyModule_GetDict(m);
-
+	
 	BindError = PyErr_NewException("py2exe_util.bind_error", NULL, NULL);
 	if (BindError)
 	    PyDict_SetItemString(d, "bind_error", BindError);
