@@ -165,15 +165,12 @@ class py2exe(Command):
             from distutils.dir_util import mkpath
             genpy_temp = os.path.join(self.temp_dir, "win32com", "gen_py")
             mkpath(genpy_temp)
-            dict_dat, num_stubs = collect_win32com_genpy(genpy_temp,
-                                                         self.typelibs)
+            num_stubs = collect_win32com_genpy(genpy_temp,
+                                               self.typelibs)
             print "collected %d stubs from %d type libraries" \
                   % (num_stubs, len(self.typelibs))
             mf.load_package("win32com.gen_py", genpy_temp)
             self.packages.append("win32com.gen_py")
-            genpy_dir = os.path.join(self.collect_dir, "win32com", "gen_py")
-            mkpath(genpy_dir)
-            self.copy_file(dict_dat, genpy_dir)
 
         print "*** searching for required modules ***"
         self.find_needed_modules(mf, required_files, required_modules)
@@ -501,7 +498,7 @@ class py2exe(Command):
         script_bytes = si + code_bytes + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
         if not self.dry_run:
-            add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
+            add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, True)
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
@@ -513,6 +510,10 @@ class py2exe(Command):
         for ico_id, ico_filename in icon_resources:
             if not self.dry_run:
                 add_icon(exe_path, ico_filename, ico_id)
+
+        for res_type, res_id, data in getattr(target, "other_resources", []):
+            if not self.dry_run:
+                add_resource(exe_path, data, res_type, res_id, False)
 
         typelib = getattr(target, "typelib", None)
         if typelib is not None:
@@ -655,11 +656,7 @@ class py2exe(Command):
                               "Carbon.Folder", "Carbon.Folders",
                               ]
             # special dlls which must be copied to the exe_dir, not the lib_dir
-            if is_debug_build:
-                name = "python%d%d_d.dll" % (sys.version_info[0], sys.version_info[1])
-            else:
-                name = "python%d%d.dll" % (sys.version_info[0], sys.version_info[1])
-            self.dlls_in_exedir = [name]
+            self.dlls_in_exedir = [python_dll]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
@@ -917,7 +914,7 @@ def collect_win32com_genpy(path, typelibs):
                     #print "", name
                 except ImportError:
                     pass
-        return os.path.join(path, "dicts.dat"), num
+        return num
     finally:
         # restore win32com, just in case.
         win32com.__gen_path__ = old_gen_path
