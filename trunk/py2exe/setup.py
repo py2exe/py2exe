@@ -26,7 +26,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 # $Id$
 
@@ -279,8 +279,8 @@ run_w = Interpreter("py2exe.run_w",
                     define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                     )
 
-##from distutils import sysconfig
-##pythoninc = sysconfig.get_python_inc()
+from distutils import sysconfig
+pythoninc = sysconfig.get_python_inc()
 
 setup(name="py2exe",
       version=__version__,
@@ -289,6 +289,8 @@ setup(name="py2exe",
       author="Thomas Heller",
       author_email="theller@python.net",
       url="http://starship.python.net/crew/theller/py2exe/",
+      licence="MIT/X11",
+##      platforms="Windows",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
@@ -306,7 +308,7 @@ setup(name="py2exe",
 ##                     "include_dirs": [pythoninc, "source/zlib"],
 ##                     "macros": [("ZLIB_DLL", None), ("_WINDOWS", None)],
 ##                     },
-##                    ),
+##                   ),
 ##                   ],
       interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],

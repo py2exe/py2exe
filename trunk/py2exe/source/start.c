@@ -405,7 +405,7 @@ int start(int argc, char **argv)
     /* Extract support script as string and run it */
     {
 	int size;
-	char *data = GetContents("Scripts\\support.py",
+	char *data = GetContents("Scripts.py2exe\\support.py",
 				 arc_data, arc_size, &size);
 	if (data) {
 	    char *script = realloc(data, size+2);
@@ -428,7 +428,7 @@ int start(int argc, char **argv)
     /* Extract the script as string and run it */
     {
 	int size;
-	char *data = GetContents("Scripts\\__main__.py", arc_data, arc_size, &size);
+	char *data = GetContents("Scripts.py2exe\\__main__.py", arc_data, arc_size, &size);
 	if (data) {
 	    char *script = realloc(data, size+2);
 	    if (script) {
