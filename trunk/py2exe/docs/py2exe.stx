@@ -4,6 +4,13 @@ py2exe
 
     Copyright (C) 2000, "Thomas Heller", mailto:theller@python.net
 
+  Warning
+
+    This is currently alpha-release software. Do not expect that it works
+    correctly.
+    
+    Look here for updates to appear soon.
+
   Abstract
   
     **py2exe** is a distutils extension to compile python scripts into
