@@ -1,0 +1,1 @@
+scp index.html py2exe.css theller@starship.python.net:~/public_html/py2exe
