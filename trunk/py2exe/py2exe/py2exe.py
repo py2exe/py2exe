@@ -7,7 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 
 import sys, os, string
 from distutils.core import Command
@@ -492,7 +492,9 @@ class py2exe (Command):
         "gdi32.dll",
         "imm32.dll",
         "kernel32.dll",
-        "msvcrtd.dll",  # not redistributable ??
+        "msvcrt.dll",
+        "msvcirt.dll",
+        "msvcrtd.dll",
         "ntdll.dll",
         "ole32.dll",
         "oleaut32.dll",
@@ -684,13 +686,31 @@ def bin_depends(path, images):
                 loadpath = os.path.dirname(abs_image) + ';' + path
                 for result in py2exe_util.depends(image, loadpath).items():
                     dll, uses_import_module = result
-                    if uses_import_module:
-                        warnings.add(dll)
-                    if not images.contains(dll) and not dependents.contains(dll):
+                    if not images.contains(dll) \
+                       and not dependents.contains(dll) \
+                       and not isSystemDLL(dll):
                         images.add(dll)
+                        if uses_import_module:
+                            warnings.add(dll)
     return dependents, warnings
     
 # bin_depends()
+
+def isSystemDLL(pathname):
+    # How can we determine whether a dll is a 'SYSTEM DLL'?
+    # Is it sufficient to use the Image Load Address?
+    import struct
+    file = open(pathname, "rb")
+    if file.read(2) != "MZ":
+        raise Exception, "Seems not to be an exe-file"
+    file.seek(0x3C)
+    pe_ofs = struct.unpack("i", file.read(4))[0]
+    file.seek(pe_ofs)
+    if file.read(4) != "PE\000\000":
+        raise Exception, ("Seems not to be an exe-file", data)
+    file.read(20 + 28) # COFF File Header, offset of ImageBase in Optional Header
+    imagebase = struct.unpack("I", file.read(4))[0]
+    return not (imagebase < 0x70000000)
 
 def endswith(str, substr):
     return str[-len(substr):] == substr
