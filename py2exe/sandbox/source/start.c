@@ -54,7 +54,7 @@ struct scriptinfo *p_script_info;
 /*
  * returns an error code if initialization fails
  */
-int init_with_instance(HMODULE hmod)
+int init_with_instance(HMODULE hmod, char *frozen)
 {
 	/* Open the executable file and map it to memory */
 	if(!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
@@ -161,9 +161,21 @@ int init_with_instance(HMODULE hmod)
 	/* From Barry Scott */
 	/* cause python to calculate the path */
 	Py_GetPath();
-	/* Set sys.frozen so apps that care can tell. Custom environments may */
-	/* set this later to a 'better' value (eg, COM dlls get 'dll') */
-	PySys_SetObject("frozen", Py_True);
+	/* Set sys.frozen so apps that care can tell.
+	   If the caller did pass NULL, sys.frozen will be set zo True.
+	   If a string is passed this is used as the frozen attribute.
+	   run.c passes "console_exe", run_w.c passes "windows_exe",
+	   run_dll.c passes "dll"
+	*/
+	if (frozen == NULL)
+		PySys_SetObject("frozen", Py_True);
+	else {
+		PyObject *o = PyString_FromString(frozen);
+		if (o) {
+			PySys_SetObject("frozen", o);
+			Py_DECREF(o);
+		}
+	}
 	/* clean up the environment so that os.system
 	   and os.popen processes can run python the normal way */
 	/* Hm, actually it would be better to set them to values saved before
@@ -174,9 +186,9 @@ int init_with_instance(HMODULE hmod)
 	return 0;
 }
 
-int init(void)
+int init(char *frozen)
 {
-	return init_with_instance(NULL);
+	return init_with_instance(NULL, frozen);
 }
 
 void fini(void)
