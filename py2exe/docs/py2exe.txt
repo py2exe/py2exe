@@ -11,6 +11,8 @@
 
 .. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
+.. _SourceForge: http://sourceforge.net/projects/py2exe/
+
 Convert python scripts into standalone windows programs
 =======================================================
 
@@ -222,3 +224,8 @@ If you use ``py2exe`` to build COM clients or servers, win32all build
 for frozen executables.
 
 .. _here: http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdkredist.htm
+
+Project information
+-------------------
+
+The project is hosted at SourceForge_
