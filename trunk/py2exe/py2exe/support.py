@@ -6,12 +6,6 @@ _StringType = type("")
 
 _c_suffixes = []
 
-if 0:
-    # enable this for debugging imports
-    _logfile = open("__import__.log", "a")
-else:
-    _logfile = None
-    
 import imp
 for desc in imp.get_suffixes():
     if desc[2] == imp.C_EXTENSION:
@@ -23,8 +17,6 @@ del desc
 class _MyImportManager(imputil.ImportManager):
 
     def _import_top_module(self, name):
-        if _logfile:
-            _logfile.write("(IM)_import_top_module(%s)\n" % name)
         # scan sys.path looking for a location in the filesystem that contains
         # the module, or an Importer object that can import the module.
         for item in sys.importers + sys.path:
@@ -33,11 +25,7 @@ class _MyImportManager(imputil.ImportManager):
             else:
                 module = item.import_top(name)
             if module:
-                if _logfile:
-                    _logfile.write("(IM)_import_top_module -> %s\n\n" % module)
                 return module
-        if _logfile:
-            _logfile.write("(IM)_import_top_module -> None\n\n")
         return None
 
 class _MyImporter(imputil.Importer):
@@ -54,20 +42,15 @@ class _MyImporter(imputil.Importer):
         # If importing a normal module, __file__ is inserted into the module.
         # XXX What should WE do?
 
-        if _logfile:
-            _logfile.write("get_code(%s, %s, %s)\n" % \
-                           (`parent`, `modname`, `fqname`))
-
         dict = {}
 
         info = _extensions_mapping.get(fqname)
         if info:
             pathname, desc = info
+            # prepend exe_dir to filename
+            pathname = "%s\\%s" % (sys.prefix, pathname)
             # Should catch IOError and convert into ImportError ??
             fp = open(pathname, desc[1])
-            if _logfile:
-                _logfile.write("return 1, imp.load_module(%s, %s, %s)\n\n" % \
-                               (`fqname`, `pathname`, `desc`))
             return 1, imp.load_module(fqname, fp, pathname, desc), dict
 
         fqname = strop.replace(fqname, '.', '\\')
@@ -77,20 +60,14 @@ class _MyImporter(imputil.Importer):
         except KeyError:
             pass
         else:
-            if _logfile:
-                _logfile.write("return 0, marshal.loads(%s)\n\n" % name)
             return 0, marshal.loads(code[8:]), dict
 
         name = fqname + '\\__init__' + _pyc_suffix[0]
         try:
             code = get_code(name)
         except KeyError:
-            if _logfile:
-                _logfile.write("FAILED\n\n")
             return None
         else:
-            if _logfile:
-                _logfile.write("return 1, marshal.loads(%s)\n\n" % name)
             dict["__path__"] = [sys.path[0]]
             return 1, marshal.loads(code[8:]), dict
 
