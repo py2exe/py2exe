@@ -209,16 +209,38 @@ class py2exe(Command):
             mkpath(genpy_dir)
             self.copy_file(dict_dat, genpy_dir)
 
+        print "*** searching for required modules ***"
         self.find_needed_modules(mf, required_files, required_modules)
 
+        print "*** parsing results ***"
         py_files, extensions = self.parse_mf_results(mf)
         self.plat_finalize(mf.modules, py_files, extensions)
 
-        self.create_binaries(py_files, extensions)
+        print "*** finding dlls needed ***"
+        dlls = self.find_dlls(extensions)
+
+        print "*** create binaries ***"
+        self.create_binaries(py_files, extensions, dlls)
 
         if mf.any_missing():
             print "The following modules appear to be missing"
             print mf.any_missing()
+
+
+    def find_dlls(self, extensions):
+        dlls = [item.__file__ for item in extensions]
+##        extra_path = ["."] # XXX
+        extra_path = []
+        dlls, unfriendly_dlls = self.find_dependend_dlls(0, dlls,
+                                                         extra_path + sys.path,
+                                                         self.dll_excludes)
+        # dlls contains the path names of all dlls we need.
+        # If a dll uses a function PyImport_ImportModule (or what was it?),
+        # it's name is additionally in unfriendly_dlls.
+        for item in extensions:
+            if item.__file__ in dlls:
+                dlls.remove(item.__file__)
+        return dlls
 
     def create_directories(self):
         bdist_base = self.get_finalized_command('bdist').bdist_base
@@ -237,7 +259,7 @@ class py2exe(Command):
                                     os.path.dirname(self.distribution.zipfile))
         self.mkpath(self.lib_dir)
 
-    def create_binaries(self, py_files, extensions):
+    def create_binaries(self, py_files, extensions, dlls):
         dist = self.distribution
         
         # byte compile the python modules into the target directory
@@ -263,26 +285,14 @@ class py2exe(Command):
             dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
 
+        # create the shared zipfile containing all Python modules
         archive_name = os.path.join(self.lib_dir,
                                     os.path.basename(dist.zipfile))
         arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
                                    verbose=self.verbose, dry_run=self.dry_run)
 
-        # find and copy binary dependencies
-        dlls = [item.__file__ for item in extensions]
-        
-##        extra_path = ["."] # XXX
-        extra_path = []
-        dlls, unfriendly_dlls = self.find_dependend_dlls(0, dlls,
-                                                         extra_path + sys.path,
-                                                         self.dll_excludes)
-
-        for item in extensions:
-            if item.__file__ in dlls:
-                dlls.remove(item.__file__)
-
         print "*** copy dlls ***"
-        for dll in dlls.items() + unfriendly_dlls.items():
+        for dll in dlls.items():
             base = os.path.basename(dll)
             if base.lower() == python_dll:
                 # The python dll itself cannot be in the lib
