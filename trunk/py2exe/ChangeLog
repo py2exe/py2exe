@@ -1,3 +1,9 @@
+2004-03-23  Thomas Heller  <theller@python.net>
+
+	* source\py2exe_util.c: The code was calling CreateFileW directly
+	instead of the function in unicows.dll, this had the effect that
+	the icons could not be changed on Win98.
+
 2004-03-12  Thomas Heller  <theller@python.net>
 
 	* py2exe\resources\VersionInfo.py: Version resource built by
