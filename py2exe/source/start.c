@@ -367,18 +367,9 @@ int start(int argc, char **argv)
  */
     Py_Initialize();
 
-#ifdef _DEBUG
-    PyRun_SimpleString("import sys; print sys.path");
-#endif
-
     PySys_SetArgv(argc, argv);
 
     toc = BuildToc(arc_data, arc_size);
-
-#ifdef _DEBUG
-    PyObject_Print(toc, stderr, 0);
-#endif
-
 
     {
 	char buffer[_MAX_PATH + 32];
@@ -393,11 +384,16 @@ int start(int argc, char **argv)
     /* Extract support script as string and run it */
     {
 	int size;
-	char *data = GetContents("Scripts\\support.py", arc_data, arc_size, &size);
+	char *data = GetContents("Scripts\\support.py",
+				 arc_data, arc_size, &size);
 	if (data) {
-	    data[size] = '\0';
-	    fix_string(data);
-	    PyRun_SimpleString(data);
+	    char *script = realloc(data, size+2);
+	    if (script) {
+		script[size] = '\n';
+		script[size+1] = '\0';
+		fix_string(script);
+		PyRun_SimpleString(script);
+	    }
 	    free(data);
 	} else {
 	    PyErr_Print();
@@ -410,9 +406,13 @@ int start(int argc, char **argv)
 	int size;
 	char *data = GetContents(script_name, arc_data, arc_size, &size);
 	if (data) {
-	    data[size] = '\0';
-	    fix_string(data);
-	    PyRun_SimpleString(data);
+	    char *script;
+	    if (script) {
+		script[size] = '\n';
+		script[size+1] = '\0';
+		fix_string(script);
+		PyRun_SimpleString(script);
+	    }
 	    free(data);
 	} else {
 	    PyErr_Print();
