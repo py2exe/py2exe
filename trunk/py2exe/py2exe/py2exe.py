@@ -22,6 +22,12 @@
 ##
 
 # $Log$
+# Revision 1.39  2002/01/03 12:35:06  theller
+# Removed the 'aggressive' option from the command line.
+# Renamed import_hack to 'invisible_imports'.
+# Invented 'mod_attrs' (better name still needed),
+# put modulefinder's AddPackagePath function to first use.
+#
 # Revision 1.38  2001/09/21 16:22:25  theller
 # Preliminary support for aggressive option.
 #
@@ -45,7 +51,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.7a"
+__version__ = "0.2.7"
 
 import sys, os, string
 from distutils.core import Command
