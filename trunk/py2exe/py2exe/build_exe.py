@@ -22,6 +22,10 @@
 ##
 
 # $Log$
+# Revision 1.5  2002/04/04 17:07:02  theller
+# Issue a warning instead of crashing when VersionInfo cannot be
+# imported: This is only the case with Python 1.5.2 without win32all.
+#
 # Revision 1.4  2002/03/20 09:54:44  theller
 # Use the standard Python modulefinder, mod_attrs is gone.
 # Include 'traceback' in services.
@@ -662,9 +666,6 @@ class py2exe (Command):
             force_remove_tree(self.bdist_dir, self.verbose, self.dry_run)
     # run()
 
-    def find_module_path(self, modname):
-        result = imp.find_module(modname)
-
     def find_suffix(self, filename):
         # given a filename (usually of type C_EXTENSION),
         # find the corresponding entry from imp.get_suffixes
@@ -720,7 +721,7 @@ class py2exe (Command):
             dst = os.path.join(final_dir, os.path.basename(src))
             try:
                 self.copy_file(src, dst)
-            except Exception, detail:
+            except Exception:
                 import traceback
                 traceback.print_exc()
     # copy_dlls()
@@ -875,7 +876,11 @@ class py2exe (Command):
             self.warn("%s\n  No VersionInfo will be created" % details)
             return delete
         else:
-            add_resource(exe_name, str(vr), RT_VERSION, 1, delete)
+            try:
+                add_resource(exe_name, str(vr), RT_VERSION, 1, delete)
+            except RuntimeError, details:
+                self.warn("%s\n  No VersionInfo will be created" % details)
+                return delete
             return 0
 
 
@@ -1041,7 +1046,7 @@ def isSystemDLL(pathname):
     pe_ofs = struct.unpack("i", file.read(4))[0]
     file.seek(pe_ofs)
     if file.read(4) != "PE\000\000":
-        raise Exception, ("Seems not to be an exe-file", data)
+        raise Exception, ("Seems not to be an exe-file", pathname)
     file.read(20 + 28) # COFF File Header, offset of ImageBase in Optional Header
     imagebase = struct.unpack("I", file.read(4))[0]
     return not (imagebase < 0x70000000)
@@ -1056,7 +1061,7 @@ class Module:
         self.__path__ = path
     def __repr__(self):
         if self.__path__:
-            return "Module(%s, %s)" %\
+            return "Module(%s, %s, %s)" %\
                    (`self.__name__`, `self.__file__`, `self.__path__`)
         else:
             return "Module(%s, %s)" % (`self.__name__`, `self.__file__`)
