@@ -1,12 +1,3 @@
-################################################################
-# Todo:
-#
-# Rename the zipfile keyword arg to the setup function to something
-# more sensible (?)
-#
-# How to include win32com.server.policy, and exclude win32com.server.dispatcher
-# for com servers ?
-
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
