@@ -256,7 +256,7 @@ setup(name="py2exe",
       long_description=__doc__,
       author="Thomas Heller",
       author_email="theller@python.net",
-      url="http://py2exe.sourceforge.net/",
+      url="http://starship.python.net/crew/theller/py2exe/",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
