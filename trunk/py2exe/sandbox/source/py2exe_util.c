@@ -60,6 +60,18 @@ static PyObject *SystemError(int code, char *msg)
     return NULL;
 }
 
+char *PyObject_AsRESOURCEID(PyObject *py_res_type)
+{
+    if (PyInt_Check(py_res_type))
+        return MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
+    if (PyString_Check(py_res_type))
+        return PyString_AS_STRING(py_res_type);
+    PyErr_Format(PyExc_ValueError,
+        "resource argument must be int or string (not '%s')",
+        py_res_type->ob_type->tp_name);
+    return NULL;
+}
+
 /*
  * Ref for the icon code, from MSDN:
  *   Icons in Win32
@@ -149,7 +161,7 @@ static char *MapExistingFile (char *pathname, DWORD *psize)
  *
  * Returns malloc()'d memory.
  */
-static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh)
+static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh, int icoid)
 {
     GRPICONDIRHEADER *pgidh;
     size_t size;
@@ -169,42 +181,32 @@ static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh)
 	pgidh->idEntries[i].wPlanes = pidh->idEntries[i].wPlanes;
 	pgidh->idEntries[i].wBitCount = pidh->idEntries[i].wBitCount;
 	pgidh->idEntries[i].dwBytesInRes = pidh->idEntries[i].dwBytesInRes;
-	pgidh->idEntries[i].nID = i + 1;
+	pgidh->idEntries[i].nID = icoid + i ;
     }
     return pgidh;
 }
 
-static PyObject *update_icon(PyObject *self, PyObject *args)
+static PyObject*do_add_icon(char *exename, char *iconame, int icoid, BOOL bDelete)
 {
-    char *exename;
-    char *iconame;
-    HANDLE hUpdate = NULL;
-    int i;
-    BOOL bDelete = 0;
-
-    char *icodata;
-    DWORD icosize;
-
     /* from the .ico file */
     ICONDIRHEADER *pidh;
     WORD idh_size;
-    
     /* for the resources */
     GRPICONDIRHEADER *pgidh = NULL;
     WORD gidh_size;
-    
-    if (!PyArg_ParseTuple(args, "ss|i", &exename, &iconame, &bDelete))
-	return NULL;
-
+    HANDLE hUpdate = NULL;
+    int i;
+    char *icodata;
+    DWORD icosize;
     icodata = MapExistingFile(iconame, &icosize);
     if (!icodata) {
-	return SystemError(GetLastError(), "MapExistingFile");
+        return SystemError(GetLastError(), "MapExistingFile");
     }
     
     pidh = (ICONDIRHEADER *)icodata;
     idh_size = sizeof(ICONDIRHEADER) + sizeof(ICONDIRENTRY) * pidh->idCount;
 
-    pgidh = CreateGrpIconDirHeader(pidh);
+    pgidh = CreateGrpIconDirHeader(pidh, icoid);
     gidh_size = sizeof(GRPICONDIRHEADER) + sizeof(GRPICONDIRENTRY) * pgidh->idCount;
 
     hUpdate = BeginUpdateResource(exename, bDelete);
@@ -215,45 +217,67 @@ static PyObject *update_icon(PyObject *self, PyObject *args)
 
     if (!UpdateResource(hUpdate,
 			MAKEINTRESOURCE(RT_GROUP_ICON),
-			MAKEINTRESOURCE(1),
+			MAKEINTRESOURCE(icoid),
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
 			pgidh,
 			gidh_size)) {
 	SystemError(GetLastError(), "UpdateResource");
 	goto failed;
     }
-
     for (i = 0; i < pidh->idCount; ++i) {
-	char *cp = &icodata[pidh->idEntries[i].dwImageOffset];
-	int cBytes = pidh->idEntries[i].dwBytesInRes;
-
-	if (!UpdateResource(hUpdate,
-			    MAKEINTRESOURCE(RT_ICON),
-			    MAKEINTRESOURCE(i+1),
-			    MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
-			    cp,
-			    cBytes)) {
-	    SystemError(GetLastError(), "UpdateResource");
-	    goto failed;
-	}
+        char *cp = &icodata[pidh->idEntries[i].dwImageOffset];
+        int cBytes = pidh->idEntries[i].dwBytesInRes;
+        if (!UpdateResource(hUpdate,
+                    MAKEINTRESOURCE(RT_ICON),
+                    MAKEINTRESOURCE(i+icoid),
+                    MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+                    cp,
+                    cBytes)) {
+            SystemError(GetLastError(), "UpdateResource");
+            goto failed;
+        }
     }
 
     free(pgidh);
     UnmapViewOfFile(icodata);
 
     if (!EndUpdateResource(hUpdate, FALSE))
-	return SystemError(GetLastError(), "EndUpdateResource");
+        return SystemError(GetLastError(), "EndUpdateResource");
     Py_INCREF(Py_None);
     return Py_None;
 
   failed:
     if (pgidh)
-	free(pgidh);
+        free(pgidh);
     if (hUpdate)
-	EndUpdateResource(hUpdate, TRUE);
+        EndUpdateResource(hUpdate, TRUE);
     if (icodata)
-	UnmapViewOfFile(icodata);
+        UnmapViewOfFile(icodata);
     return NULL;
+}
+
+static PyObject *update_icon(PyObject *self, PyObject *args)
+{
+    char *exename;
+    char *iconame;
+    BOOL bDelete = 0;
+
+    if (!PyArg_ParseTuple(args, "ss|i", &exename, &iconame, &bDelete))
+        return NULL;
+    return do_add_icon(exename, iconame, 1, bDelete);
+}
+
+static PyObject *add_icon(PyObject *self, PyObject *args)
+{
+    char *exename;
+    char *iconame;
+    int resid;
+    BOOL bDelete = 0;
+
+    if (!PyArg_ParseTuple(args, "ssi|i", &exename, &iconame, &resid, &bDelete))
+        return NULL;
+
+    return do_add_icon(exename, iconame, resid, bDelete);
 }
 
 static PyObject *add_resource(PyObject *self, PyObject *args)
@@ -272,27 +296,13 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
 			  &py_res_type, &py_res_id, &bDelete))
 	return NULL;
 
-    if (PyInt_Check(py_res_type))
-	    res_type = MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
-    else if (PyString_Check(py_res_type)) {
-	    res_type = PyString_AS_STRING(py_res_type);
-    } else {
-	    PyErr_SetString(PyExc_ValueError,
-			    "3rd argument must be int or string");
-	    return NULL;
-    }
+    res_type = PyObject_AsRESOURCEID(py_res_type);
+    if (res_type==NULL)
+        return NULL;
 
-    if (PyInt_Check(py_res_id))
-	    res_id = MAKEINTRESOURCE(PyInt_AsLong(py_res_id));
-    else if (PyString_Check(py_res_id)) {
-	    res_id = PyString_AS_STRING(py_res_id);
-    }
-    else {
-	    PyErr_SetString(PyExc_ValueError,
-			    "4th argument must be int or string");
-	    return NULL;
-    }
-
+    res_id = PyObject_AsRESOURCEID(py_res_id);
+    if (res_id==NULL)
+        return NULL;
 
     hUpdate = BeginUpdateResource(exename, bDelete);
     if (!hUpdate) {
@@ -458,6 +468,9 @@ static PyObject *get_sysdir(PyObject *self, PyObject *args)
 static PyMethodDef methods[] = {
     { "add_resource", add_resource, METH_VARARGS,
       "add_resource(exe, res_data, res_size, res_type, res_id [, delete=0]) - add resource to an exe file\n"},
+    { "add_icon", add_icon, METH_VARARGS,
+      "add_icon(exe, ico, ico_id[, delete=0]) - add icon to an exe file\n"
+      "If the delete flag is 1, delete all existing resources", },
     { "update_icon", update_icon, METH_VARARGS,
       "update_icon(exe, ico[, delete=0]) - add icon to an exe file\n"
       "If the delete flag is 1, delete all existing resources", },
