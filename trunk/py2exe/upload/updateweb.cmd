@@ -1,1 +1,1 @@
-scp ..\py2exe-samples-0.3.0.zip py2exe-0.3.0.win32-py1.5.exe py2exe-0.3.0.win32-py2.0.exe py2exe-0.3.0.win32-py2.1.exe py2exe-0.3.0.win32-py2.2.exe py2exe-0.3.0.zip ..\LICENSE.txt theller@starship.python.net:~/public_html/py2exe
+scp ..\py2exe-samples-0.3.1.zip py2exe-0.3.1.win32-py1.5.exe py2exe-0.3.1.win32-py2.0.exe py2exe-0.3.1.win32-py2.1.exe py2exe-0.3.1.win32-py2.2.exe py2exe-0.3.1.zip ..\LICENSE.txt theller@starship.python.net:~/public_html/py2exe
