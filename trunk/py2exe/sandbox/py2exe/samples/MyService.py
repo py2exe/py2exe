@@ -20,18 +20,6 @@ class MyService(win32serviceutil.ServiceFramework):
     _svc_display_name_ = "My Service"
     _svc_deps_ = ["EventLog"]
     def __init__(self, args):
-        import sys
-        # The exe-file has messages for the Event Log Viewer.
-        # Register the exe-file as event source.
-        #
-        # Probably it would be better if this is done at installation time,
-        # so that it also could be removed if the service is uninstalled.
-        # Unfortunately it cannot be done in the 'if __name__ == "__main__"'
-        # block below, because the 'frozen' exe-file does not run this code.
-        #
-        win32evtlogutil.AddSourceToRegistry(self._svc_display_name_,
-                                            sys.executable,
-                                            "Application")
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
@@ -42,7 +30,7 @@ class MyService(win32serviceutil.ServiceFramework):
     def SvcDoRun(self):
         import servicemanager
         # Write a 'started' event to the event log...
-        win32evtlogutil.ReportEvent(self._svc_display_name_,
+        win32evtlogutil.ReportEvent(self._svc_name_,
                                     servicemanager.PYS_SERVICE_STARTED,
                                     0, # category
                                     servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -52,7 +40,7 @@ class MyService(win32serviceutil.ServiceFramework):
         win32event.WaitForSingleObject(self.hWaitStop, win32event.INFINITE)
 
         # and write a 'stopped' event to the event log.
-        win32evtlogutil.ReportEvent(self._svc_display_name_,
+        win32evtlogutil.ReportEvent(self._svc_name_,
                                     servicemanager.PYS_SERVICE_STOPPED,
                                     0, # category
                                     servicemanager.EVENTLOG_INFORMATION_TYPE,
