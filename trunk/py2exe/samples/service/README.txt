@@ -13,7 +13,7 @@ Prerequisites:
 
    Python (1.5.2, 2.0, 2.1, or 2.2).
 
-   Mark Hammond's win32all extensions, I've tested it with the lastesd
+   Mark Hammond's win32all extensions, I've tested it with the latest
    builds (143 and up). ActiveState Python should also work (and
    includes Mark's extensions).
 
