@@ -168,11 +168,10 @@ class py2exe (Command):
                 src = item.__file__
                 if src and src != script:
                     if src[-3:] == ".py":
-                        py_files.append(src)
+                        py_files.append(item)
                         continue
                     for suffix in _c_suffixes:
                         if endswith(src, suffix):
-##                        if src.endswith(suffix):
                             extensions.append(item)
                             break
                     else:
@@ -181,7 +180,7 @@ class py2exe (Command):
 
             # byte compile the python modules into the target directory
             #
-            byte_compile(py_files, extra_path,
+            byte_compile(py_files,
                          target_dir=collect_dir,
                          optimize=self.optimize, force=self.force,
                          verbose=self.verbose,
@@ -255,7 +254,8 @@ class py2exe (Command):
         file, pathname, desc = imp.find_module("exceptions")
         if file:
             file.close()
-            byte_compile([pathname], [],
+            module = Module(name=name, path=pathname)
+            byte_compile([module],
                          target_dir=final_dir,
                          optimize=self.optimize, force=self.force,
                          verbose=self.verbose,
@@ -350,7 +350,13 @@ def strip_syspath(file, extra_path):
 
 # strip_syspath()
 
-def byte_compile(py_files, extra_path, optimize=0, force=0,
+class Module:
+    def __init__(self, name, file, path=None):
+        self.__name__ = name
+        self.__file__ = file
+        self.__path__ = path
+
+def byte_compile(py_files, optimize=0, force=0,
                  target_dir=None, verbose=1, dry_run=0,
                  direct=None):
 
@@ -368,17 +374,20 @@ def byte_compile(py_files, extra_path, optimize=0, force=0,
         if not dry_run:
             script = open(script_name, "w")
             script.write("""\
-from py2exe.py2exe import byte_compile
+from py2exe.py2exe import byte_compile, Module
 files = [
 """)
 
-            script.write(string.join(map(repr, py_files), ",\n") + "]\n")
+            for f in py_files:
+                script.write("Module(%s, %s, %s),\n" % \
+                (`f.__name__`, `f.__file__`, `f.__path__`))
+            script.write("]\n")
             script.write("""
-byte_compile(files, %s, optimize=%s, force=%s,
+byte_compile(files, optimize=%s, force=%s,
              target_dir=%s,
              verbose=%s, dry_run=0,
              direct=1)
-""" % (`extra_path`, `optimize`, `force`, `target_dir`, `verbose`))
+""" % (`optimize`, `force`, `target_dir`, `verbose`))
 
             script.close()
 
@@ -397,28 +406,28 @@ byte_compile(files, %s, optimize=%s, force=%s,
         from distutils.dir_util import mkpath
 
         for file in py_files:
-            if file[-3:] != ".py":
-                raise RuntimeError, "cannot compile '%s'" % file
-        
+            if file.__file__[-3:] != ".py":
+                raise RuntimeError, "cannot compile '%s'" % file.__file__
+
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
-            if target_dir:
-                dfile = cfile = strip_syspath(file, extra_path)
-                cfile = os.path.join(target_dir, cfile)
-            else:
-                dfile = cfile = file
-            cfile = cfile + (__debug__ and "c" or "o")
-            dfile = dfile + (__debug__ and "c" or "o")
+            cfile = string.replace(file.__name__, '.', '\\')
 
-            if force or newer(file, cfile):
+            if file.__path__:
+                dfile = cfile + '\\__init__.py' + (__debug__ and 'c' or 'o')
+            else:
+                dfile = cfile + '.py' + (__debug__ and 'c' or 'o')
+            if target_dir:
+                cfile = os.path.join(target_dir, dfile)
+
+            if force or newer(file.__file__, cfile):
                 if verbose:
-                    print "byte-compiling %s to %s" % (file, dfile)
+                    print "byte-compiling %s to %s" % (file.__file__, dfile)
                 if not dry_run:
                     mkpath(os.path.dirname(cfile))
-                    compile(file, cfile, dfile)
+                    compile(file.__file__, cfile, dfile)
             else:
                 if verbose:
                     print "skipping byte-compilation of %s to %s" % \
-                          (file, dfile)
-
+                          (file.__file__, dfile)
