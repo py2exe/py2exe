@@ -1,5 +1,5 @@
 ##
-##	   Copyright (c) 2000, 2001 Thomas Heller
+##	   Copyright (c) 2000, 2001, 2002 Thomas Heller
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.42  2002/01/22 21:13:40  theller
+# renamed to VersionInfo.py
+#
 # Revision 1.41  2002/01/03 13:44:49  theller
 # Short option for console 'c' again.
 #
@@ -57,7 +60,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.7"
+__version__ = "0.3.0"
 
 import sys, os, string
 from distutils.core import Command
@@ -113,7 +116,7 @@ class py2exe (Command):
         ('console', 'c',
          "Create a Console application"),
         ('service=', 's',
-         "Create w Windows NT service"),
+         "class in your script which implements a Windows NT service"),
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
@@ -137,6 +140,8 @@ class py2exe (Command):
         self.force = 0
         self.debug = None
 
+        self.ascii = None
+
         self.windows = None
         self.console = None
         self.service = None
@@ -147,7 +152,33 @@ class py2exe (Command):
         self.force_imports = None
         self.icon = None
 
+        # The following options cannot be given from the command line
+        # because they are not present in 'user_options' above. So we
+        # have to specify them in distutils configuration file.
+
+        # All recommended string entries for a version resource, with
+        # those disabled I have currently no use for...
+        
+##        self.version_comments = None
+        self.version_companyname = None
+        self.version_filedescription = None
+        self.version_fileversion = None
+##        self.version_internalname = None
+        self.version_legalcopyright = None
+        self.version_legaltrademarks = None
+        self.version_originalfilename = None
+##        self.version_privatebuild = None
+        self.version_productname = None
+        self.version_productversion = None
+##        self.version_specialbuild = None
+
     # initialize_options()
+
+
+    vrc_names = """companyname filedescription fileversion
+    legalcopyright legaltrademarks originalfilename productname
+    productversion"""
+    vrc_names = string.split(vrc_names)
 
 
     def finalize_options (self):
@@ -199,6 +230,10 @@ class py2exe (Command):
         else:
             self.force_imports = []
 
+        for name in self.vrc_names:
+            self.ensure_string("version_" + name, "")
+
+
     # finalize_options()
 
 
@@ -208,6 +243,10 @@ class py2exe (Command):
             # should raise an error!
             raise "Error", "Nothing to do"
             return
+
+        # XXX Should "import resources.StringTables"
+        # or "resources.VersionInfo" early to catch ImportErrors fast
+        # (before failing the build in the last step)
 
         # Distribute some of our options to other commands.
         # Is this the right way to do it?
@@ -236,6 +275,9 @@ class py2exe (Command):
         self.mkpath(self.dist_dir)
 
         extra_path = [os.path.abspath(os.path.normpath(install.install_lib))]
+
+        if self.service:
+            self.excludes.append("servicemanager") # avoid warnings when freezing a service
 
         # Problems with modulefinder:
         # Some extensions import python modules,
@@ -299,6 +341,9 @@ class py2exe (Command):
         else:
             AddPackagePath("win32com", res[1] + 'ext')
 
+##        if sys.hexversion >= 0x02020000 and not self.ascii:
+##            self.packages.append("encodings")
+
         for script in self.distribution.scripts:
             self.announce("+----------------------------------------------------")
             self.announce("| Processing script %s with py2exe-%s" % (script, __version__))
@@ -315,9 +360,9 @@ class py2exe (Command):
                 install_data.ensure_finalized()
                 install_data.run()
 
-            collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
-            self.mkpath(collect_dir)
-            self.mkpath(os.path.join(collect_dir, "Scripts.py2exe"))
+            self.collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
+            self.mkpath(self.collect_dir)
+            self.mkpath(os.path.join(self.collect_dir, "Scripts.py2exe"))
 
             if self.debug:
                 exe_name = os.path.join(final_dir, script_base+'_d.exe')
@@ -427,6 +472,10 @@ class py2exe (Command):
             missing, extensions = self.fix_extmodules(missing, extensions,
                                                       sys.path + extra_path)
 
+            if 'servicemanager' in missing:
+                self.warn("*** If you want to build a service, "
+                          "don't forget the --service flag! ***")
+
             tcl_src_dir = tcl_dst_dir = None
             if "Tkinter" in mf.modules.keys():
                 import Tkinter
@@ -482,7 +531,7 @@ class py2exe (Command):
             thisfile = sys.modules['py2exe.py2exe'].__file__
             src = os.path.join(os.path.dirname(thisfile), "support.py")
             # Scripts.py2exe\\support.py must be forced to be rewritten!
-            dst = os.path.join(collect_dir, "Scripts.py2exe\\support.py")
+            dst = os.path.join(self.collect_dir, "Scripts.py2exe\\support.py")
             file_util.copy_file(src, dst, update=0,
                                 # Since we want to modify support.py,
                                 # readonly status must not be preserved.
@@ -506,7 +555,7 @@ class py2exe (Command):
 
             # byte compile the python modules into the target directory
             byte_compile(py_files,
-                         target_dir=collect_dir,
+                         target_dir=self.collect_dir,
                          optimize=self.optimize, force=self.force,
                          verbose=self.verbose,
                          dry_run=self.dry_run)
@@ -515,7 +564,7 @@ class py2exe (Command):
                 pass
             else:
                 self.copy_file(script,
-                               os.path.join(collect_dir,
+                               os.path.join(self.collect_dir,
                                             "Scripts.py2exe\\__main__.py"),
                                preserve_mode=0)
                            
@@ -523,7 +572,7 @@ class py2exe (Command):
             # it may include a (partial) copy of itself
             archive_basename = os.path.join(self.bdist_dir, script_base)
             arcname = self.make_archive(archive_basename, "zip",
-                                        root_dir=collect_dir)
+                                        root_dir=self.collect_dir)
 
             self.create_exe(exe_name, arcname, use_runw)
             self.copy_additional_files(final_dir)
@@ -564,8 +613,11 @@ class py2exe (Command):
             if unfriendly_dlls or missing:
                 self.warn("*" * 73)
             if not self.keep_temp:
-                force_remove_tree(collect_dir, self.verbose, self.dry_run)
-                
+                force_remove_tree(self.collect_dir, self.verbose, self.dry_run)
+
+            print "Built File %s" % exe_name
+            print
+            
         if not self.keep_temp:
             force_remove_tree(self.bdist_dir, self.verbose, self.dry_run)
     # run()
@@ -713,26 +765,79 @@ class py2exe (Command):
                     import traceback
                     traceback.print_exc()
 
+            from py2exe_util import add_resource
+
             if self.service:
-                from StringTables import StringTable, RT_STRING
-                # resource id in the EXE of the servicename,
+                from resources.StringTables import StringTable, RT_STRING
+                # resource id in the EXE of the serviceclass,
                 # see source/PythonService.cpp
                 RESOURCE_SERVICE_NAME = 1016
+
                 st = StringTable()
+                svc_name, svc_display_name = self.get_service_names()
                 st.add_string(RESOURCE_SERVICE_NAME,
                               "__service__.%s" % self.service)
-
-                from py2exe_util import add_resource
+                st.add_string(RESOURCE_SERVICE_NAME+1, svc_name)
+                st.add_string(RESOURCE_SERVICE_NAME+2, svc_display_name)
 
                 for id, data in st.binary():
                     add_resource(exe_name, data, RT_STRING, id, delete)
                     delete = 0
+
+            delete = self.add_versioninfo(exe_name, delete)
 
             file = open(exe_name, "ab")
             file.write(header)
             file.write(open(arcname, "rb").read())
             file.close()
     # create_exe()
+
+    def add_versioninfo(self, exe_name, delete):
+        # "companyname filedescription fileversion"
+        # "legalcopyright legaltrademarks originalfilename productname"
+        # "productversion"
+        
+        from resources.VersionInfo import VS_VERSIONINFO, RT_VERSION, \
+             StringFileInfo, VarFileInfo, VersionError
+        from py2exe_util import add_resource
+
+        md = self.distribution.metadata
+        
+        # XXX Build version resource from options in distutils config file
+        # or options to the setup function.
+
+        file_version = self.version_fileversion or md.version or ""
+
+        strings = [
+            ("CompanyName", self.version_companyname),
+            ("FileDescription", self.version_filedescription or md.description or ""),
+            ("FileVersion", file_version),
+            ("LegalCopyright", self.version_legalcopyright),
+            ("LegalTrademarks", self.version_legaltrademarks),
+            ("OriginalFilename", self.version_originalfilename or md.name),
+            ("ProductName", self.version_productname or md.name),
+            ("ProductVersion", self.version_productversion or md.version or ""),
+            ]
+
+        try:
+            vr = VS_VERSIONINFO(file_version, [
+                StringFileInfo("040904B0",
+                               strings),
+                VarFileInfo(0x040904B0)
+                ])
+        except VersionError, details:
+            self.warn("%s\n  No VersionInfo will be created" % details)
+            return delete
+        else:
+            add_resource(exe_name, str(vr), RT_VERSION, 1, delete)
+            return 0
+
+
+    def get_service_names(self):
+        file, pathname, desc = imp.find_module("__service__", [self.collect_dir])
+        mod = imp.load_module("__service__", file, pathname, desc)
+        klass = getattr(mod, self.service)
+        return klass._svc_name_, klass._svc_display_name_
 
     def get_exe_stub(self, use_runw):
         thismod = sys.modules['distutils.command.py2exe']
