@@ -110,7 +110,10 @@ class BuildInterpreters(build_ext.build_ext):
             else:
                 self.announce("building '%s' interpreter" % inter.name)
 
-            sources = self.swig_sources(sources)
+            # fortunately, we don't have swig files.  The signature of
+            # swig_sources is different in Python 2.3 and 2.4, the 2.4
+            # version has an additional parameter.
+##            sources = self.swig_sources(sources)
 
             extra_args = inter.extra_compile_args or []
 
@@ -353,7 +356,8 @@ setup(name="py2exe",
                     ],
       scripts = ["py2exe_postinstall.py"],
       interpreters = interpreters,
-      packages=['py2exe', 'py2exe.resources',
+      packages=['py2exe',
+                'py2exe.resources',
                 'py2exe.samples.simple', # not really a package!
                 'py2exe.samples.extending', # not really a package!
                 'py2exe.samples.advanced'], # not really a package!
