@@ -299,17 +299,9 @@ run_dll = Interpreter("py2exe.run_dll",
                     target_desc = "shared_library",
                     )
 
-##run_dll = Interpreter("py2exe.run_dll",
-##                    ["source/run_dll.c", "source/start.c", "source/icon.rc"],
-##                    include_dirs=["source/zlib"],
-##                    libraries=["zlibstat", "user32"],
-##                    library_dirs=["source/zlib/static32"],
-##                    extra_link_args=["/NOD:LIBC", "/def:source/run_dll.def"],
-##                    define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
-##                    target_desc = "shared_library",
-##                    )
-
 interpreters = [run, run_w, run_dll]
+
+options = {"bdist_wininst": {"install_script": "py2exe_postinstall.py"}}
 
 setup(name="py2exe",
       version=__version__,
@@ -330,9 +322,11 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
+      scripts = ["py2exe_postinstall.py"],
       interpreters = interpreters,
       packages=['py2exe', 'py2exe.resources',
                 'py2exe.samples'], # not really a package!
+      options = options,
       )
 
 # Local Variables:
