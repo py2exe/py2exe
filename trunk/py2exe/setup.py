@@ -3,7 +3,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.1.1a"
+__version__ = "0.1.2"
 
 # $Id$
 
