@@ -22,6 +22,10 @@
 ##
 
 # $Log$
+# Revision 1.3  2002/02/01 12:43:26  theller
+# Hopefully a better way to import the script with less side-effects.
+# Approaching version 0.3.1.
+#
 # Revision 1.2  2002/02/01 10:50:32  theller
 # Did still try to import py2exe instead of build_exe.
 # Found by Peter Goode. Thanks!
@@ -70,7 +74,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.3.1"
+__version__ = "0.3.3"
 
 import sys, os, string
 from distutils.core import Command
@@ -150,7 +154,7 @@ class py2exe (Command):
         self.force = 0
         self.debug = None
 
-        self.ascii = None
+##        self.ascii = None
 
         self.windows = None
         self.console = None
@@ -287,7 +291,11 @@ class py2exe (Command):
         extra_path = [os.path.abspath(os.path.normpath(install.install_lib))]
 
         if self.service:
-            self.excludes.append("servicemanager") # avoid warnings when freezing a service
+            # avoid warnings when freezing a service
+            self.excludes.append("servicemanager")
+
+            # so that tracebacks are printed to the registry
+            self.includes.append("traceback")
 
         # Problems with modulefinder:
         # Some extensions import python modules,
@@ -332,14 +340,31 @@ class py2exe (Command):
 ##            "odbc": ["dbi"],
 
             "multiarray": ["_numpy"],
+            "xml.sax": ["xml.sax.expatreader"],
 
+##            "xml.dom": ["HierarchyRequestErr"],
             }
 
         mod_attrs = {
+## Hmm. These are module which are automatically available
+## when wxPython is imported.
+## Maybe when wxPythin is detected, these should go into mf.excludes?
             "wxPython": ["miscc", "windowsc", "streamsc", "gdic", "sizersc", "controls2c",
                          "printfwc", "framesc", "stattoolc", "misc2c", "controlsc",
                          "windows2c", "eventsc", "windows3c", "clip_dndc", "mdic",
                          "imagec", "cmndlgsc", "filesysc"],
+##            "gnosis.xml.pickle": ["XMLUnpicklingError"],
+##            "gnosis.xml.pickle.ext": ["add_xml_helper", "XMLP_Helper"],
+##            "gnosis.xml.pickle.util": ["subnodes", "setParanoia",
+##                                       "setDeepCopy", "getDeepCopy",
+##                                       "_klass", "get_class_from_stack",
+##                                       "add_class_to_store", "get_class_from_store",
+##                                       "getExcludeParentAttr", "safe_eval", "safe_content",
+##                                       "get_class_full_search", "_EmptyClass",
+##                                       "remove_class_from_store", "unsafe_string",
+##                                       "get_class_from_vapor", "unsafe_content",
+##                                       "getParanoia", "safe_string", "_module"],
+####            "gnosis.xml.pickle.doc": ["__version__"],
             }
 
         from tools.modulefinder import ModuleFinder, AddPackagePath
@@ -398,8 +423,7 @@ class py2exe (Command):
                         ] + self.excludes
             mf = ModuleFinder(path=extra_path + sys.path,
                               debug=0,
-                              excludes=excludes,
-                              mod_attrs=mod_attrs)
+                              excludes=excludes)
 
             for f in self.support_modules():
                 mf.load_file(f)
