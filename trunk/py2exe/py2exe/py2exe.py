@@ -195,7 +195,10 @@ class py2exe (Command):
             self.mkpath(collect_dir)
 
             excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
-                        "MACFS", "pwd"] + self.excludes
+                        "MACFS", "pwd", "MacOS", "macostools",
+                        "EasyDialogs", "termios", "TERMIOS",
+                        "java.lang",
+                        ] + self.excludes
 
             # Use the modulefinder to find dependend modules.
             #
