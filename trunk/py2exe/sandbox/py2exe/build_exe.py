@@ -106,6 +106,7 @@ class py2exe(Command):
         self.dist_dir = extra_options.get("dist_dir")
         self.ext_mapping = extra_options.get("ext_mapping", {})
         self.bitmap_resources = extra_options.get("bitmap_resources", [])
+        self.icon_resources = extra_options.get("icon_resources", [])
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -118,7 +119,7 @@ class py2exe(Command):
         self.packages = fancy_split(self.packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
-        for bmp_id, bmp_filename in self.bitmap_resources:
+        for bmp_id, bmp_filename in self.bitmap_resources + self.icon_resources:
             if type(bmp_id) != type(0):
                 raise DistutilsOptionError, "bitmap ID must be an integer"
             if not os.path.isfile(bmp_filename):
@@ -316,7 +317,7 @@ class py2exe(Command):
         # For each file in scripts, build an executable.
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
-        from py2exe_util import add_resource
+        from py2exe_util import add_resource, add_icon
         ext = os.path.splitext(template)[1]
         for path in scripts:
             exe_base = os.path.splitext(os.path.basename(path))[0]
@@ -332,7 +333,7 @@ class py2exe(Command):
                              self.unbuffered,
                              ) + os.path.basename(arcname) + "\000"
             
-            script_bytes = si + open(path, "r").read() + '\000\000'
+            script_bytes = si + "import sys;sys.frozen=1\n" + open(path, "r").read() + '\000\000'
             self.announce("add script resource, %d bytes" % len(script_bytes))
             add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
             RT_BITMAP=2
@@ -340,6 +341,9 @@ class py2exe(Command):
                 bmp_data = open(bmp_filename, "rb").read()
                 # skip the 14 byte bitmap header.
                 add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
+            for ico_id, ico_filename in self.icon_resources:
+                add_icon(exe_path, ico_filename, ico_id)
+                
 
     def find_dependend_dlls(self, use_runw, dlls, pypath):
         import py2exe_util
