@@ -14,11 +14,13 @@ for desc in imp.get_suffixes():
         _pyc_suffix = desc
 del desc
 
+# We install our special importers not in sys.path
+# but in sys.importers, so that sys.path only contain
+# strings.
+# So we have to sublcass imputil.ImportManager.
+#
 class _MyImportManager(imputil.ImportManager):
-
     def _import_top_module(self, name):
-        # scan sys.path looking for a location in the filesystem that contains
-        # the module, or an Importer object that can import the module.
         for item in sys.importers + sys.path:
             if isinstance(item, _StringType):
                 module = self.fs_imp.import_from_dir(item, name)
@@ -29,8 +31,57 @@ class _MyImportManager(imputil.ImportManager):
         return None
 
 class _MyImporter(imputil.Importer):
+    # The following method is copied from imputil.Importer.
+    # There seems to be a bug in imputil somewhere which
+    # raises an 'AttributeError: __ispkg__' in the code
+    # marked below. So far I could not find this bug,
+    # so we work around it.
+    def _finish_import(self, top, parts, fromlist):
+        # if "a.b.c" was provided, then load the ".b.c" portion down from
+        # below the top-level module.
+        bottom = self._load_tail(top, parts)
+
+        # if the form is "import a.b.c", then return "a"
+        if not fromlist:
+            # no fromlist: return the top of the import tree
+            return top
+
+        # the top module was imported by self.
+        #
+        # this means that the bottom module was also imported by self (just
+        # now, or in the past and we fetched it from sys.modules).
+        #
+        # since we imported/handled the bottom module, this means that we can
+        # also handle its fromlist (and reliably use __ispkg__).
+
+        # if the bottom node is a package, then (potentially) import some
+        # modules.
+        #
+        # note: if it is not a package, then "fromlist" refers to names in
+        #       the bottom module rather than modules.
+        # note: for a mix of names and modules in the fromlist, we will
+        #       import all modules and insert those into the namespace of
+        #       the package module. Python will pick up all fromlist names
+        #       from the bottom (package) module; some will be modules that
+        #       we imported and stored in the namespace, others are expected
+        #       to be present already.
+
+        # The following line is the original one which raised the AttributeError:
+        #if bottom.__ispkg__:
+        # and this is the changed one:
+        if hasattr(bottom, '__ispkg__') and bottom.__ispkg__:
+            self._import_fromlist(bottom, fromlist)
+
+        # if the form is "from a.b import c, d" then return "b"
+        return bottom
 
     def get_code(self, parent, modname, fqname, get_code=get_code):
+        # Greg's importers return a dict containing the
+        # following items:
+        #
+        # __pkgdir__, __path__, __file__ for packages
+        # __file__ for normal modules
+    
         # Usually 'parent', if not None, defines a context for
         # importing. In the normal python import mechanism, parent.__path__
         # is a list containing the package directory.
@@ -51,15 +102,16 @@ class _MyImporter(imputil.Importer):
             pathname = "%s\\%s" % (sys.prefix, pathname)
             # Should catch IOError and convert into ImportError ??
             fp = open(pathname, desc[1])
-            return 1, imp.load_module(fqname, fp, pathname, desc), dict
+            dict['__file__'] = pathname
+            return 0, imp.load_module(fqname, fp, pathname, desc), dict
 
-        fqname = strop.replace(fqname, '.', '\\')
-        name = fqname + _pyc_suffix[0]
+        name = strop.replace(fqname, '.', '\\') + _pyc_suffix[0]
         try:
             code = get_code(name)
         except KeyError:
             pass
         else:
+            dict['__file__'] = "<%s from archive>" % fqname
             return 0, marshal.loads(code[8:]), dict
 
         name = fqname + '\\__init__' + _pyc_suffix[0]
@@ -68,11 +120,14 @@ class _MyImporter(imputil.Importer):
         except KeyError:
             return None
         else:
-            dict["__path__"] = [sys.path[0]]
+            dict['__file__'] = "<package %s from archive>" % name
+            dict['__path__'] = [sys.path[0]]
             return 1, marshal.loads(code[8:]), dict
 
 _MyImportManager().install()
-sys.importers.append(_MyImporter())
 sys.importers.append(imputil.BuiltinImporter())
+sys.importers.append(_MyImporter())
 
 del get_code
+
+# XXX We should not clobber the namespace this severe!!!

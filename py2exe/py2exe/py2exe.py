@@ -149,8 +149,6 @@ class py2exe (Command):
         # build everything and do a fake install
         install.run()
 
-        collect_dir = os.path.join(self.bdist_dir, "collect")
-        self.mkpath(collect_dir)
         self.mkpath(self.dist_dir)
 
         extra_path = [os.path.abspath(os.path.normpath(install.install_lib))]
@@ -186,6 +184,15 @@ class py2exe (Command):
         from tools.modulefinder import ModuleFinder
 
         for script in self.distribution.scripts:
+            self.announce("+------------------------------")
+            self.announce("| Processing script %s" % script)
+            self.announce("+------------------------------")
+
+            script_base = os.path.splitext(os.path.basename(script))[0]
+            final_dir = os.path.join(self.dist_dir, script_base)
+
+            collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
+            self.mkpath(collect_dir)
 
             excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
                         "MACFS", "pwd"] + self.excludes
@@ -195,9 +202,6 @@ class py2exe (Command):
             self.announce("Searching modules needed to run '%s' on path:" % \
                           script)
             self.announce(repr(extra_path + sys.path))
-
-            script_base = os.path.splitext(os.path.basename(script))[0]
-            final_dir = os.path.join(self.dist_dir, script_base)
 
             if self.debug:
                 exe_name = os.path.join(final_dir, script_base+'_d.exe')
@@ -212,19 +216,17 @@ class py2exe (Command):
                               debug=0,
                               excludes=excludes)
 
+            # feed modulefinder.
+            #
             for f in self.support_modules():
                 mf.load_file(f)
 
             for f in self.includes:
                 try:
-                    file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                    file, pathname, desc = \
+                          self.find_dotted_module(f, extra_path + sys.path)
                 except ImportError:
-                    # Strange! Modules found via registry entries are only
-                    # found by imp.find_module if NO path specified.
-                    try:
-                        file, pathname, desc = imp.find_module(f)
-                    except ImportError:
-                        continue
+                    self.warn("Module '%s' not found" % f)
                 mf.load_module(f, file, pathname, desc)
 
             mf.run_script(script)
@@ -236,7 +238,8 @@ class py2exe (Command):
                     mods = import_hack[item.__name__]
                     force_imports.extend(mods)
                     for f in mods:
-                        file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                        file, pathname, desc = \
+                              imp.find_module(f, extra_path + sys.path)
                         mf.load_module(f, file, pathname, desc)
 
             # Retrieve modules from modulefinder
@@ -363,6 +366,23 @@ class py2exe (Command):
 
     # run()
 
+    def find_dotted_module(self, name, path=None):
+        # same as imp.find_module, except that it is able
+        # to handle hierarchical module names.
+        components = string.split(name, '.')
+        while components:
+            # Strange! Modules found via registry entries are only
+            # found by imp.find_module if NO path specified.
+            try:
+                file, pathname, desc = imp.find_module(components[0], path)
+            except ImportError:
+                file, pathname, desc = imp.find_module(components[0])
+            components = components[1:]
+            path = [pathname]
+        return file, pathname, desc
+
+    # find_dotted_module()
+
     def find_suffix(self, filename):
         # given a filename (usually of type C_EXTENSION),
         # find the corresponding entry from imp.get_suffixes
@@ -373,7 +393,8 @@ class py2exe (Command):
                 return desc
         # XXX Should not occur!
         raise "Error"
-
+    # find_suffix()
+    
     def copy_dependend_dlls(self, final_dir, use_runw, dlls):
         import py2exe_util
         sysdir = py2exe_util.get_sysdir()
@@ -471,7 +492,6 @@ class py2exe (Command):
                          dry_run=self.dry_run)
 
     def support_modules(self):
-        import imp
         try:
             return [imp.find_module("imputil")[1]]
         except ImportError:
