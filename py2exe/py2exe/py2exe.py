@@ -110,8 +110,8 @@ class py2exe (Command):
 
         # Distribute some of our options to other commands.
         # Is this the right way to do it?
-        build_ext = self.reinitialize_command('build_ext').force
-        build_ext.force = force
+        build_ext = self.reinitialize_command('build_ext')
+        build_ext.force = self.force
         
         build = self.reinitialize_command('build')
 
@@ -159,15 +159,6 @@ class py2exe (Command):
                 m.load_file(f)
             m.run_script(script)
 
-            missing = filter(lambda m, e=excludes: m not in e, m.badmodules.keys())
-
-            if missing:
-                self.warn("*" * 48)
-                self.warn("* The following modules were not found:")
-                for n in missing:
-                    self.warn("*    " + n)
-                self.warn("*" * 48)
-
             # Retrieve modules from modulefinder
             py_files = []
             extensions = []
@@ -184,6 +175,16 @@ class py2exe (Command):
                     else:
                         raise RuntimeError \
                               ("Don't know how to handle '%s'" % src)
+
+            missing = filter(lambda m, e=excludes: m not in e, m.badmodules.keys())
+
+            if missing:
+                self.warn("*" * 48)
+                self.warn("* The following modules were not found:")
+                for n in missing:
+                    self.warn("*    " + n)
+                self.warn("*" * 48)
+
 
             # byte compile the python modules into the target directory
             #
@@ -204,6 +205,9 @@ class py2exe (Command):
                 src, dst = self.find_extmodule_paths(ext_module)
                 self.copy_file(src,
                           os.path.join(final_dir, dst))
+
+            for x in missing:
+                pass
 
             # copy support files and the script itself
             #
@@ -242,7 +246,8 @@ class py2exe (Command):
     # run()
 
     def find_extmodule_paths(self, ext_module):
-        # XXX comment missing
+        # if we are buildiing a debug version, we have to insert an
+        # '_d' into the filename just before the extension
         if self.debug:
             src = imp.find_module(ext_module.__name__ + '_d')[1]
             dst = ext_module.__name__ + '_d' # module name
