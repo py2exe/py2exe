@@ -1,5 +1,6 @@
+# -*- coding: latin-1 -*-
 ##
-##	   Copyright (c) 2000, 2001, 2002 Thomas Heller
+##	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
@@ -25,6 +26,10 @@
 # $Id$
 #
 # $Log$
+# Revision 1.2  2003/09/18 20:19:57  theller
+# Remove a 2.3 warning, but mostly this checkin is to test the brand new
+# py2exe-checkins mailing list.
+#
 # Revision 1.1  2003/08/29 12:30:52  mhammond
 # New py2exe now uses the old resource functions :)
 #
@@ -48,26 +53,12 @@ RT_VERSION = 16
 class VersionError(Exception):
     pass
 
-_use_unicode = 0
-
-try:
-    _use_unicode = unicode
-except NameError:
-    try:
-        import pywintypes
-    except ImportError:
-        raise ImportError, "Could not import StringTables, no unicode available"
-        
-if _use_unicode:
-
-    def w32_uc(text):
-        """convert a string into unicode, then encode it into UTF-16
-        little endian, ready to use for win32 apis"""
+def w32_uc(text):
+    """convert a string into unicode, then encode it into UTF-16
+    little endian, ready to use for win32 apis"""
+    if type(text) is str:
         return unicode(text, "unicode-escape").encode("utf-16-le")
-
-else:
-    def w32_uc(text):
-        return pywintypes.Unicode(text).raw
+    return unicode(text).encode("utf-16-le")
 
 class VS_FIXEDFILEINFO:
     dwSignature = 0xFEEF04BDL
@@ -84,7 +75,7 @@ class VS_FIXEDFILEINFO:
     dwFileDateMS = 0
     dwFileDateLS = 0
 
-    fmt = "13l"
+    fmt = "13L"
 
     def __init__(self, version):
         import string
@@ -209,40 +200,74 @@ class VS_VERSIONINFO(VS_STRUCT):
     def get_value(self):
         return str(self.value)
 
-
-def Version(vers, strings):
-    return str(VS_VERSIONINFO(vers,
-                              [StringFileInfo("040904B0",
-                                              strings),
-                               VarFileInfo(0x040904B0)]))
+class Version(object):
+    def __init__(self,
+                 version,
+                 comments = None,
+                 company_name = None,
+                 file_description = None,
+                 internal_name = None,
+                 legal_copyright = None,
+                 legal_trademarks = None,
+                 original_filename = None,
+                 private_build = None,
+                 product_name = None,
+                 product_version = None,
+                 special_build = None):
+        self.version = version
+        strings = []
+        if comments is not None:
+            strings.append(("Comments", comments))
+        if company_name is not None:
+            strings.append(("CompanyName", company_name))
+        if file_description is not None:
+            strings.append(("FileDescription", file_description))
+        strings.append(("FileVersion", version))
+        if internal_name is not None:
+            strings.append(("InternalName", internal_name))
+        if legal_copyright is not None:
+            strings.append(("LegalCopyright", legal_copyright))
+        if legal_trademarks is not None:
+            strings.append(("LegalTrademarks", legal_trademarks))
+        if original_filename is not None:
+            strings.append(("OriginalFilename", original_filename))
+        if private_build is not None:
+            strings.append(("PrivateBuild", private_build))
+        if product_name is not None:
+            strings.append(("ProductName", product_name))
+        strings.append(("ProductVersion", product_version or version))
+        if special_build is not None:
+            strings.append(("SpecialBuild", special_build))
+        self.strings = strings
+        
+    def resource_bytes(self):
+        vs = VS_VERSIONINFO(self.version,
+                            [StringFileInfo("040904B0",
+                                            self.strings),
+                             VarFileInfo(0x040904B0)])
+        return str(vs)
 
 def test():
     import sys
     sys.path.append("c:/tmp")
     from hexdump import hexdump
-    res_data = version("1, 0, 0, 1",
-                       [("Comments", ""),
-                        ("CompanyName", "ION-TOF GmbH"),
-                        ("FileDescription", "icon Application"),
-                        ("FileVersion", "1, 0, 0, 1"),
-                        ("InternalName", "icon"),
-                        ("LegalCopyright", "Copyright © 2002"),
-                        ("LegalTrademarks", ""),
-                        ("OriginalFilename", "icon.rc"),
-                        ("PrivateBuild", ""),
-                        ("ProductName", "ION-TOF GmbH icon Application"),
-                        ("ProductVersion", "1, 0, 0, 1"),
-                        ("SpecialBuild", "")
-                        ])
-    hexdump(res_data)
+    version = Version("1, 0, 0, 1",
+                      comments = "ümläut comments",
+                      company_name = "No Company",
+                      file_description = "silly application",
+                      internal_name = "silly",
+                      legal_copyright = u"Copyright © 2003",
+##                      legal_trademark = "",
+                      original_filename = "silly.exe",
+                      private_build = "test build",
+                      product_name = "silly product",
+                      product_version = None,
+##                      special_build = ""
+                      )
+    hexdump(version.resource_bytes())
 
 if __name__ == '__main__':
     import sys
-    sys.path.append("c:/tmp")
+    sys.path.append("d:/nbalt/tmp")
     from hexdump import hexdump
-
-    import win32api, win32con, sys
-##    path = "../../build/lib.win32-%s/py2exe/run.exe" % sys.winver
-    path = r"c:\sf\py2exe\tests\dist\logsvc\logsvc.exe"
-    hlib = win32api.LoadLibrary(path)
-    hexdump(win32api.LoadResource(hlib, win32con.RT_VERSION, 1))
+    test()
