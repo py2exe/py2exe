@@ -8,6 +8,9 @@ NT services, exe and dll COM servers are supported.
 
 This release fixes a few bugs in the 0.5.2 version:
 
+    * The windows installer has been fixed to avoid problems when
+      doing non-admin installs.  Thanks to Harald A. Massa for testing.
+
     * Applied a patch from Mark Hammond to correctly manage the thread
       state in dll COM servers.
 
