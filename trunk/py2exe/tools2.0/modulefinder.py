@@ -233,6 +233,8 @@ class ModuleFinder:
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
+##        except NameError: # THe, may be something else (not a module)
+##            return None
         try:
             m = self.load_module(fqname, fp, pathname, stuff)
         finally:
