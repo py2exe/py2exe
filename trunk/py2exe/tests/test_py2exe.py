@@ -8,9 +8,9 @@ def skip_TEST(*args):
 try:
     import pygame
 except ImportError:
-    pass
+    print "pygame not tested"
 else:
-    skip_TEST(r"""
+    TEST(r"""
 >>> build('pygame-examples\liquid', """
 """data_files=[('data', ['pygame-examples\\data\\liquid.gif'])], """
 """args=['-e', 'win32api,zlib', """
@@ -76,7 +76,7 @@ F zlib.dll
 try:
     import _xmlplus
 except:
-    pass
+    print "_xmlplus not tested"
 else:
     TEST(r"""
 >>> build('test_sax', args=['-p', '_xmlplus'])
@@ -474,8 +474,12 @@ F test_system.exe
 ++++++++++++++++++++++++++++++++++++++++++
 """)
 
-
-TEST("""
+try:
+    import Numeric
+except ImportError:
+    print "Numeric not tested"
+else:
+    TEST("""
 >>> build('test_numeric')
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
@@ -489,8 +493,13 @@ F test_numeric.exe
 ++++++++++++++++++++++++++++++++++++++++++
 """)
 
-
-TEST("""
+try:
+    import win32ui
+    import dde
+except ImportError:
+    print "dde not tested"
+else:
+    TEST("""
 >>> build('test_dde')
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
@@ -505,8 +514,12 @@ F win32ui.pyd
 ++++++++++++++++++++++++++++++++++++++++++
 """)
 
-
-TEST("""
+try:
+    import win32api
+except ImportError:
+    print "win32 not tested"
+else:
+    TEST("""
 >>> build('win32')
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
@@ -523,7 +536,12 @@ F win32api.pyd
 """)
 
 
-TEST("""
+try:
+    import Tkinter
+except ImportError:
+    print "Tkinter not tested"
+else:
+    TEST("""
 >>> build('test_hanoi', args=['-e', 'win32api'])
 Z FixTk.pyc
 Z Scripts.py2exe/
@@ -566,7 +584,12 @@ F tk83.dll
 """)
 
 
-TEST("""
+try:
+    import wxPython
+except ImportError:
+    print "wxPython not tested"
+else:
+    TEST("""
 >>> build('test_wx', args=['-e', 'win32api'])
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
@@ -699,4 +722,5 @@ def _test():
     print "Done"
 
 if __name__ == '__main__':
+    print
     _test()
