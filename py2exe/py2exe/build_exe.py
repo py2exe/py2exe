@@ -158,7 +158,10 @@ class py2exe(Command):
         build = self.reinitialize_command('build')
         build.run()
         sys_old_path = sys.path[:]
-        sys.path[:0] = [build.build_lib, build.build_platlib]
+        if build.build_platlib is not None:
+            sys.path.insert(0, build.build_platlib)
+        if build.build_lib is not None:
+            sys.path.insert(0, build.build_lib)
         try:
             self._run()
         finally:
