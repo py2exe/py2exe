@@ -38,6 +38,7 @@ import sys, os, imp
 _c_suffixes = [triple[0] for triple in imp.get_suffixes()
                if triple[2] == imp.C_EXTENSION]
 
+# consider adding this to our "extended options"??
 EXCLUDED_DLLS = ["dapi.dll", "MAPI32.dll"] # sigh
 
 def imp_find_module(name):
@@ -88,13 +89,23 @@ class py2exe(Command):
     boolean_options = ['unbuffered']
 
     def initialize_options (self):
-        self.unbuffered = 0
-        self.optimize = 0
-        self.includes = None
-        self.excludes = None
-        self.packages = None
-        self.dist_dir = None
-        self.ext_mapping = {}
+        # hack in extra options - if the main setup script defines an object
+        # py2exe_options, default some extra options from that.
+        try:
+            extra_options = __import__('__main__').py2exe_options
+            # if class/instance etc, get the dics.
+            extra_options = getattr(extra_options, "__dict__", extra_options)
+        except (ImportError, AttributeError):
+            extra_options = []
+        
+        self.unbuffered = extra_options.get("unbuffered", 0)
+        self.optimize = extra_options.get("optimize", 0)
+        self.includes = extra_options.get("include")
+        self.excludes = extra_options.get("excludes")
+        self.packages = extra_options.get("packages")
+        self.dist_dir = extra_options.get("dist_dir")
+        self.ext_mapping = extra_options.get("ext_mapping", {})
+        self.bitmap_resources = extra_options.get("bitmap_resources", [])
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -107,6 +118,12 @@ class py2exe(Command):
         self.packages = fancy_split(self.packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
+        for bmp_id, bmp_filename in self.bitmap_resources:
+            if type(bmp_id) != type(0):
+                raise DistutilsOptionError, "bitmap ID must be an integer"
+            if not os.path.isfile(bmp_filename):
+                raise DistutilsOptionError, "Bitmap filename '%s' does not exist" % bmp_filename
+        
 
     def run(self):
         # refactor, refactor, refactor!
@@ -318,6 +335,11 @@ class py2exe(Command):
             script_bytes = si + open(path, "r").read() + '\000\000'
             self.announce("add script resource, %d bytes" % len(script_bytes))
             add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
+            RT_BITMAP=2
+            for bmp_id, bmp_filename in self.bitmap_resources:
+                bmp_data = open(bmp_filename, "rb").read()
+                # skip the 14 byte bitmap header.
+                add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
 
     def find_dependend_dlls(self, use_runw, dlls, pypath):
         import py2exe_util
