@@ -11,5 +11,3 @@ def fake_getline(filename, lineno):
     return ''
 linecache.orig_getline = linecache.getline
 linecache.getline = fake_getline
-
-print "common Boot script"
