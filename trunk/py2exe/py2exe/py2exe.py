@@ -268,7 +268,7 @@ class py2exe (Command):
         else:
             template = "python%s%s.dll"
         pythondll = (template % version)
-        for path in string.split(os.environ["PATH"], ';'):
+        for path in string.split(os.environ["PATH"], ';') + sys.path:
             fullpath = os.path.join(path, pythondll)
             if os.path.isfile(fullpath):
                 self.copy_file(fullpath,
