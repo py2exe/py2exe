@@ -495,32 +495,32 @@ F test_popen.exe
 
 
 TEST(r"""
->>> build('test_system', args=['-e', 'win32api'])
+>>> build('test_system', args=['-e', 'win32api', '-O', '2'])
 Built File dist\test_system\test_system.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
-Z UserDict.pyc
-Z copy.pyc
-Z copy_reg.pyc
-Z dospath.pyc
-Z imputil.pyc
-Z macpath.pyc
-Z ntpath.pyc
-Z os.pyc
-Z popen2.pyc
-Z posixpath.pyc
-Z pre.pyc
-Z re.pyc
-Z repr.pyc
-Z sre.pyc
-Z sre_compile.pyc
-Z sre_constants.pyc
-Z sre_parse.pyc
-Z stat.pyc
-Z string.pyc
-Z tempfile.pyc
-Z types.pyc
+Z UserDict.pyo
+Z copy.pyo
+Z copy_reg.pyo
+Z dospath.pyo
+Z imputil.pyo
+Z macpath.pyo
+Z ntpath.pyo
+Z os.pyo
+Z popen2.pyo
+Z posixpath.pyo
+Z pre.pyo
+Z re.pyo
+Z repr.pyo
+Z sre.pyo
+Z sre_compile.pyo
+Z sre_constants.pyo
+Z sre_parse.pyo
+Z stat.pyo
+Z string.pyo
+Z tempfile.pyo
+Z types.pyo
 ------------------------------------------
 F _sre.pyd
 F python%(winver)s.dll
