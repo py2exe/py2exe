@@ -1,5 +1,9 @@
 """Find modules used by a script, using introspection."""
 
+# Taken from Python 2.2a distribution,
+# enhanced to track dependencies of modules whether they are
+# found or not
+
 import dis
 import imp
 import marshal
@@ -88,6 +92,7 @@ class ModuleFinder:
         self.path = path
         self.modules = {}
         self.badmodules = {}
+        self.needed = {}
         self.debug = debug
         self.indent = 0
         self.excludes = excludes
@@ -314,6 +319,10 @@ class ModuleFinder:
                         if not self.badmodules.has_key(name):
                             self.badmodules[name] = {}
                         self.badmodules[name][m.__name__] = None
+                    else:
+                        if not self.needed.has_key(name):
+                            self.needed[name] = {}
+                        self.needed[name][m.__name__] = None
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
                 assert lastname is not None
