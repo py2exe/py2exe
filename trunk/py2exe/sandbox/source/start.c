@@ -129,8 +129,8 @@ int init_with_instance(HMODULE hmod)
  * We need the module's directory, because zipimport needs zlib.pyd.
  * And, of course, the zipfile itself.
  */
-		sprintf(buffer, "PYTHONPATH=%s;%s\\%s",
-			libdirname, libdirname, pZipBaseName);
+		sprintf(buffer, "PYTHONPATH=%%s\\%s",
+			libdirname, pZipBaseName);
 		_putenv (buffer);
 		_putenv ("PYTHONSTARTUP=");
 		_putenv ("PYTHONOPTIMIZE=");
@@ -202,13 +202,9 @@ int start (int argc, char **argv)
 int run_script(void)
 {
 	int rc;
-	/* It would be nice to run only with the single zipfile entry on sys.path,
-	   but it seems for inproc com servers the module's directory is needed as well.
-	*/
 	char buffer[_MAX_PATH * 3];
 	snprintf(buffer, sizeof(buffer),
-		 "import sys; sys.path=[r'%s', r'%s\\%s']",
-		 libdirname,
+		 "import sys; sys.path=[r'%s\\%s']",
 		 libdirname, pZipBaseName);
 	rc = PyRun_SimpleString(buffer);
 	if (rc == 0) {
