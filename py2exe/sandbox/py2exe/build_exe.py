@@ -196,10 +196,52 @@ class py2exe(Command):
         print "*** create binaries ***"
         self.create_binaries(py_files, extensions, dlls)
 
+        self.fix_badmodules(mf)
+
         if mf.any_missing():
             print "The following modules appear to be missing"
             print mf.any_missing()
 
+    def fix_badmodules(self, mf):
+        # This dictionary maps additional builtin module names to the
+        # module that creates them.
+        # For example, 'wxPython.misc' creates a builtin module named
+        # 'miscc'.
+        builtins = {"clip_dndc": "wxPython.clip_dnd",
+                    "cmndlgsc": "wxPython.cmndlgs",
+                    "controls2c": "wxPython.controls2",
+                    "controlsc": "wxPython.controls",
+                    "eventsc": "wxPython.events",
+                    "filesysc": "wxPython.filesys",
+                    "fontsc": "wxPython.fonts",
+                    "framesc": "wxPython.frames",
+                    "gdic": "wxPython.gdi",
+                    "imagec": "wxPython.image",
+                    "mdic": "wxPython.mdi",
+                    "misc2c": "wxPython.misc2",
+                    "miscc": "wxPython.misc",
+                    "printfwc": "wxPython.printfw",
+                    "sizersc": "wxPython.sizers",
+                    "stattoolc": "wxPython.stattool",
+                    "streamsc": "wxPython.streams",
+                    "utilsc": "wxPython.utils",
+                    "windows2c": "wxPython.windows2",
+                    "windows3c": "wxPython.windows3",
+                    "windowsc": "wxPython.windows",
+                    }
+
+        # Somewhat hackish: change modulefinder's badmodules dictionary in place.
+        bad = mf.badmodules
+        # mf.badmodules is a dictionary mapping unfound module names
+        # to another dictionary, the keys of this are the module names
+        # importing the unknown module.  For the 'miscc' module
+        # mentioned above, it looks like this:
+        # mf.badmodules["miscc"] = { "wxPython.miscc": 1 }
+        for name in mf.any_missing():
+            mod = builtins.get(name, None)
+            if mod is not None:
+                if mod in bad[name] and bad[name] == {mod: 1}:
+                    del bad[name]
 
     def find_dlls(self, extensions):
         dlls = [item.__file__ for item in extensions]
@@ -295,31 +337,48 @@ class py2exe(Command):
 
         # build the executables
         for target in dist.console:
-            dst = self.build_executable(target, "run.exe", arcname, target.script)
+            dst = self.build_executable(target, self.get_console_template(),
+                                        arcname, target.script)
             all_files.append(dst)
         for target in dist.windows:
-            dst = self.build_executable(target, "run_w.exe", arcname, target.script)
+            dst = self.build_executable(target, self.get_windows_template(),
+                                        arcname, target.script)
             all_files.append(dst)
         for target in dist.service:
-            # Note: we may want to give the user the option of using run_w.exe
-            dst = self.build_service(target, "run.exe", arcname)
+            dst = self.build_service(target, self.get_service_template(),
+                                     arcname)
             all_files.append(dst)
 
         for target in dist.com_server:
             if getattr(target, "create_exe", True):
-                # XXX Mark: Hm, should there be an option to build a
-                # console version for debugging, or is the regular
-                # debug support in win32com sufficient?
-                dst = self.build_comserver(target, "run_w.exe", arcname)
+                dst = self.build_comserver(target, self.get_comexe_template(),
+                                           arcname)
                 all_files.append(dst)
             if getattr(target, "create_dll", True):
-                dst = self.build_comserver(target, "run_dll.dll", arcname)
+                dst = self.build_comserver(target, self.get_comdll_template(),
+                                           arcname)
                 all_files.append(dst)
 
         # XXX debug code!
 ##        for name in all_files:
 ##            assert name.startswith(self.dist_dir)
 ##            print "*", name[len(self.dist_dir)+1:]
+
+    # for user convenience, let subclasses override the templates to use
+    def get_console_template(self):
+        return is_debug_build and "run_d.exe" or "run.exe"
+
+    def get_windows_template(self):
+        return is_debug_build and "run_w_d.exe" or "run_w.exe"
+
+    def get_service_template(self):
+        return is_debug_build and "run_d.exe" or "run.exe"
+
+    def get_comexe_template(self):
+        return is_debug_build and "run_w_d.exe" or "run_w.exe"
+
+    def get_comdll_template(self):
+        return is_debug_build and "run_dll_d.dll" or "run_dll.dll"
 
     def fixup_distribution(self):
         dist = self.distribution
