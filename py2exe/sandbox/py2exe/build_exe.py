@@ -33,7 +33,13 @@
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
-import sys, os, imp
+import sys, os, imp, types
+
+import _sre # any module known to be a .pyd
+is_debug_build = _sre.__file__.find("_d")>=0
+
+# resource constants
+RT_BITMAP=2
 
 _c_suffixes = [triple[0] for triple in imp.get_suffixes()
                if triple[2] == imp.C_EXTENSION]
@@ -59,13 +65,60 @@ def fancy_split(str, sep=","):
 LOADER = """
 def __load():
     import imp, os, sys
-    dirname = os.path.dirname(sys.executable)
+    dirname = sys.prefix
     path = os.path.join(dirname, '%s')
+    #print "py2exe extension module", __name__, "->", path
     mod = imp.load_dynamic(__name__, path)
 ##    mod.frozen = 1
 __load()
 del __load
 """
+
+# A very loosely defined "target".  We assume either a "script" or "modules"
+# attribute.  Some attributes will be target specific.
+class Target:
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+        # If modules is a simple string, assume they meant list
+        m = self.__dict__.get("modules")
+        if m and type(m) in types.StringTypes:
+            self.modules = [m]
+    def get_dest_base(self):
+        dest_base = getattr(self, "dest_base", None)
+        if dest_base: return dest_base
+        script = getattr(self, "script", None)
+        if script:
+            return os.path.basename(os.path.splitext(script)[0])
+        modules = getattr(self, "modules", None)
+        assert modules, "no script, modules or dest_base specified"
+        return modules[0].split(".")[-1]
+
+    def validate(self):
+        resources = getattr(self, "bitmap_resources", []) + \
+                    getattr(self, "icon_resources", [])
+        for r_id, r_filename in resources:
+            if type(r_id) != type(0):
+                raise DistutilsOptionError, "Resource ID must be an integer"
+            if not os.path.isfile(r_filename):
+                raise DistutilsOptionError, "Resource filename '%s' does not exist" % r_filename
+
+def FixupTargets(targets, default_attribute):
+    if not targets:
+        return targets
+    ret = []
+    for target in targets:
+        if type(target) in types.StringTypes :
+            # Create a default target object, with the string as the attribute
+            target = Target(**{default_attribute: target})
+        else:
+            d = getattr(target, "__dict__", target)
+            if not d.has_key(default_attribute):
+                raise DistutilsOptionError, \
+                      "This target class requires an attribute '%s'" % default_attribute
+            target = Target(**d)
+        target.validate()
+        ret.append(target)
+    return ret
 
 class py2exe(Command):
     description = ""
@@ -105,8 +158,6 @@ class py2exe(Command):
         self.packages = extra_options.get("packages")
         self.dist_dir = extra_options.get("dist_dir")
         self.ext_mapping = extra_options.get("ext_mapping", {})
-        self.bitmap_resources = extra_options.get("bitmap_resources", [])
-        self.icon_resources = extra_options.get("icon_resources", [])
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -119,17 +170,11 @@ class py2exe(Command):
         self.packages = fancy_split(self.packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
-        for bmp_id, bmp_filename in self.bitmap_resources + self.icon_resources:
-            if type(bmp_id) != type(0):
-                raise DistutilsOptionError, "bitmap ID must be an integer"
-            if not os.path.isfile(bmp_filename):
-                raise DistutilsOptionError, "Bitmap filename '%s' does not exist" % bmp_filename
-        
+
 
     def run(self):
         # refactor, refactor, refactor!
         abspath=os.path.abspath
-        force_console = True # useful for debugging - refactor this too :)
         bdist_base = self.get_finalized_command('bdist').bdist_base
         self.bdist_dir = os.path.join(bdist_base, 'winexe')
 
@@ -146,13 +191,24 @@ class py2exe(Command):
             # XXX separate method?
             dist = self.distribution
 
+            # Convert our args into target objects.
+            dist.com_server = FixupTargets(dist.com_server, "modules")
+            dist.service = FixupTargets(dist.service, "modules")
+            dist.windows = FixupTargets(dist.windows, "script")
+            dist.console = FixupTargets(dist.console, "script")
             # all of these contain module names
-            required_modules = dist.com_server[:]
-            required_modules += dist.service
+            required_modules = []
+            for target in dist.com_server:
+                required_modules.extend(target.modules)
+            for target in dist.service:
+                required_modules.extend(target.modules)
 
             # and these contains file names
-            required_files = dist.windows[:]
-            required_files += dist.console
+            required_files = []
+            for target in dist.windows:
+                required_files.append(target.script)
+            for target in dist.console:
+                required_files.append(target.script)
 
         self.includes.append("zlib") # needed for zipimport
         self.includes.append("warnings") # needed by Python itself
@@ -181,12 +237,14 @@ class py2exe(Command):
             # But this won't work, because this would also rename
             # pythoncom23.dll into pythoncom.dll, and win32com contains
             # magic which relies on this exact filename.
-##            base, ext = os.path.splitext(os.path.basename(item.__file__))
-##            dst = os.path.join(self.dist_dir, item.__name__ + ext)
+            # So we do it via a custom loader - see create_loader()
             dst = os.path.join(self.dist_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
 
         archive_name = os.path.join(self.dist_dir, dist.zipfile)
+        # make_archive appends ".zip", but we already have it.
+        if os.path.splitext(archive_name)[1]==".zip":
+            archive_name = os.path.splitext(archive_name)[0]
         arcname = self.make_archive(archive_name, "zip",
                                     root_dir=self.collect_dir)
 
@@ -209,15 +267,18 @@ class py2exe(Command):
             self.copy_file(dll, dst)
 
         # build the executables
-        self.build_executables(dist.console, "run.exe", arcname)
-        self.build_executables(dist.windows, "run_w.exe", arcname)
-        self.build_services(dist.service, "run_svc.exe", arcname)
+        for target in dist.console:
+            self.build_executable(target, "run.exe", arcname)
+        for target in dist.windows:
+            self.build_executable(target, "run_w.exe", arcname)
+        for target in dist.service:
+            self.build_service(target, "run_svc.exe", arcname)
 
-        if dist.com_server:
-            if force_console: com_exe_template = "run.exe"
-            else: com_exe_template = "run_w.exe"
-            self.build_comservers(dist.com_server, com_exe_template, arcname)
-            self.build_comservers(dist.com_server, "run_dll.dll", arcname)
+        for target in dist.com_server:
+            if getattr(target, "create_exe", True):
+                self.build_comserver(target, "run_w.exe", arcname)
+            if getattr(target, "create_dll", True):
+                self.build_comserver(target, "run_dll.dll", arcname)
 
         if mf.any_missing():
             print "The following modules appear to be missing"
@@ -229,23 +290,26 @@ class py2exe(Command):
         return os.path.join(os.path.dirname(thisfile),
                             "boot_" + boot_type + ".py")
 
-    def build_comservers(self, module_names, template, arcname):
+    def build_comserver(self, target, template, arcname):
         # Build a dll and an exe executable hosting all the com
         # objects listed in module_names.
         # The basename of the dll/exe is the last part of the first module.
         # Do we need a way to specify the name of the files to be built?
-        fname = module_names[0].split(".")[-1]
-        boot = self.get_boot_script("com_servers")
-        dst = os.path.join(self.temp_dir, "%s.py" % fname)
+        module_names = target.modules
+        dest_base = target.get_dest_base()
+        dest_script = os.path.join(self.temp_dir, "%s.py" % dest_base)
 
         # We take the boot_com_servers.py script, write the required
         # module names into it, and use it as the script to be run.
-        ofi = open(dst, "w")
+        boot = self.get_boot_script("com_servers")
+        ofi = open(dest_script, "w")
         ofi.write("com_module_names = %s\n" % module_names)
         ofi.write(open(boot, "r").read())
         ofi.close()
-
-        self.build_executables([dst], template, arcname)
+        # update the target
+        target.script = dest_script
+        # and build it
+        self.build_executable(target, template, arcname)
 
     def get_service_names(self, module_name):
         # import the script with every side effect :)
@@ -261,40 +325,29 @@ class py2exe(Command):
             deps = klass._svc_deps_
         return klass.__name__, klass._svc_name_, klass._svc_display_name_, deps
 
-    def build_services(self, module_names, template, arcname):
+    def build_service(self, target, template, arcname):
         # services still need a little thought.  It should be possible
         # to host many modules in a single service - but pythonservice.exe
         # isn't really there yet.
         from py2exe_util import add_resource
+        module_names = target.modules
         assert len(module_names)==1, "We only support one service module"
         module_name = module_names[0]
-        fname = module_name.split(".")[-1]
-        boot = self.get_boot_script("service")
-        dst = os.path.join(self.temp_dir, "%s.py" % fname)
+
+        dest_base = target.get_dest_base()
+        dest_script = os.path.join(self.temp_dir, "%s.py" % dest_base)
 
         # We take the boot_service.py script, write the required
         # module names into it, and use it as the script to be run.
-        ofi = open(dst, "w")
+        boot = self.get_boot_script("service")
+        ofi = open(dest_script, "w")
         ofi.write("service_module_names = ['%s']\n" % module_name)
         ofi.write(open(boot, "r").read())
         ofi.close()
 
-        exe_path = os.path.join(self.dist_dir, fname + ".exe")
+        target.script = dest_script
+        exe_path = self.build_executable(target, template, arcname)
 
-        src = os.path.join(os.path.dirname(__file__), template)
-        self.copy_file(src, exe_path)
-
-        # the standard resources
-        import struct
-        si = struct.pack("iii",
-                            0x78563412, # a magic value,
-                            self.optimize,
-                            self.unbuffered,
-                            ) + os.path.basename(arcname) + "\000"
-
-        script_bytes = si + open(dst, "r").read() + '\000\000'
-        self.announce("add script resource, %d bytes" % len(script_bytes))
-        add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
         # and the service specific resources.
         from resources.StringTables import StringTable, RT_STRING
         # resource id in the EXE of the serviceclass,
@@ -313,37 +366,43 @@ class py2exe(Command):
         for id, data in st.binary():
             add_resource(exe_path, data, RT_STRING, id, 0)
 
-    def build_executables(self, scripts, template, arcname):
-        # For each file in scripts, build an executable.
+    def build_executable(self, target, template, arcname):
+        # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
         from py2exe_util import add_resource, add_icon
-        ext = os.path.splitext(template)[1]
-        for path in scripts:
-            exe_base = os.path.splitext(os.path.basename(path))[0]
-            exe_path = os.path.join(self.dist_dir, exe_base + ext)
+        if is_debug_build:
+            base_d, ext_d = os.path.splitext(template)
+            template_d = base_d + "_d" + ext_d
+            template = template_d
 
-            src = os.path.join(os.path.dirname(__file__), template)
-            self.copy_file(src, exe_path)
-            
-            import struct
-            si = struct.pack("iii",
-                             0x78563412, # a magic value,
-                             self.optimize,
-                             self.unbuffered,
-                             ) + os.path.basename(arcname) + "\000"
-            
-            script_bytes = si + "import sys;sys.frozen=1\n" + open(path, "r").read() + '\000\000'
-            self.announce("add script resource, %d bytes" % len(script_bytes))
-            add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
-            RT_BITMAP=2
-            for bmp_id, bmp_filename in self.bitmap_resources:
-                bmp_data = open(bmp_filename, "rb").read()
-                # skip the 14 byte bitmap header.
-                add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
-            for ico_id, ico_filename in self.icon_resources:
-                add_icon(exe_path, ico_filename, ico_id)
-                
+        ext = os.path.splitext(template)[1]
+        exe_base = target.get_dest_base()
+        exe_path = os.path.join(self.dist_dir, exe_base + ext)
+
+        src = os.path.join(os.path.dirname(__file__), template)
+        self.copy_file(src, exe_path)
+        
+        import struct
+        si = struct.pack("iii",
+                         0x78563412, # a magic value,
+                         self.optimize,
+                         self.unbuffered,
+                         ) + os.path.basename(arcname) + "\000"
+        
+        script_bytes = si + "import sys\nif not hasattr(sys, 'frozen'): sys.frozen=1\n" + open(target.script, "r").read() + '\000\000'
+        self.announce("add script resource, %d bytes" % len(script_bytes))
+        add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
+        # Handle all resources specified by the target
+        bitmap_resources = getattr(target, "bitmap_resources", [])
+        for bmp_id, bmp_filename in bitmap_resources:
+            bmp_data = open(bmp_filename, "rb").read()
+            # skip the 14 byte bitmap header.
+            add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
+        icon_resources = getattr(target, "icon_resources", [])
+        for ico_id, ico_filename in icon_resources:
+            add_icon(exe_path, ico_filename, ico_id)
+        return exe_path
 
     def find_dependend_dlls(self, use_runw, dlls, pypath):
         import py2exe_util
