@@ -104,7 +104,8 @@ class BuildInterpreters(build_ext.build_ext):
                 try:
                     self.spawn(["upx", "-9", "-q", exe_filename + '.exe'])
                 except DistutilsExecError, details:
-                    print details
+                    self.announce("warning: upx.exe could be used to compress the executable")
+                    self.announce("warning: %s" % str(details))
 
 
     # build_extensions ()
