@@ -22,6 +22,11 @@
 ##
 
 # $Log$
+# Revision 1.36  2001/09/07 16:12:52  theller
+# Fixed to work with readonly scripts - previous versions
+# did fail to remove the built directories. Solution suggested
+# by Robert Kiendl.
+#
 
 """distutils.command.py2exe
 
@@ -140,12 +145,12 @@ class py2exe (Command):
                 raise DistutilsOptionError, "optimize must be 0, 1, or 2"
 
         if self.excludes:
-            self.excludes = string.split(self.excludes, ',')
+            self.excludes = map(string.strip, string.split(self.excludes, ','))
         else:
             self.excludes = []
 
         if self.includes:
-            self.includes = string.split(self.includes, ',')
+            self.includes = map(string.strip, string.split(self.includes, ','))
             # includes is stronger than excludes
             for m in self.includes:
                 if m in self.excludes:
@@ -154,12 +159,12 @@ class py2exe (Command):
             self.includes = []
 
         if self.packages:
-            self.packages = string.split(self.packages, ',')
+            self.packages = map(string.strip, string.split(self.packages, ','))
         else:
             self.packages = []
 
         if self.force_imports:
-            self.force_imports = string.split(self.force_imports, ',')
+            self.force_imports = map(string.strip, string.split(self.force_imports, ','))
         else:
             self.force_imports = []
 
