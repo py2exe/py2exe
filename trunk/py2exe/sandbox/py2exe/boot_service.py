@@ -2,6 +2,7 @@
 import sys
 import os
 import servicemanager
+import win32service
 import win32serviceutil
 # We assume that py2exe has magically set service_module_names
 # to the module names that expose the services we host.
@@ -36,17 +37,122 @@ else:
     for k in service_klasses:
         servicemanager.PrepareToHostMultiple(k._svc_name_, k)
 
+################################################################
+
+class GetoptError(Exception):
+    pass
+
+def w_getopt(args, options):
+    """A getopt for Windows style command lines.
+
+    Options may start with either '-' or '/', the option names may
+    have more than one letter (examples are /tlb or -RegServer), and
+    option names are case insensitive.
+
+    Returns two elements, just as getopt.getopt.  The first is a list
+    of (option, value) pairs in the same way getopt.getopt does, but
+    there is no '-' or '/' prefix to the option name, and the option
+    name is always lower case.  The second is the list of arguments
+    which do not belong to any option.
+
+    Different from getopt.getopt, a single argument not belonging to an option
+    does not terminate parsing.
+    """
+    opts = []
+    arguments = []
+    while args:
+        if args[0][:1] in "/-":
+            arg = args[0][1:] # strip the '-' or '/'
+            arg = arg.lower()
+            if arg + ':' in options:
+                try:
+                    opts.append((arg, args[1]))
+                except IndexError:
+                    raise GetoptError, "option '%s' requires an argument" % args[0]
+                args = args[1:]
+            elif arg in options:
+                opts.append((arg, ''))
+            else:
+                raise GetoptError, "invalid option '%s'" % args[0]
+            args = args[1:]
+        else:
+            arguments.append(args[0])
+            args = args[1:]
+
+    return opts, arguments
+
+
 # Simulate the old py2exe command line handling (to some extent)
 # This could do with some re-thought, although it still isn't clear to
 # MarkH that win32serviceutil command line options are appropriate here.
-if len(sys.argv)>1 and sys.argv[1]=="-install":
-    for k in service_klasses:
-        svc_display_name = getattr(k, "_svc_display_name_", k._svc_name_)
-        win32serviceutil.InstallService(None, k._svc_name_, svc_display_name,
-                                        exeName = sys.executable)
-elif len(sys.argv)>1 and sys.argv[1]=="-remove":
-    for k in service_klasses:
-        win32serviceutil.RemoveService(k._svc_name_)
-else:
-    print "Connecting to the Service Control Manager"
-    servicemanager.StartServiceCtrlDispatcher()
+
+options = "help install remove auto disabled interactive user: password:".split()
+
+def usage():
+    print "Usage: %s <options>. Valid options are:" % os.path.basename(sys.executable)
+    for opt in options:
+        if opt.endswith(":"):
+            print "\t-%s <arg>" % opt
+        else:
+            print "\t-%s" % opt
+
+try:
+    opts, args = w_getopt(sys.argv[1:], options)
+except GetoptError, detail:
+    print detail
+    usage()
+    sys.exit(1)
+
+if opts:
+    startType = None
+    bRunInteractive = 0
+    serviceDeps = None
+    userName = None
+    password = None
+
+    do_install = False
+    do_remove = False
+
+    done = False
+
+    for o, a in opts:
+        if o == "help":
+            usage()
+            done = True
+        elif o == "install":
+            do_install = True
+        elif o == "remove":
+            do_remove = True
+        elif o == "auto":
+            startType = win32service.SERVICE_AUTO_START
+        elif o == "disabled":
+            startType = win32service.SERVICE_DISABLED
+        elif o == "user":
+            userName = a
+        elif o == "password":
+            password = a
+        elif o == "interactive":
+            bRunInteractive = True
+
+    if do_install:
+        for k in service_klasses:
+            svc_display_name = getattr(k, "_svc_display_name_", k._svc_name_)
+            win32serviceutil.InstallService(None, k._svc_name_, svc_display_name,
+                                            exeName = sys.executable,
+                                            userName = userName,
+                                            password = password,
+                                            startType = startType,
+                                            bRunInteractive = bRunInteractive,
+                                            )
+        done = True
+
+    if do_remove:
+        for k in service_klasses:
+            win32serviceutil.RemoveService(k._svc_name_)
+        done = True
+
+    if done:
+        sys.exit(0)
+
+print "Connecting to the Service Control Manager"
+servicemanager.StartServiceCtrlDispatcher()
