@@ -403,7 +403,8 @@ setup(name="py2exe",
                                libraries=["imagehlp"]),
                     ],
       interpreters = interpreters,
-      packages=['py2exe', 'py2exe.resources'],
+      packages=['py2exe', 'py2exe.resources',
+                'py2exe.samples'], # not really a package!
       )
 
 # Local Variables:
