@@ -217,6 +217,19 @@ class py2exe(Command):
             mf.load_package("win32com.gen_py", genpy_temp)
             self.packages.append("win32com.gen_py")
 
+        # monkey patching the compile builtin.
+        # The idea is to include the filename in the error message
+        orig_compile = compile
+        import __builtin__
+        def my_compile(source, filename, *args):
+            try:
+                result = orig_compile(source, filename, *args)
+            except Exception, details:
+                raise DistutilsError, "compiling '%s' failed\n    %s: %s" % \
+                      (filename, details.__class__.__name__, details)
+            return result
+        __builtin__.compile = my_compile
+
         print "*** searching for required modules ***"
         self.find_needed_modules(mf, required_files, required_modules)
 
@@ -384,7 +397,20 @@ class py2exe(Command):
                 dst = os.path.join(self.exe_dir, base)
             else:
                 dst = os.path.join(self.lib_dir, base)
-            self.copy_file(dll, dst)
+            _, copied = self.copy_file(dll, dst)
+            if not self.dry_run and copied and base.lower() == python_dll.lower():
+                # If we actually copied pythonxy.dll, we have to patch it.
+                #
+                # Previously, the code did it every time, but this
+                # breaks if, for example, someone runs UPX over the
+                # dist directory.  Patching an UPX'd dll seems to work
+                # (no error is detected when patching), but the
+                # resulting dll does not work anymore.
+                # 
+                # The function restores the file times so
+                # dependencies still work correctly.
+                self.patch_python_dll_winver(dst)
+
             self.lib_files.append(dst)
 
         for target in self.distribution.isapi:
@@ -408,20 +434,6 @@ class py2exe(Command):
             install_data.run()
 
             self.lib_files.extend(install_data.get_outputs())
-
-        # Patch the Python DLL - we could try and get smart and do it
-        # only when newly copied to the dest directory, but that is fragile
-        # should it fail that first time, or anything else go wrong.
-        # So do it always (the function restores the file times so
-        # dependencies still work correctly.)
-        if not self.dry_run:
-            dll = os.path.join(self.exe_dir, python_dll)
-            # Now that I have static Pythons, built into the exe stubs,
-            # it may be that pythonxx.dll is not needed at all.
-            #
-            # XXX It may be neccessary to patch the exe instead, in this case?
-            if os.path.isfile(dll):
-                self.patch_python_dll_winver(dll)
 
         # build the executables
         for target in dist.console:
@@ -564,8 +576,6 @@ class py2exe(Command):
         return self.build_executable(target, template, arcname, None, vars)
 
     def build_executable(self, target, template, arcname, script, vars={}):
-        print "build_executable\n\t", target, template, arcname, script, vars
-
         # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
