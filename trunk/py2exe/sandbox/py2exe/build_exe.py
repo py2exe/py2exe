@@ -228,13 +228,13 @@ class py2exe(Command):
             mkpath(genpy_temp)
             dict_dat, num_stubs = collect_win32com_genpy(genpy_temp,
                                                          self.typelibs)
+            print "collected %d stubs from %d type libraries" \
+                  % (num_stubs, len(self.typelibs))
             mf.load_package("win32com.gen_py", genpy_temp)
             self.packages.append("win32com.gen_py")
             genpy_dir = os.path.join(self.collect_dir, "win32com", "gen_py")
             mkpath(genpy_dir)
             self.copy_file(dict_dat, genpy_dir)
-            print "collected %d stubs from %d type libraries" \
-                  % (num_stubs, len(self.typelibs))
 
         self.find_needed_modules(mf, required_files, required_modules)
 
@@ -404,24 +404,27 @@ class py2exe(Command):
         src = os.path.join(os.path.dirname(__file__), template)
         self.copy_file(src, exe_path)
 
-        boot_bits = ["import marshal\n"]
+        # We create a list of code objects, and write it as a marshaled
+        # stream.  The framework code then just exec's these in order.
+        code_objects = []
         for var_name, var_val in vars.items():
-            boot_bits.append("%s=%r\n" % (var_name, var_val))
+            code_objects.append(
+                    compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
+            )
         code_object = compile(open(script, "U").read(),
                               os.path.basename(script), "exec")
-        boot_bits.append("exec marshal.loads(")
-        boot_bits.append(repr(marshal.dumps(code_object)))
-        boot_bits.append(")\n")
-        boot_code = "".join(boot_bits)
+        code_objects.append(code_object)
+        code_bytes = marshal.dumps(code_objects)
 
         import struct
-        si = struct.pack("iii",
+        si = struct.pack("iiii",
                          0x78563412, # a magic value,
                          self.optimize,
                          self.unbuffered,
+                         len(code_bytes),
                          ) + relative_arcname + "\000"
 
-        script_bytes = si + boot_code + '\000\000'
+        script_bytes = si + code_bytes + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
         add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
         # Handle all resources specified by the target

@@ -26,12 +26,16 @@
  *
  */
 #include <Python.h>
+#include <marshal.h>
+#include <compile.h>
+#include <eval.h>
 #include <windows.h>
 
 struct scriptinfo {
     int tag;
     int optimize;
     int unbuffered;
+	int data_bytes;
 
     char zippath[0];
 };
@@ -40,6 +44,7 @@ extern void SystemError(int error, char *msg);
 int run_script(void);
 void fini(void);
 char *pScript;
+int numScriptBytes;
 char dirname[_MAX_PATH]; // my directory
 char libdirname[_MAX_PATH]; // library directory - probably same as above.
 char modulename[_MAX_PATH];
@@ -81,7 +86,7 @@ int init_with_instance(HMODULE hmod)
 	    return 255;
 	}
     }
-
+	numScriptBytes = p_script_info->data_bytes;
     pScript += sizeof(struct scriptinfo);
     if (p_script_info->tag != 0x78563412) {
 	    SystemError (0, "Bug: Invalid script resource");
@@ -199,7 +204,28 @@ int run_script(void)
 	     dirname,
 	     dirname, p_script_info->zippath);
     rc = PyRun_SimpleString(buffer);
-    if (rc != 0)
-	return rc;
-    return PyRun_SimpleString(pScript);
+    if (rc == 0) {
+		/* load the code objects to execute */
+		PyObject *m=NULL, *d=NULL, *seq=NULL;
+		/* We execute then in the context of '__main__' */
+		m = PyImport_AddModule("__main__");
+		if (m) d = PyModule_GetDict(m);
+		if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
+		if (seq) {
+			int i, max = PySequence_Length(seq);
+			for (i=0;i<max;i++) {
+				PyObject *sub = PySequence_GetItem(seq, i);
+				if (sub && PyCode_Check(sub)) {
+					PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
+														d, d);
+					if (!discard)
+						PyErr_Print();
+					Py_XDECREF(discard);
+					/* keep going even if we fail */
+				}
+				Py_XDECREF(sub);
+			}
+		}
+    }
+    return rc;
 }
