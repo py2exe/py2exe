@@ -22,6 +22,11 @@
 ##
 
 # $Log$
+# Revision 1.37  2001/09/17 20:10:41  theller
+# Strip whitespace off the results of string.split(..., ',') for
+# command line options (or from setup.cfg) containing lists of items.
+# --includes, --excludes, and --force-imports.
+#
 # Revision 1.36  2001/09/07 16:12:52  theller
 # Fixed to work with readonly scripts - previous versions
 # did fail to remove the built directories. Solution suggested
@@ -76,6 +81,8 @@ class py2exe (Command):
 
     # XXX need more options: unbuffered, ???
     user_options = [
+        ('aggressive', 'a',
+         "use aggressive mode when searching for dependencies"),
         ('debug', 'g',
          "create runtime with debugging information"),
         ('dist-dir=', 'd',
@@ -103,7 +110,7 @@ class py2exe (Command):
          "path to an icon file for the executable(s)"),
         ]
     
-    boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
+    boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console', 'aggressive']
 
     def initialize_options (self):
         self.bdist_dir = None
@@ -119,6 +126,7 @@ class py2exe (Command):
         self.packages = None
         self.force_imports = None
         self.icon = None
+        self.aggressive = None
 
     # initialize_options()
 
@@ -289,9 +297,10 @@ class py2exe (Command):
                         "java.lang", "org.python.core", "riscos",
                         "riscosenviron", "riscospath", "ce",
                         ] + self.excludes
-            mf = ModuleFinder (path=extra_path + sys.path,
+            mf = ModuleFinder(path=extra_path + sys.path,
                               debug=0,
-                              excludes=excludes)
+                              excludes=excludes,
+                              aggressive=self.aggressive)
 
             for f in self.support_modules():
                 mf.load_file(f)
@@ -357,6 +366,9 @@ class py2exe (Command):
                     else:
                         raise RuntimeError \
                               ("Don't know how to handle '%s'" % repr(src))
+
+            # ModuleFinder may update the excludes list
+            excludes = mf.excludes
 
             missing = filter(lambda n, e=excludes: n not in e, \
                              mf.badmodules.keys())
