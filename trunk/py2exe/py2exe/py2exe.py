@@ -68,6 +68,9 @@ class py2exe (Command):
          "comma-separated list of modules to exclude"),
         ("includes=", 'i',
          "comma-separated list of modules to include"),
+## Not yet!
+##        ("packages=", 'p',
+##         "comma-separated list of packages to include"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -83,6 +86,8 @@ class py2exe (Command):
         self.console = None
         self.excludes = None
         self.includes = None
+## Not yet!
+##        self.packages = None
 
     # initialize_options()
 
@@ -122,6 +127,12 @@ class py2exe (Command):
         else:
             self.includes = []
 
+## Not yet!
+##        if self.packages:
+##            self.packages = string.split(self.packages, ',')
+##        else:
+##            self.packages = []
+
     # finalize_options()
 
 
@@ -156,6 +167,17 @@ class py2exe (Command):
         # Problems with modulefinder:
         # Some extensions import python modules,
         # modulefinder cannot find them.
+        # If the python module is imported with PyImport_Import(),
+        # the only problem is to find the dependency.
+        #
+        # If the module is imported with PyImport_ImportModule(),
+        # it is worse, because PyImport_ImportModule()
+        # does NOT call the __import__() and thus will not trigger
+        # our import hook.
+        # The only solution (so far) is to make sure that these modules
+        # ARE ALREADY PRESENT in sys.modules at the time the extension
+        # is imported.
+        #
         # Examples: (from python 2.0)
         #   _sre imports copy_reg
         #   cPickle imports string, copy_reg
@@ -163,23 +185,25 @@ class py2exe (Command):
         #   parser imports copy_reg
         #   codecs imports encodings
         #
-        # Update: The problem is even worse, because
-        # cPickle imports string. copy_reg, types
-        # with PyImport_ImportModule, which does not call the
-        # import hook. So, we are not able the import them
-        # from within the import of cPickle.
-        #
         # Our solution:
         # Add them to the py_files we need, and additionally
         # 'import' them directly after installing the import hook.
-        # We do this by collectiong them into the force_imports
+        # We do this by collecting them into the force_imports
         # list and writing an 'import ...' line to Scripts\support.py.
+        #
+        # These are the known dependencies:
+        #
         import_hack = {
             "cPickle": ["copy_reg", "types", "string"],
             "cStringIO": ["copy_reg"],
             "parser": ["copy_reg"],
             "codecs": ["encodings"],
             "_sre": ["copy_reg"],
+
+            "win32api": ["pywintypes"],
+            "win32ui": ["cStringIO", "traceback"],
+            "pythoncom": ["win32com.server.policy", "pywintypes"],
+##            "odbc": ["dbi"],
             }
         from tools.modulefinder import ModuleFinder
 
@@ -215,35 +239,46 @@ class py2exe (Command):
             use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
                        and not self.console
 
+            # Create and feed modulefinder.
+            #
             mf = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
 
-            # feed modulefinder.
-            #
             for f in self.support_modules():
                 mf.load_file(f)
 
             for f in self.includes:
-                try:
-                    file, pathname, desc = \
-                          self.find_dotted_module(f, extra_path + sys.path)
-                except ImportError:
-                    self.warn("Module '%s' not found" % f)
-                mf.load_module(f, file, pathname, desc)
+                mf.import_hook(f)
+
+## No, I cannot yet figure out how to feed modulefinder
+## with complete packages. mf.load_file() failes for extension modules,
+## and mf.load_package() only loads the package itself, but not the modules
+## Has this to do with __all__?
+##            for f in self.packages:
+##                file = imp.find_module(f)[1]
+####                mf.load_package(f, file)
+##                def visit(arg, dirname, names):
+##                    for name in names:
+##                        ext = os.path.splitext(name)[1]
+##                        if ext in (".py", ".pyd", ".dll"):
+##                            arg.append(os.path.join(dirname, name))
+##                files = []
+##                os.path.walk(file, visit, files)
+
+##                map(mf.load_file, files)
+
 
             mf.run_script(script)
 
-            force_imports = []
             # first pass over modulefinder results, insert modules from import_hack
+            force_imports = Set()
             for item in mf.modules.values():
                 if item.__name__ in import_hack.keys():
                     mods = import_hack[item.__name__]
                     force_imports.extend(mods)
                     for f in mods:
-                        file, pathname, desc = \
-                              imp.find_module(f, extra_path + sys.path)
-                        mf.load_module(f, file, pathname, desc)
+                        mf.import_hook(f)
 
             # Retrieve modules from modulefinder
             py_files = []
@@ -260,7 +295,7 @@ class py2exe (Command):
                             break
                     else:
                         raise RuntimeError \
-                              ("Don't know how to handle '%s'" % src)
+                              ("Don't know how to handle '%s'" % repr(src))
 
             # byte compile the python modules into the target directory
             byte_compile(py_files,
@@ -300,17 +335,6 @@ class py2exe (Command):
             # This distionary will later be written to the source file
             # used to install the import hook.
             #
-            # XXX Problem remaining:
-            # If win32api is somehow included, PyWinTypesxx.dll is found
-            # in the binary dependencies.
-            #
-            # But because it is not imported, it is not found by modulefinder,
-            # and so the registry mapping is not found....
-            #
-            # We cold solve this by reading the registry directly.
-            # Python 1.5 cannot do this, so we cannot use _winreg,
-            # and so we have
-            
             ext_mapping = {}
             dlls = []
             for ext_module in extensions:
@@ -336,7 +360,10 @@ class py2exe (Command):
                 file = open(dst, "a")
                 file.write("_extensions_mapping = %s\n" % `ext_mapping`)
                 if force_imports:
-                    file.write("import %s\n" % string.join(force_imports, ', '))
+                    file.write("def _force_imports():\n")
+                    for item in force_imports:
+                        file.write("    import %s; del %s\n" % (item, item))
+                    file.write("_force_imports(); del _force_imports\n")
                 file.close()
 
             self.announce("force_imports = %s" % string.join(force_imports, ', '))
@@ -369,23 +396,6 @@ class py2exe (Command):
 
     # run()
 
-    def find_dotted_module(self, name, path=None):
-        # same as imp.find_module, except that it is able
-        # to handle hierarchical module names.
-        components = string.split(name, '.')
-        while components:
-            # Strange! Modules found via registry entries are only
-            # found by imp.find_module if NO path specified.
-            try:
-                file, pathname, desc = imp.find_module(components[0], path)
-            except ImportError:
-                file, pathname, desc = imp.find_module(components[0])
-            components = components[1:]
-            path = [pathname]
-        return file, pathname, desc
-
-    # find_dotted_module()
-
     def find_suffix(self, filename):
         # given a filename (usually of type C_EXTENSION),
         # find the corresponding entry from imp.get_suffixes
@@ -413,8 +423,13 @@ class py2exe (Command):
 
         self.announce("Resolving binary dependencies")
         
-        alldlls = bin_depends(loadpath, images)
+        alldlls, warnings = bin_depends(loadpath, images)
         alldlls.remove(self.get_exe_stub(use_runw))
+
+        if warnings:
+            self.warn("The following modules call PyImport_ImportModule:")
+            for item in warnings.items():
+                self.warn("  %s" % item)
 
         for src in alldlls:
             basename = os.path.basename(src)
@@ -434,6 +449,7 @@ class py2exe (Command):
     EXCLUDE = (
         "advapi32.dll",
         "comctl32.dll",
+        "comdlg32.dll",
         "gdi32.dll",
         "kernel32.dll",
         "msvcrtd.dll",  # not redistributable ??
@@ -539,23 +555,87 @@ class py2exe (Command):
 
 # class py2exe
 
+class Set:
+    # A generic set class
+    def __init__(self, *args):
+        self._dict = {}
+        for arg in args:
+            self.add(arg)
+
+    def extend(self, args):
+        for arg in args:
+            self.add(arg)
+
+    def add(self, item):
+        self._dict[item] = 0
+
+    def remove(self, item):
+        del self._dict[item]
+
+    def contains(self, item):
+        return item in self._dict.keys()
+
+    def __getitem__(self, index):
+        return self._dict.keys()[index]
+
+    def __len__(self):
+        return len(self._dict)
+
+    def items(self):
+        return self._dict.keys()
+
+# class Set()
+
+class FileSet:
+    # A case insensitive but case preserving set of files
+    def __init__(self, *args):
+        self._dict = {}
+        for arg in args:
+            self.add(arg)
+
+    def add(self, file):
+        self._dict[string.upper(file)] = file
+
+    def remove(self, file):
+        del self._dict[string.upper(file)]
+
+    def contains(self, file):
+        return string.upper(file) in self._dict.keys()
+
+    def __getitem__(self, index):
+        key = self._dict.keys()[index]
+        return self._dict[key]
+
+    def __len__(self):
+        return len(self._dict)
+
+    def items(self):
+        return self._dict.values()
+
+# class FileSet()
+
 def bin_depends(path, images):
     import py2exe_util
-    images = list(images[:])
-    dependents = []
+    warnings = FileSet()
+    images = apply(FileSet, images)
+    dependents = FileSet()
     while images:
         for image in images:
             images.remove(image)
-            image = os.path.abspath(image)
-            if image not in dependents:
-                dependents.append(image)
-                loadpath = os.path.dirname(image) + ';' + path
-                for dll in py2exe_util.depends(image, loadpath):
-                    if dll not in images:
-                        images.append(dll)
-    return dependents
+            if not dependents.contains(image):
+                print "   ", image
+                dependents.add(image)
+                abs_image = os.path.abspath(image)
+                loadpath = os.path.dirname(abs_image) + ';' + path
+                for result in py2exe_util.depends(image, loadpath).items():
+                    dll, uses_import_module = result
+                    if uses_import_module:
+                        warnings.add(dll)
+                    if not images.contains(dll) and not dependents.contains(dll):
+                        images.add(dll)
+    return dependents, warnings
     
-
+# bin_depends()
 
 def endswith(str, substr):
     return str[-len(substr):] == substr
@@ -571,6 +651,9 @@ class Module:
                    (`self.__name__`, `self.__file__`, `self.__path__`)
         else:
             return "Module(%s, %s)" % (`self.__name__`, `self.__file__`)
+
+# class Module()
+
 
 def byte_compile(py_files, optimize=0, force=0,
                  target_dir=None, verbose=1, dry_run=0,
@@ -647,3 +730,4 @@ byte_compile(files, optimize=%s, force=%s,
                 if verbose:
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
+# byte_compile()
