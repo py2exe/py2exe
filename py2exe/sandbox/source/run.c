@@ -48,13 +48,13 @@ void SystemError(int error, char *msg)
 	}
 }
 
-extern int init(void);
+extern int init(char *);
 extern int start(int argc, char **argv);
 
 int main (int argc, char **argv)
 {
 	int result;
-	result = init();
+	result = init("console_exe");
 	if (result)
 		return result;
 	return start(argc, argv);

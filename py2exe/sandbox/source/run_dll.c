@@ -66,7 +66,7 @@ BOOL have_init = FALSE;
 HANDLE gPythoncom = 0;
 HMODULE gInstance = 0;
 
-extern int init_with_instance(HMODULE);
+extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
 
@@ -125,13 +125,8 @@ int check_init()
 {
 	if (!have_init) {
 		PyObject *frozen;
-		init_with_instance(gInstance);
 		// a little DLL magic.  Set sys.frozen='dll'
-		frozen = PyString_FromString("dll");
-		if (frozen) {
-			PySys_SetObject("frozen", frozen);
-			Py_DECREF(frozen);
-		}
+		init_with_instance(gInstance, "dll");
 		frozen = PyInt_FromLong((LONG)gInstance);
 		if (frozen) {
 			PySys_SetObject("frozendllhandle", frozen);
