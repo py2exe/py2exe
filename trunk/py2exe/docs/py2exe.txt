@@ -34,10 +34,28 @@ News
 **py2exe 0.5.0** released.
 
 Python 2.3 is required, because the new zipimport feature is used.
+The zipimport mechanism is able to handle the early imports of the
+warnings and also the encodings module which is done by Python.
 
-It builds a single directory from your script(s), containing one
-or more related executables files, a single zipfile containing the
-Python modules needed, the Python dll, and the Python extension modules.
+Creates a single directory, which must be deployed completely.
+
+Can create any number of console and gui executables in this
+directory, plus optionally windows service exes, plus optionally exe
+and dll com servers.  The com servers can expose one or more com
+object classes.
+
+All pure Python files are contained in a single zip archive, which is
+shared by all the executables.  The zip archive may also be used by
+programs embedding Python.  Since extension modules cannot be imported
+from zipfiles, simple pure Python loaders are included in the zipfile
+which load the extensions from the file system (without requiring that
+the directory is in sys.path).
+
+It is now simple to build py2exe from the sources, provided you have
+MSVC6 installed - there are no dependencies on win32all sources.
+
+The created executables are standard PE executable files now, no
+longer is something appended to the exe portion.
 
 Using py2exe
 ------------
@@ -149,6 +167,7 @@ delete those you don't need.
 Advanced features
 -----------------
 
+Still to be written.
 So far, you have to look into the supplied samples.
 
 There is also a wiki_ now where you can look for information, or
@@ -183,8 +202,7 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer
-py2exe-0.5.0.win32-py2.3.exe_.
+Download and run the installer py2exe-0.5.0.win32-py2.3.exe_.
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
@@ -198,5 +216,9 @@ the unpacked ``unicows.dll`` file in the directory which contains your
 ``python.exe``.  Note that this is only needed on the machine where
 you want to build executables with **py2exe**, it is not required on
 the machine where you want to run the created programs.
+
+If you use ``py2exe`` to build COM clients or servers, win32all build
+163 (or later) is strongly recommened - it contains much better support
+for frozen executables.
 
 .. _here: http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdkredist.htm
