@@ -1,5 +1,49 @@
 # Common py2exe boot script - executed for all target types.
 
+# When we are a windows_exe we have no console, and writing to
+# sys.stderr or sys.stdout will sooner or later raise an exception,
+# and tracebacks will be lost anyway.
+#
+# We assume that output to sys.stdout can go to the bitsink, but we
+# *want* to see tracebacks.  So we redirect sys.stdout into an object
+# with a write method doing nothing, and sys.stderr into a logfile
+# having the same name as the executable, with '.log' appended.
+#
+# We only open the logfile if something is written to sys.stderr.
+#
+# If the logfile cannot be opened for *any* reason, we have no choice
+# but silently ignore the error.
+#
+# It remains to be seen if the 'a' flag for opening the logfile is a
+# good choice, or 'w' would be better.
+#
+
+import sys
+if sys.frozen == "windows_exe":
+    class Stderr(object):
+        softspace = 0
+        _file = None
+        _error = None
+        def write(self, text):
+            if self._file is None and self._error is None:
+                fname = sys.executable + '.log'
+                try:
+                    self._file = open(fname, 'a')
+                except Exception, details:
+                    self._error = details
+            if self._file is not None:
+                self._file.write(text)
+    sys.stderr = Stderr()
+    del Stderr
+
+    class Blackhole(object):
+        softspace = 0
+        def write(self, text):
+            pass
+    sys.stdout = Blackhole()
+    del Blackhole
+del sys
+
 # Disable linecache.getline() which is called by
 # traceback.extract_stack() when an exception occurs to try and read
 # the filenames embedded in the packaged python code.  This is really
