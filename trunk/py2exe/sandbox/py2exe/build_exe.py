@@ -794,7 +794,10 @@ def make_lib_archive(base_name, base_dir, verbose=0, dry_run=0):
     if not dry_run:
         z = zipfile.ZipFile(zip_filename, "w",
                             compression=zipfile.ZIP_STORED)
-        os.path.walk(base_dir, visit, z)
+        save_cwd = os.getcwd()
+        os.chdir(base_dir)
+        os.path.walk('', visit, z)
+        os.chdir(save_cwd)
         z.close()
 
     return zip_filename
