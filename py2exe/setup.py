@@ -175,7 +175,7 @@ InstallSubCommands()
 
 ############################################################################
 
-class uninstall(Command):
+class deinstall(Command):
     description = "Remove all installed files"
 
     user_options = []
@@ -269,7 +269,7 @@ setup(name="py2exe",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
-                  'uninstall': uninstall},
+                  'deinstall': deinstall},
 
       ext_modules = [Extension("py2exe.py2exe_util",
                                sources=["source/py2exe_util.c"],
