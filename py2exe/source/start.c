@@ -431,7 +431,7 @@ finish:
 
 int init(void)
 {
-    init_with_instance(NULL);
+    return init_with_instance(NULL);
 }
 
 void fini(void)
