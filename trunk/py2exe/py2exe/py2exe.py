@@ -7,7 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 
 # ToDo:
 #
@@ -16,7 +16,7 @@ import sys, os, string
 from distutils.core import Command
 from distutils.util import get_platform
 from distutils.dir_util import create_tree, remove_tree
-from distutils.file_util import copy_file
+from distutils import file_util
 from distutils.errors import *
 from distutils.dep_util import newer
 from distutils.spawn import spawn
@@ -31,7 +31,7 @@ _c_suffixes = ['.pyd', '.dll'] #+ ['_d.pyd', '_d.dll']
 #    2. optimized mode (-O) - compiled python files have the extension .pyo
 #    3. optimized mode (-OO) - compiled python files have the extension .pyo
 #       and do not contain __doc__ strings
-# We could be running
+# We (python) could be running
 #    4. the release binary of the python interpreter pythonxx.dll,
 #       extension modules have the filenames <module>.pyd or <module>.dll
 #    5. the debug binary of the python interpreter pythonxx.dll,
@@ -40,12 +40,15 @@ _c_suffixes = ['.pyd', '.dll'] #+ ['_d.pyd', '_d.dll']
 # in case 1, __debug__ is true, in cases 2 and 3 __debug__ is false.
 # in case 4, imp.get_suffixes() returns something like [('.pyd',...), ('.dll',...), ...]
 # in case 5, imp_get_suffixes() returns something like [('_d.pyd',...), ('_d.dll',...), ...]
+#
+# We should make it easy for us and simply refuse to build
+# when running the debug python binary...
 
 class py2exe (Command):
 
     description = "create executable windows programs from scripts"
 
-    # XXX need more options: unbuffered, includes, excludes, ???
+    # XXX need more options: unbuffered, ???
     user_options = [
         ('debug', 'g',
          "create runtime with debugging information"),
@@ -175,6 +178,18 @@ class py2exe (Command):
                           script)
             self.announce(repr(extra_path + sys.path))
 
+            script_base = os.path.splitext(os.path.basename(script))[0]
+            final_dir = os.path.join(self.dist_dir, script_base)
+
+            if self.debug:
+                exe_name = os.path.join(final_dir, script_base+'_d.exe')
+            else:
+                exe_name = os.path.join(final_dir, script_base+'.exe')
+
+            ext = os.path.splitext(script)[1]
+            use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
+                       and not self.console
+
             mf = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
@@ -183,7 +198,15 @@ class py2exe (Command):
                 mf.load_file(f)
 
             for f in self.includes:
-                file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                try:
+                    file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                except ImportError:
+                    # Strange! Modules found via registry entries are only
+                    # found by imp.find_module if no path specified.
+                    try:
+                        file, pathname, desc = imp.find_module(f)
+                    except ImportError:
+                        continue
                 mf.load_module(f, file, pathname, desc)
 
             mf.run_script(script)
@@ -212,10 +235,6 @@ class py2exe (Command):
                          verbose=self.verbose,
                          dry_run=self.dry_run)
 
-            script_base = os.path.splitext(os.path.basename(script))[0]
-            final_dir = os.path.join(self.dist_dir, script_base)
-            self.mkpath(final_dir)
-
             missing = filter(lambda n, e=excludes: n not in e, \
                              mf.badmodules.keys())
             
@@ -232,27 +251,62 @@ class py2exe (Command):
                     self.warn("*   %15s: %s" % (name, mod))
                 self.warn("*" * 48)
 
+            self.mkpath(final_dir)
 
-            # copy extension modules, massaging filenames so that they
-            # contain the package-name they belong to (if any).
-            # They are copied  directly to dist_dir.
             # Collect all the dlls, so that binary dependencies can be
             # resolved.
+
+            # Note: Some extension modules (from win32all: pythoncom and pywintypes)
+            # are located via registry entries. Our ext_mapping dictionary
+            # maps the module name to the filename. At runtime,
+            # the import hook does not have to search the filesystem for modules,
+            # but can lookup the needed file directly.
+            # Also, this way the registry entries are contained in the
+            # dict.
+            # This distionary will later be written to the source file
+            # used to install the import hook.
+            #
+            # XXX Problem remaining:
+            # If win32api is somehow included, PyWinTypesxx.dll is found
+            # in the binary dependencies.
+            #
+            # But because it is not imported, it is not found by modulefinder,
+            # and so the registry mapping is not found....
+            #
+            # We cold solve this by reading the registry directly.
+            # Python 1.5 cannot do this, so we cannot use _winreg,
+            # and so we have
+            
+            ext_mapping = {}
             dlls = []
             for ext_module in extensions:
-                src, dst = self.get_extension_filenames(ext_module)
-                dst = os.path.join(final_dir, dst)
-                self.copy_file(src, dst)
-                dlls.append(src)
+                pathname = ext_module.__file__
+                suffix = self.find_suffix(pathname)
+                ext_mapping[ext_module.__name__] = (os.path.basename(pathname), suffix)
+                dlls.append(pathname)
 
             # copy support files and the script itself
             #
             thisfile = sys.modules['py2exe.py2exe'].__file__
-            support = os.path.join(os.path.dirname(thisfile),
+            src = os.path.join(os.path.dirname(thisfile),
                                    "support.py")
+
             self.mkpath(os.path.join(collect_dir, "Scripts"))
-            self.copy_file(support, os.path.join(collect_dir,
-                                                 "Scripts\\support.py"))
+            # Scripts\\support.py must be forced to be rewritten!
+            dst = os.path.join(collect_dir, "Scripts\\support.py")
+            file_util.copy_file(src, dst, update=0,
+                                verbose=self.verbose,
+                                dry_run=self.dry_run)
+
+            if not self.dry_run:
+                file = open(dst, "a")
+                file.write("_extensions_mapping = %s\n" % `ext_mapping`)
+                file.close()
+
+            self.announce("ext_mapping = {")
+            for key, value in ext_mapping.items():
+                self.announce(" %s: %s" % (`key`, `value`))
+            self.announce("}")
 
             self.copy_file(script,
                            os.path.join(collect_dir,
@@ -267,15 +321,6 @@ class py2exe (Command):
 
             script_path = os.path.join("Scripts", os.path.basename(script))
 
-            if self.debug:
-                exe_name = os.path.join(final_dir, script_base+'_d.exe')
-            else:
-                exe_name = os.path.join(final_dir, script_base+'.exe')
-
-            ext = os.path.splitext(script)[1]
-            use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
-                       and not self.console
-
             self.create_exe(exe_name, arcname, use_runw)
 
             self.copy_additional_files(final_dir)
@@ -286,6 +331,17 @@ class py2exe (Command):
             remove_tree(self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
+
+    def find_suffix(self, filename):
+        # given a filename (usually of type C_EXTENSION),
+        # find the corresponding entry from imp.get_suffixes
+        # based on the extension
+        extension = os.path.splitext(filename)[1]
+        for desc in imp.get_suffixes():
+            if desc[0] == extension:
+                return desc
+        # XXX Should not occur!
+        raise "Error"
 
     def copy_dependend_dlls(self, final_dir, use_runw, dlls):
         sysdir = py2exe_util.get_sysdir()
@@ -317,16 +373,16 @@ class py2exe (Command):
 
          
     # DLLs to be excluded
-    # XXX This list is NOT complete
+    # XXX This list is NOT complete (it cannot be)
     # Note: ALL ENTRIES MUST BE IN LOWER CASE!
     EXCLUDE = (
         "advapi32.dll",
         "comctl32.dll",
         "gdi32.dll",
         "kernel32.dll",
-        "msvcirt.dll",  # XXX
-        "msvcrt.dll",   # redistributable?
-        "msvcrtd.dll",  # XXX redistributable?
+        "msvcirt.dll",  # ???
+        "msvcrt.dll",   # normally redistributable
+        "msvcrtd.dll",  # not redistributable
         "ntdll.dll",
         "ole32.dll",
         "oleaut32.dll",
@@ -335,27 +391,12 @@ class py2exe (Command):
         "shlwapi.dll",
         "user32.dll",
         "winmm.dll",
+        "winspool.drv",
         "ws2_32.dll",
         "ws2help.dll",
         "wsock32.dll",
         )
 
-    def find_dependend_dlls(self, dll, loadpath):
-        # XXX should walk recursively XXX
-        mypath = os.path.abspath(os.path.dirname(dll)) + ';' + loadpath
-        found = []
-        print "BINDEPENDS FOR", dll
-        for dep in py2exe_util.depends(dll, mypath):
-            # XXX should stop on EXCLUDE here
-            if string.lower(os.path.basename(dep)) not in self.EXCLUDE:
-                found.append(dep)
-                print "  ", dep
-        for x in found[:]:
-            for y in self.find_dependend_dlls(x, mypath):
-                if y not in found:
-                    found.append(y)
-        return found
- 
     def fix_extmodules(self, missing, extensions, path):
         if not self.debug:
             return missing, extensions
@@ -384,22 +425,6 @@ class py2exe (Command):
                     missing.remove(name)
                     fixed_modules.append(Module(name=name, file=file))
         return missing, fixed_modules
-
-    def get_extension_filenames(self, ext_module):
-        # if we are buildiing a debug version, we have to insert an
-        # '_d' into the filename just before the extension
-        src = ext_module.__file__ # pathname
-        if self.debug:
-            dst = ext_module.__name__ + '_d' # module name
-        else:
-            dst = ext_module.__name__ # module name
-        # massage the name for importing extension modules
-        # contained in packages (Yes, this happens)
-        dst = string.replace(dst, '\\', '.')
-
-        ext = os.path.splitext(src)[1]
-
-        return src, dst + ext
 
     def copy_additional_files(self, final_dir):
         # Some python versions (1.5) import the 'exceptions'
