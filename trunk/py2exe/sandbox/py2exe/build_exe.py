@@ -563,27 +563,27 @@ class py2exe(Command):
         script_bytes = si + code_bytes + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
         if not self.dry_run:
-            add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, True)
+            add_resource(unicode(exe_path), script_bytes, u"PYTHONSCRIPT", 1, True)
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
             bmp_data = open(bmp_filename, "rb").read()
             # skip the 14 byte bitmap header.
             if not self.dry_run:
-                add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
+                add_resource(unicode(exe_path), bmp_data[14:], RT_BITMAP, bmp_id, False)
         icon_resources = getattr(target, "icon_resources", [])
         for ico_id, ico_filename in icon_resources:
             if not self.dry_run:
-                add_icon(exe_path, ico_filename, ico_id)
+                add_icon(unicode(exe_path), unicode(ico_filename), ico_id)
 
         for res_type, res_id, data in getattr(target, "other_resources", []):
             if not self.dry_run:
-                add_resource(exe_path, data, res_type, res_id, False)
+                add_resource(unicode(exe_path), data, res_type, res_id, False)
 
         typelib = getattr(target, "typelib", None)
         if typelib is not None:
             data = open(typelib, "rb").read()
-            add_resource(exe_path, data, "TYPELIB", 1, False)
+            add_resource(unicode(exe_path), data, u"TYPELIB", 1, False)
 
         self.add_versioninfo(target, exe_path)
 
@@ -615,7 +615,7 @@ class py2exe(Command):
                           product_name = get("name"),
                           product_version = version)
         from py2exe_util import add_resource
-        add_resource(exe_path, version.resource_bytes(), RT_VERSION, 1, False)
+        add_resource(unicode(exe_path), version.resource_bytes(), RT_VERSION, 1, False)
 
     def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
         import py2exe_util
