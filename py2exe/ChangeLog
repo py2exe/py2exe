@@ -1,3 +1,8 @@
+2004-10-22  Thomas Heller  <theller@python.net>
+
+	*  py2exe can now create module crosss references in HTML format,
+	and displays them in the default browser.
+
 2004-09-22  Thomas Heller  <theller@python.net>
 
 	*  py2exe\build_exe.py: Added the .pyw extension for Python modules.
