@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.11  2003/05/09 19:01:51  theller
+# Post-release version number changes.
+#
 # Revision 1.10  2003/05/09 18:47:50  theller
 # Minor tweaks.
 #
@@ -482,6 +485,7 @@ class py2exe (Command):
                         "EasyDialogs", "termios", "TERMIOS",
                         "java.lang", "org.python.core", "riscos",
                         "riscosenviron", "riscospath", "ce",
+                        "os.path"
                         ] + self.excludes
             mf = ModuleFinder(path=extra_path + sys.path,
                               debug=0,
@@ -532,7 +536,7 @@ class py2exe (Command):
             for item in self.force_imports:
                 mf.import_hook(item)
                 
-            force_imports = apply(Set, self.force_imports)
+            force_imports = Set(*self.force_imports)
 
             for item in mf.modules.values():
                 if item.__name__ in invisible_imports.keys():
@@ -562,8 +566,10 @@ class py2exe (Command):
             # ModuleFinder may update the excludes list
             excludes = mf.excludes
 
+            missing, maybe = mf.any_missing_maybe()
+
             missing = filter(lambda n, e=excludes: n not in e, \
-                             mf.badmodules.keys())
+                             missing)
             
             # if build debug binary, use debug extension modules
             # instead of the release versions.
@@ -1046,7 +1052,7 @@ class FileSet:
 def bin_depends(path, images):
     import py2exe_util
     warnings = FileSet()
-    images = apply(FileSet, images)
+    images = FileSet(*images)
     dependents = FileSet()
     while images:
         for image in images:
@@ -1245,7 +1251,7 @@ def force_remove_tree (directory, verbose=0, dry_run=0):
     _build_cmdtuple(directory, cmdtuples)
     for cmd in cmdtuples:
         try:
-            apply(cmd[0], (cmd[1],))
+            cmd[0](cmd[1])
             # remove dir from cache if it's already there
             abspath = os.path.abspath(cmd[1])
             if _path_created.has_key(abspath):
