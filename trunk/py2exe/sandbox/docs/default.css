@@ -8,11 +8,6 @@ P, DL, table {
 	margin-right: 2em;
 }
 
-pre {
-	margin-left: 4em;
-	margin-right: 4em;
-}
-
 H1, H2, H3, H4, H5, H6 {
 	font-family: verdana, Arial, sans-serif;
 	color: #000080;
@@ -50,12 +45,20 @@ td {
 }
 
 pre {
-  	background: #C0C0E0;
-	font-family: Courier New, Courier, mono;
-	font-size: 120%;
-	padding-top: 1em;
-	padding-left: 1em;
-	padding-bottom: 1em;
+  border-style: solid;
+  border-width: 1px;
+  
+  background: #C0C0E0;
+  
+  font-family: Courier New, Courier, mono;
+  font-size: 120%;
+  
+  padding-top: 1em;
+  padding-left: 1em;
+  padding-bottom: 1em;
+  
+  margin-left: 4em;
+  margin-right: 4em;
 }
 
 tt, code {
