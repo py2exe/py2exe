@@ -405,7 +405,11 @@ class py2exe(Command):
 
         # We create a list of code objects, and write it as a marshaled
         # stream.  The framework code then just exec's these in order.
-        code_objects = []
+        # First is our common boot script.
+        boot = self.get_boot_script("common")
+        boot_code = compile(file(boot, "U").read(),
+                            os.path.abspath(boot), "exec")
+        code_objects = [boot_code]
         for var_name, var_val in vars.items():
             code_objects.append(
                     compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
