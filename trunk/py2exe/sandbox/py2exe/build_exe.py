@@ -156,14 +156,6 @@ class py2exe(Command):
         required_files = [target.script
                           for target in dist.windows + dist.console]
 
-        ################
-        # refactor, refactor, refactor!
-
-        # XXX zlib is only needed for zipimport from compressed archives (?)
-        self.includes.append("zlib") # needed for zipimport
-        self.includes.append("warnings") # needed by Python itself
-##        self.packages.append("encodings")
-
         from modulefinder import ModuleFinder, ReplacePackage
         ReplacePackage("_xmlplus", "xml")
         mf = ModuleFinder(excludes=self.excludes)
@@ -618,16 +610,6 @@ class py2exe(Command):
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
     def create_loader(self, item):
-        # Extension modules can not be loaded from zipfiles.
-        # So we create a small Python stub to be included in the zipfile,
-        # which will then load the extension from the file system.
-        # Without a need for the extensions directory to be in sys.path!
-        #
-        # For zlib there must be NO stub, otherwise zipimport wouldn't
-        # work correctly!
-        if item.__name__ == "zlib":
-            return
-
         # Hm, how to avoid needless recreation of this file?
         pathname = os.path.join(self.temp_dir, "%s.py" % item.__name__)
         # and what about dry_run?
@@ -644,8 +626,13 @@ class py2exe(Command):
         return Module(item.__name__, pathname)
 
     def plat_prepare(self):
+        self.includes.append("warnings") # needed by Python itself
+##        self.packages.append("encodings")
+
         # update the self.excludes list to exclude platform specific
         # modules
+        # XXX IMO it would be better to not add these to the excludes list,
+        # but instead filter them out *after* modulefinder has run.
         if sys.platform == "win32":
             self.excludes += ["os2", "posix", "dos", "mac", "macfs", "macfsn",
                               "macpath", "grp",
