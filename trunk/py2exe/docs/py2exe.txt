@@ -7,14 +7,20 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.5.0.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.0.win32-py2.3.exe?download
+.. _py2exe-0.5.1.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.1.win32-py2.3.exe?download
+
+.. _py2exe-0.5.1.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.1.win32-py2.4.exe?download
 
 .. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
-Convert python scripts into standalone windows programs
-=======================================================
+.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=1.3
+
+.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=1.14
+
+py2exe - convert python scripts into standalone windows programs
+================================================================
 
 Copyright (c) 2001, 2002, 2003, 2004 Thomas Heller, Mark Hammond.
 
@@ -33,7 +39,16 @@ win32com client and server modules and other standalone programs.
 News
 ----
 
-**py2exe 0.5.0** released.
+**py2exe 0.5.1** released
+
+A bugfix release: the announcement_, and the ChangeLog_.
+
+What's new in py2exe 0.5
+------------------------
+
+The documentation is still to be written, but there is quite some info
+available in the included samples, and in the wiki_ pages.  Thanks to
+everyone who contributed.
 
 Python 2.3 is required, because the new zipimport feature is used.
 The zipimport mechanism is able to handle the early imports of the
@@ -66,7 +81,7 @@ Assuming you have written a python script ``myscript.py`` which you
 want to convert into an executable windows program, able to run on
 systems without a python installation.  If you don't already have
 written a *distutils* setup-script_, write one, and insert the
-statement 'import py2exe' before the call to the setup function::
+statement ``import py2exe`` before the call to the setup function::
 
   # setup.py
   from distutils.core import setup
@@ -145,9 +160,9 @@ attribute)::
 	
   setup(service=["MyService"])
 
-The build service executable are able to install and remove themselves
-by calling them with certain command line flags, run the exe with the
-``-help`` argument to find out more.
+The built service executables are able to install and remove
+themselves by calling them with certain command line flags, run the
+exe with the ``-help`` argument to find out more.
 
 COM servers
 -----------
@@ -204,7 +219,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.5.0.win32-py2.3.exe_.
+Download and run the installer py2exe-0.5.1.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.5.1.win32-py2.4.exe_ (for Python 2.4).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
