@@ -1,10 +1,10 @@
 BODY 	{
-	font-family: verdana;
-	font-size: 10pt;
+	font-family: verdana,sans-serif;
+	font-size: 80%;
 }
 
-CODE	{
-	font-family: courier;
+TT, PRE, CODE	{
+	font-family: monospace;
 	font-weight: bold;
 }
 
@@ -13,17 +13,18 @@ H2, H3, H4, H5, H6 {
 }
 
 H1	{
-	font-size: 24pt;
+	color: #C00000;
+	font-size: 240%;
 	margin-left: 100pt;
 }
 
 H2	{
-	font-size: 19pt;
+	font-size: 190%;
 	margin-left: 10pt;
 }
 
 H3	{
-	font-size: 15pt;
+	font-size: 150%;
 	margin-left: 30pt;
 	font-style: italic;
 }
@@ -40,23 +41,22 @@ H6	{
 	margin-left: 50pt;
 }
 
-P, DL, UL	{
-	margin-left: 60pt;
+P, DL, UL, LI	{
+/*	margin-left: 60pt;*/
+	margin-left: 5em;
 	margin-right: 60pt;
 	}
 
-DD	{
-	margin-left: -1pt;
-	margin-right: -70pt;
-	}
+DD {
+	margin-bottom: 15pt;
+	margin-top: 5pt;
+}
 
 PRE	{
-
 	border: solid;
 	border-width: thin;
-	width: 100%;
-	background: rgb(220,220,220);
+	width: 40em;
+	background: rgb(180,180,220);
 	white-space: pre;
 	margin-left: 60pt;
-	margin-right: 60pt;
 	}
