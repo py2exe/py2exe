@@ -25,6 +25,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  2003/08/29 12:30:52  mhammond
+# New py2exe now uses the old resource functions :)
+#
 # Revision 1.1  2002/01/29 09:30:55  theller
 # version 0.3.0
 #
@@ -67,7 +70,7 @@ else:
         return pywintypes.Unicode(text).raw
 
 class VS_FIXEDFILEINFO:
-    dwSignature = 0xFEEF04BD
+    dwSignature = 0xFEEF04BDL
     dwStrucVersion = 0x00010000
     dwFileVersionMS = 0x00010000
     dwFileVersionLS = 0x00000001
