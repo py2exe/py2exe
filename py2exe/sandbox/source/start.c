@@ -134,25 +134,23 @@ int init_with_instance(HMODULE hmod)
 	_putenv (buffer);
 	_putenv ("PYTHONSTARTUP=");
 	_putenv ("PYTHONOPTIMIZE=");
+	_putenv ("PYTHONDEBUG=");
+	_putenv("PYTHONINSPECT=");
 
-	if (getenv("PY2EXEVERBOSE"))
+	if (getenv("PY2EXEVERBOSE")) 
 	    _putenv ("PYTHONVERBOSE=1");
 	else
-	    _putenv ("PYTHONVERBOSE");
+	    _putenv ("PYTHONVERBOSE=");
 
 	if (p_script_info->unbuffered)
 	    _putenv ("PYTHONUNBUFFERED=1");
 	else
 	    _putenv ("PYTHONUNBUFFERED=");
-
-	_putenv ("PYTHONDEBUG=");
     }
 
     Py_NoSiteFlag = 1;
     Py_OptimizeFlag = p_script_info->optimize;
     
-//    Py_VerboseFlag = p_script_info->verbose;
-
     /* XXX Is this correct? For the dll server code? */
     /* And we should probably change all the above code if Python is already
      * initialized */
@@ -163,14 +161,16 @@ int init_with_instance(HMODULE hmod)
     /* From Barry Scott */
     /* cause python to calculate the path */
     Py_GetPath();
-	/* Set sys.frozen so apps that care can tell. Custom environments may */
-	/* set this later to a 'better' value (eg, COM dlls get 'dll') */
-	PySys_SetObject("frozen", Py_True);
+    /* Set sys.frozen so apps that care can tell. Custom environments may */
+    /* set this later to a 'better' value (eg, COM dlls get 'dll') */
+    PySys_SetObject("frozen", Py_True);
     /* clean up the environment so that os.system
        and os.popen processes can run python the normal way */
-    _putenv( "PYTHONPATH=" );	
-    _putenv ("PYTHONUNBUFFERED=");
-
+    /* Hm, actually it would be better to set them to values saved before
+	changing them ;-) */
+    _putenv("PYTHONPATH=");
+    _putenv("PYTHONUNBUFFERED=");
+    _putenv("PYTHONVERBOSE=");
     return 0;
 }
 
@@ -181,6 +181,11 @@ int init(void)
 
 void fini(void)
 {
+    /* The standard Python 2.3 does also allow this: Set PYTHONINSPECT
+       in the script and examine it afterwards
+    */
+    if (getenv("PYTHONINSPECT") && Py_FdIsInteractive(stdin, "<stdin>"))
+	PyRun_InteractiveLoop(stdin, "<stdin>");
     /* Clean up */
     Py_Finalize();
 }
@@ -207,27 +212,27 @@ int run_script(void)
 	     libdirname, pZipBaseName);
     rc = PyRun_SimpleString(buffer);
     if (rc == 0) {
-		/* load the code objects to execute */
-		PyObject *m=NULL, *d=NULL, *seq=NULL;
-		/* We execute then in the context of '__main__' */
-		m = PyImport_AddModule("__main__");
-		if (m) d = PyModule_GetDict(m);
-		if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
-		if (seq) {
-			int i, max = PySequence_Length(seq);
-			for (i=0;i<max;i++) {
-				PyObject *sub = PySequence_GetItem(seq, i);
-				if (sub && PyCode_Check(sub)) {
-					PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
-														d, d);
-					if (!discard)
-						PyErr_Print();
-					Py_XDECREF(discard);
-					/* keep going even if we fail */
-				}
-				Py_XDECREF(sub);
-			}
+	/* load the code objects to execute */
+	PyObject *m=NULL, *d=NULL, *seq=NULL;
+	/* We execute then in the context of '__main__' */
+	m = PyImport_AddModule("__main__");
+	if (m) d = PyModule_GetDict(m);
+	if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
+	if (seq) {
+	    int i, max = PySequence_Length(seq);
+	    for (i=0;i<max;i++) {
+		PyObject *sub = PySequence_GetItem(seq, i);
+		if (sub && PyCode_Check(sub)) {
+		    PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
+							d, d);
+		    if (!discard)
+			PyErr_Print();
+		    Py_XDECREF(discard);
+		    /* keep going even if we fail */
 		}
+		Py_XDECREF(sub);
+	    }
+	}
     }
     return rc;
 }
