@@ -158,6 +158,7 @@ class py2exe(Command):
         self.lib_dir = extra_options.get("lib_dir")
         self.dll_excludes = extra_options.get("dll_excludes", [])
         self.ext_mapping = extra_options.get("ext_mapping", {})
+        self.typelibs = extra_options.get("typelibs", [])
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -216,7 +217,26 @@ class py2exe(Command):
         self.includes.append("warnings") # needed by Python itself
 ##        self.packages.append("encodings")
 
-        mf = self.find_needed_modules(required_files, required_modules)
+        from modulefinder import ModuleFinder, ReplacePackage
+        ReplacePackage("_xmlplus", "xml")
+        mf = ModuleFinder(excludes=self.excludes)
+
+        if self.typelibs:
+            print "*** generate typelib stubs ***"
+            from distutils.dir_util import mkpath
+            genpy_temp = os.path.join(self.temp_dir, "win32com", "gen_py")
+            mkpath(genpy_temp)
+            dict_dat, num_stubs = collect_win32com_genpy(genpy_temp,
+                                                         self.typelibs)
+            mf.load_package("win32com.gen_py", genpy_temp)
+            self.packages.append("win32com.gen_py")
+            genpy_dir = os.path.join(self.collect_dir, "win32com", "gen_py")
+            mkpath(genpy_dir)
+            self.copy_file(dict_dat, genpy_dir)
+            print "collected %d stubs from %d type libraries" \
+                  % (num_stubs, len(self.typelibs))
+
+        self.find_needed_modules(mf, required_files, required_modules)
 
         py_files, extensions = self.parse_mf_results(mf)
 
@@ -555,13 +575,8 @@ class py2exe(Command):
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
-    def find_needed_modules(self, files, modules):
+    def find_needed_modules(self, mf, files, modules):
         # feed Modulefinder with everything, and return it.
-        from modulefinder import ModuleFinder, ReplacePackage
-
-        ReplacePackage("_xmlplus", "xml")
-        mf = ModuleFinder(excludes=self.excludes)
-
         for mod in modules:
             mf.import_hook(mod)
 
@@ -586,6 +601,9 @@ class py2exe(Command):
                     arg.append(dirname)
             # Very weird...
             # Find path of package
+            # XXX - MarkH isn't sure what is particularly weird here, but note
+            # that mf.modules[f] appears to work for packages ModuleFinder
+            # has seen a reference to.
             try:
                 path = imp_find_module(f)[1]
             except ImportError:
@@ -757,6 +775,35 @@ byte_compile(files, optimize=%s, force=%s,
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
 # byte_compile()
+
+# win32com makepy helper.
+def collect_win32com_genpy(path, typelibs):
+    from modulefinder import Module
+    import win32com, pywintypes
+    from win32com.client import gencache, makepy
+    old_gen_path = win32com.__gen_path__
+    num = 0
+    try:
+        win32com.__gen_path__ = path
+        win32com.gen_py.__path__ = [path]
+        gencache.__init__()
+        for info in typelibs:
+            makepy.GenerateFromTypeLibSpec(info, bForDemand = True)
+            # Now get the module, and build all sub-modules.
+            mod = gencache.GetModuleForTypelib(*info)
+            for clsid, name in mod.CLSIDToPackageMap.items():
+                try:
+                    sub_mod = gencache.GetModuleForCLSID(clsid)
+                    num += 1
+                    #print "", name
+                except ImportError:
+                    pass
+        return os.path.join(path, "dicts.dat"), num
+    finally:
+        # restore win32com, just in case.
+        win32com.__gen_path__ = old_gen_path
+        win32com.gen_py.__path__ = [old_gen_path]
+        gencache.__init__()
 
 # utilities hacked from distutils.dir_util
 
