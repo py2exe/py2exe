@@ -645,18 +645,23 @@ class py2exe(Command):
         return alldlls, warnings
     # find_dependend_dlls()
 
+    def get_hidden_imports(self):
+        # imports done from builtin modules in C code (untrackable by py2exe)
+        return {"time": ["_strptime"],
+##                "datetime": ["time"],
+                "cPickle": ["copy_reg"],
+                "parser": ["copy_reg"],
+                "codecs": ["encodings"],
+                
+                "cStringIO": ["copy_reg"],
+                "_sre": ["copy", "string", "sre"],
+                }
+
     def parse_mf_results(self, mf):
-        # XXX invisible imports (warnings, encodings(?)
-##        {"cPickle": ["copy_reg", "types", "string"],
-##         "cStringIO": ["copy_reg"],
-##         "parser": ["copy_reg"],
-##         "codecs": ["encodings"],
-##         "_sre": ["copy_reg"],
-         
-##         "win32api": ["pywintypes"],
-##         "win32ui": ["cStringIO", "traceback"],
-##         "pythoncom": ["win32com.server.policy", "win32com.server.util", "pywintypes"],
-##         }
+        for name, imports in self.get_hidden_imports():
+            if name in mf.modules.keys():
+                for mod in imports:
+                    mf.import_hook(mod)
 
         tcl_src_dir = tcl_dst_dir = None
         if "Tkinter" in mf.modules.keys():
