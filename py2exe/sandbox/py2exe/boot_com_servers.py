@@ -1,6 +1,8 @@
 # This support script is executed as the entry point for py2exe.
 
 import sys
+import win32api
+
 if 0:
     ################################################################
     # XXX Remove later!
@@ -31,7 +33,6 @@ import win32com.server.policy, win32com.server.util
 
 # Patchup sys.argv for our DLL
 if sys.frozen=="dll" and not hasattr(sys, "argv"):
-    import win32api
     sys.argv = [win32api.GetModuleFileName(sys.frozendllhandle)]
 # We assume that py2exe has magically set com_module_names
 # to the module names that expose the COM objects we host.
@@ -117,7 +118,6 @@ if sys.frozen != "dll":
             break
     else:
         # You could do something else useful here.
-        import win32api
         win32api.MessageBox(0,
                             "This program hosts a COM Object and\r\nis started automatically",
                             "COM Object")
