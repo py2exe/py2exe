@@ -1,6 +1,7 @@
 BODY 	{
 	font-family: verdana,sans-serif;
 	font-size: 80%;
+	background: rgb(255,255,255);
 }
 
 TT, PRE, CODE	{
