@@ -179,9 +179,6 @@ HRESULT __stdcall DllCanUnloadNow(void)
 HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
     HRESULT rc;
-#ifdef _DEBUG
-    _asm int 3;
-#endif
     check_init();
     assert(Pyc_DllGetClassObject);
     if (!Pyc_DllGetClassObject) return E_UNEXPECTED;
