@@ -23,6 +23,7 @@
 
 #include <windows.h>
 #include <stdio.h>
+#include <Python.h>
 
 void SystemError(int error, char *msg)
 {
@@ -53,13 +54,36 @@ void SystemError(int error, char *msg)
 extern int init(char *);
 extern int start(int argc, char **argv);
 
+static PyObject *Py_MessageBox(PyObject *self, PyObject *args)
+{
+	HWND hwnd;
+	char *message;
+	char *title = NULL;
+	int flags = MB_OK;
+
+	if (!PyArg_ParseTuple(args, "is|zi", &hwnd, &message, &title, &flags))
+		return NULL;
+	return PyInt_FromLong(MessageBox(hwnd, message, title, flags));
+}
+
+PyMethodDef method[] = { "_MessageBox", Py_MessageBox, METH_VARARGS };
+
 int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 	LPSTR lpCmdLine, int nCmdShow)
 {
 	int result;
+	PyObject *mod;
+
 	result = init("windows_exe");
 	if (result)
 		return result;
+
+	mod = PyImport_ImportModule("sys");
+	if (mod)
+		PyObject_SetAttrString(mod,
+				       "_MessageBox",
+				       PyCFunction_New(&method[0], NULL));
+
 	return start(__argc, __argv);
 }
