@@ -5,7 +5,7 @@
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
-import sys, os, imp, types
+import sys, os, imp, types, stat
 import marshal
 import zipfile
 
@@ -478,7 +478,21 @@ class py2exe(Command):
         relative_arcname += os.path.basename(arcname)
 
         src = os.path.join(os.path.dirname(__file__), template)
+        # We want to force the creation of this file, as otherwise distutils
+        # will see the earlier time of our 'template' file versus the later
+        # time of our modified template file, and consider our old file OK.
+        old_force = self.force
+        self.force = True
         self.copy_file(src, exe_path)
+        self.force = old_force
+
+        # Make sure the file is writeable...
+        os.chmod(exe_path, stat.S_IREAD | stat.S_IWRITE)
+        try:
+            f = open(exe_path, "a+b")
+            f.close()
+        except IOError, why:
+            print "WARNING: File %s could not be opened - %s" % (pathname, why)
 
         # We create a list of code objects, and write it as a marshaled
         # stream.  The framework code then just exec's these in order.
