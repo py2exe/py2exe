@@ -322,7 +322,10 @@ void fix_string(char *src)
     *dst = '\0';
 }
 
-int start(int argc, char **argv)
+/*
+ * returns an error code if initialization fails
+ */
+int init(void)
 {
     int result = 255;
     char modulename[_MAX_PATH];
@@ -405,8 +408,6 @@ int start(int argc, char **argv)
     _putenv( "PYTHONPATH=" );	
 #endif
 
-    PySys_SetArgv(argc, argv);
-
     toc = BuildToc(arc_data, arc_size);
 
     {
@@ -436,38 +437,49 @@ int start(int argc, char **argv)
 		SystemError(0, "Not enough memory");
 	    }
 	    free(data);
+	    return 0;
 	} else {
 	    PyErr_Print();
 	    goto done;
 	}
     }
-
-    /* Extract the script as string and run it */
-    {
-	int size;
-	char *data = GetContents("Scripts.py2exe\\__main__.py", arc_data, arc_size, &size);
-	if (data) {
-	    char *script = realloc(data, size+2);
-	    if (script) {
-		data = script;
-		script[size] = '\n';
-		script[size+1] = '\0';
-		fix_string(script);
-		PyRun_SimpleString(script);
-
-		result = 0;
-	    } else {
-		SystemError(0, "Not enough memory");
-	    }
-	    free(data);
-	} else {
-	    PyErr_Print();
-	    goto done;
-	}
-    }
+    return 0;
   done:
     Py_Finalize();
   finish:
+    UnmapViewOfFile(arc_data);
+    return 255;
+}
+
+int start (int argc, char **argv)
+{
+    int result = 255;
+    /* Extract the script as string and run it */
+    int size;
+    char *data;
+
+    PySys_SetArgv(argc, argv);
+
+    data = GetContents("Scripts.py2exe\\__main__.py", arc_data, arc_size, &size);
+
+    if (data) {
+	char *script = realloc(data, size+2);
+	if (script) {
+	    data = script;
+	    script[size] = '\n';
+	    script[size+1] = '\0';
+	    fix_string(script);
+	    PyRun_SimpleString(script);
+
+	    result = 0;
+	} else {
+	    SystemError(0, "Not enough memory");
+	}
+	free(data);
+    } else {
+	PyErr_Print();
+    }
+    Py_Finalize();
     /* Clean up */
     UnmapViewOfFile (arc_data);
     
