@@ -641,6 +641,9 @@ class py2exe(Command):
             if "pywintypes" in modules.keys():
                 import pywintypes
                 dlls.add(pywintypes.__file__)
+            # Using popen requires (on Win9X) the w9xpopen.exe helper executable.
+            if "os" in modules.keys() or "popen2" in modules.keys():
+                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
