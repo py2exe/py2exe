@@ -1,5 +1,5 @@
 ##
-##	   Copyright (c) 2000, 2001, 2002 Thomas Heller
+##	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.10  2003/05/09 18:47:50  theller
+# Minor tweaks.
+#
 # Revision 1.9  2002/09/05 19:23:11  theller
 # Final (?) changes for early bound COM support.
 # Fix a bug: The 'PY' icon wasn't deleted before inserting a new icon.
@@ -102,7 +105,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.3.4"
+__version__ = "0.4.0"
 
 import sys, os, string
 from distutils.core import Command
