@@ -417,10 +417,10 @@ static void PyService_InitPython()
 extern "C" int PythonService_main(int argc, char **argv)
 {
 	SERVICE_TABLE_ENTRY   DispatchTable[] = 
-    { 
-        { TEXT(""), 	service_main      }, 
-        { NULL,              NULL         } 
-    }; 
+		{ 
+			{ TEXT(""), 	service_main      }, 
+			{ NULL,              NULL         } 
+		}; 
 
 	// Get the name of the EXE, and store it in the global variable
 	// for the Event Source name
@@ -434,25 +434,25 @@ extern "C" int PythonService_main(int argc, char **argv)
 		*posDot = _T('\0');
 
 
-    if ( (argc > 1) &&
-         ((*argv[1] == '-') || (*argv[1] == '/')) )
-    {
+	if ( (argc > 1) &&
+	     ((*argv[1] == '-') || (*argv[1] == '/')) )
+	{
 #ifndef BUILD_FREEZE
-        if ( _stricmp( "register", argv[1]+1 ) == 0 ||
-             _stricmp( "install", argv[1]+1 ) == 0 )
-        {
-	        // Get out of here.
+		if ( _stricmp( "register", argv[1]+1 ) == 0 ||
+		     _stricmp( "install", argv[1]+1 ) == 0 )
+		{
+			// Get out of here.
 			return RegisterPythonServiceExe() ? 0 : 1;
-        }
+		}
 #else
 #ifdef BUILD_PY2EXE
-	if (_stricmp("install", argv[1]+1) == 0)
-		return InstallService() ? 0 : 1;
-	if (_stricmp("remove", argv[1]+1) == 0)
-		return RemoveService() ? 0 : 1;
+		if (_stricmp("install", argv[1]+1) == 0)
+			return InstallService() ? 0 : 1;
+		if (_stricmp("remove", argv[1]+1) == 0)
+			return RemoveService() ? 0 : 1;
 #endif
 #endif
-        if ( _stricmp( "debug", argv[1]+1 ) == 0 ) {
+		if ( _stricmp( "debug", argv[1]+1 ) == 0 ) {
 			/* Debugging the service.  If this EXE has a service name
 			   embedded in it, use it, otherwise insist one is passed on the
 			   command line
@@ -463,33 +463,33 @@ extern "C" int PythonService_main(int argc, char **argv)
 			if (LoadStringA(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME, svcNameBuf, sizeof(svcNameBuf))>1) {
 				svcName = svcNameBuf;
 			} else {
-	        	if (argc<3) {
-		    		printf("-debug requires a service name");
+				if (argc<3) {
+					printf("-debug requires a service name");
 					return 1;
-        		}
+				}
 				svcName = argv[2];
 				argOffset = 2;
 			}
 			bServiceDebug = TRUE;
 			printf("Debugging service %s\n", svcName);
-		    int dwArgc;
-		    LPTSTR *lpszArgv;
+			int dwArgc;
+			LPTSTR *lpszArgv;
 
 #ifdef UNICODE
-		    lpszArgv = CommandLineToArgvW(GetCommandLineW(), &(dwArgc) );
+			lpszArgv = CommandLineToArgvW(GetCommandLineW(), &(dwArgc) );
 #else
-		    dwArgc   = argc;
-		    lpszArgv = argv;
+			dwArgc   = argc;
+			lpszArgv = argv;
 #endif
-	        SetConsoleCtrlHandler( DebugControlHandler, TRUE );
+			SetConsoleCtrlHandler( DebugControlHandler, TRUE );
 			service_main(dwArgc-argOffset, lpszArgv+argOffset);
-        	return 0; // gotta assume OK...
-        }
-    }
+			return 0; // gotta assume OK...
+		}
+	}
 
 	// To be friendly, say what we are doing
-    printf("%s - Python Service Manager\n", argv[0]);
-    printf("Options:\n");
+	printf("%s - Python Service Manager\n", argv[0]);
+	printf("Options:\n");
 #ifndef BUILD_FREEZE
 	printf(" -register - register the EXE - this must be done at least once.\n");
 #else
@@ -499,19 +499,19 @@ extern "C" int PythonService_main(int argc, char **argv)
 #endif
 #endif
 #ifdef BUILD_PY2EXE
-    printf(" -debug [parms] - debug the service.\n");
+	printf(" -debug [parms] - debug the service.\n");
 #else
-    printf(" -debug servicename [parms] - debug the Python service.\n");
+	printf(" -debug servicename [parms] - debug the Python service.\n");
 #endif
-    printf("\nStarting service - this may take several seconds - please wait...\n");
+	printf("\nStarting service - this may take several seconds - please wait...\n");
 
-    if (!StartServiceCtrlDispatcher( DispatchTable)) {
-    	ReportAPIError(PYS_E_API_CANT_START_SERVICE);
-    	printf("Could not start the service - error %d\n", GetLastError());
+	if (!StartServiceCtrlDispatcher( DispatchTable)) {
+		ReportAPIError(PYS_E_API_CANT_START_SERVICE);
+		printf("Could not start the service - error %d\n", GetLastError());
 #ifndef BUILD_FREEZE
 		RegisterPythonServiceExe();
 #endif
-    }
+	}
 	return 2;
 }
 
@@ -574,10 +574,10 @@ void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
 			sshStatusHandle = RegisterServiceCtrlHandler( lpszArgv[0], service_ctrl);
 	}
 	// Not much we can do here.
-    if ( !bPythonInitedOK || (!sshStatusHandle && !bServiceDebug) || !instance) {
+	if ( !bPythonInitedOK || (!sshStatusHandle && !bServiceDebug) || !instance) {
 		if (sshStatusHandle)
 			SetServiceStatus( sshStatusHandle, &neverStartedStatus );
-        goto cleanup;
+		goto cleanup;
 	}
 
 	if (!bServiceDebug)
@@ -595,18 +595,18 @@ void WINAPI service_main(DWORD dwArgc, LPTSTR *lpszArgv)
 			Py_DECREF(result);
 	}
 	// We are all done.
-cleanup:
+  cleanup:
 
-    // try to report the stopped status to the service control manager.
-    //
+	// try to report the stopped status to the service control manager.
+	//
 	Py_XDECREF(start);
 	Py_XDECREF(instance);
 		
-    if (sshStatusHandle) { // Wont be true if debugging.
+	if (sshStatusHandle) { // Wont be true if debugging.
 		if (!SetServiceStatus( sshStatusHandle, &stoppedStatus ))
 			ReportAPIError(PYS_E_API_CANT_SET_STOPPED);
-    }
-    return;
+	}
+	return;
 }
 
 static BOOL LocatePythonServiceClassString( DWORD dwArgc, LPTSTR *lpszArgv, char *buf, int cchBuf)
@@ -835,45 +835,34 @@ done:
 static void ReportPythonError(DWORD code)
 {
 	if (PyErr_Occurred()) {
-		WCHAR *inserts[4];
+		TCHAR *inserts[4];
 		inserts[3] = NULL; // terminate array
 		PyObject *type, *value, *traceback;
 		PyErr_Fetch(&type, &value, &traceback);
-		WCHAR *szTracebackUse = L"<No memory!>"; // default.
-		WCHAR *szTraceback = NULL; // to be freed.
+		TCHAR *szTracebackUse = _T("<No memory!>"); // default.
+		TCHAR *szTraceback = NULL; // to be freed.
 		char *szmbTraceback = GetPythonTraceback(traceback);
-		if (szmbTraceback) {
-			int tb_len = strlen(szmbTraceback) + 1;
-			szTraceback = (WCHAR *)malloc(sizeof(WCHAR) * tb_len);
-			if (szTraceback) {
-				szTracebackUse = szTraceback;
-				MultiByteToWideChar(CP_ACP, 0, szmbTraceback, tb_len, szTraceback, tb_len);
-				// trim crud from the end.
-				if (tb_len>2) szTracebackUse[tb_len-2] = L'\0';
-			}
-			free(szmbTraceback);
-		}
-		inserts[0] = szTracebackUse;
+		inserts[0] = szmbTraceback;
 		PyObject *obStr = PyObject_Str(type);
-		PyWinObject_AsBstr(obStr, inserts+1);
+		PyWinObject_AsTCHAR(obStr, inserts+1);
 		Py_XDECREF(obStr);
 		obStr = PyObject_Str(value);
-		PyWinObject_AsBstr(PyObject_Str(obStr), inserts+2);
+		PyWinObject_AsTCHAR(PyObject_Str(obStr), inserts+2);
 		Py_XDECREF(obStr);
-	    ReportError(code, (LPCTSTR *)inserts);
+		ReportError(code, (LPCTSTR*)inserts);
 		if (szTraceback) free(szTraceback);
-	    SysFreeString(inserts[1]);
-	    SysFreeString(inserts[2]);
-	    if (bServiceDebug) { // If debugging, restore for traceback print,
-		    PyErr_Restore(type, value, traceback);
+		PyWinObject_FreeTCHAR(inserts[1]);
+		PyWinObject_FreeTCHAR(inserts[2]);
+		if (bServiceDebug) { // If debugging, restore for traceback print,
+			PyErr_Restore(type, value, traceback);
 		} else {	// free em up.
 			Py_XDECREF(type);
 			Py_XDECREF(value);
 			Py_XDECREF(traceback);
 		}
 	} else {
-	  LPCTSTR inserts[] = {_T("<No Python Error!>"), _T(""), _T(""), NULL};
-    	ReportError(code, inserts);
+		LPCTSTR inserts[] = {_T("<No Python Error!>"), _T(""), _T(""), NULL};
+		ReportError(code, inserts);
 	}
 //    if (bServiceDebug) {
 //	    if (PyErr_Occurred())
@@ -885,60 +874,61 @@ static void ReportPythonError(DWORD code)
 static BOOL ReportError(DWORD code, LPCTSTR *inserts, WORD errorType /* = EVENTLOG_ERROR_TYPE*/)
 {
 	WORD numInserts = 0;
-	while (inserts && inserts[numInserts]!=NULL)
+	while (inserts && inserts[numInserts]!=NULL) {
 		numInserts++;
+	}
 		
-    HANDLE  hEventSource;
-    // Use event logging to log the error.
+	HANDLE  hEventSource;
+	// Use event logging to log the error.
 	//
 
-    if (bServiceDebug) {
+	if (bServiceDebug) {
 		TCHAR *szType;
 		switch (errorType) {
-			case EVENTLOG_WARNING_TYPE:
-				szType = _T("Warning");
-				break;
-			case EVENTLOG_INFORMATION_TYPE:
-				szType = _T("Info");
-				break;
-			case EVENTLOG_ERROR_TYPE:
-				szType = _T("Error");
-				break;
-			default:
-				szType = _T("Message");
-				break;
+		case EVENTLOG_WARNING_TYPE:
+			szType = _T("Warning");
+			break;
+		case EVENTLOG_INFORMATION_TYPE:
+			szType = _T("Info");
+			break;
+		case EVENTLOG_ERROR_TYPE:
+			szType = _T("Error");
+			break;
+		default:
+			szType = _T("Message");
+			break;
 		}
-    	LPTSTR buffer;
-    	// Get the message text, and just print it.
-    	if (FormatMessage(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY,
-    			GetModuleHandle(NULL), code, 0, (LPTSTR)&buffer, 0, (va_list *)inserts)==0) {
-    		_tprintf(_T("%s 0x%X - No message available\nMessage inserts were"), szType, code);
-    		for (int i=0;i<numInserts;i++)
-    			_tprintf(_T("'%s',"), inserts[i]);
-    	} else {
-    		_tprintf(_T("%s 0x%X - %s"), szType, code, buffer);
-    		LocalFree(buffer);
-    	}
+		LPTSTR buffer;
+		// Get the message text, and just print it.
+		if (FormatMessage(FORMAT_MESSAGE_FROM_HMODULE | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_ARGUMENT_ARRAY,
+				  GetModuleHandle(NULL), code, 0, (LPTSTR)&buffer, 0, (va_list *)inserts)==0) {
+			_tprintf(_T("%s 0x%X - No message available\nMessage inserts were"), szType, code);
+			for (int i=0;i<numInserts;i++)
+				_tprintf(_T("'%s',"), inserts[i]);
+		} else {
+			_tprintf(_T("%s 0x%X - %s"), szType, code, buffer);
+			LocalFree(buffer);
+		}
 		return TRUE;
-    } else {
+	} else {
  	
-	    hEventSource = RegisterEventSource(NULL, g_szEventSourceName);
+		hEventSource = RegisterEventSource(NULL, g_szEventSourceName);
 		if (hEventSource==NULL)
 			return FALSE;
 
-        BOOL rc = ReportEvent(hEventSource, // handle of event source
-            errorType,  // event type
-            0,                    // event category
-            code,                 // event ID
-            NULL,                 // current user's SID
-            numInserts,           // strings in lpszStrings
-            0,                    // no bytes of raw data
-            inserts,          // array of error strings
-            NULL);                // no raw data
+		BOOL rc = ReportEvent(hEventSource, // handle of event source
+				      errorType,  // event type
+				      0,                    // event category
+				      code,                 // event ID
+				      NULL,                 // current user's SID
+				      numInserts,           // strings in lpszStrings
+				      0,                    // no bytes of raw data
+				      inserts,          // array of error strings
+				      NULL);                // no raw data
 
-        (VOID) DeregisterEventSource(hEventSource);
+		(VOID) DeregisterEventSource(hEventSource);
 		return rc;
-    }
+	}
 }
 
 // Register the EXE.
