@@ -127,4 +127,15 @@ py2exe
 
   Download and project information
 
+    Binaries (windows installer)
+
+	For Python 1.5 "py2exe-0.1.win32-py1.5.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.win32-py1.5.exe
+
+	For Python 2.0 "py2exe-0.1.win32-py2.0.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.win32-py2.0.exe
+
+    Source code
+
+        "py2exe-0.1.zip":http://download.sourceforge.net/py2exe/py2exe-0.1.zip
+
     The project is hosted at "http://sourceforge.net/projects/py2exe/":http://sourceforge.net/projects/py2exe/
+
