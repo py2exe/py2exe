@@ -20,7 +20,7 @@ src="py2exe.jpg" alt="py2exe" border="0"></a></center>
 
 <h2>Convert python scripts into standalone windows programs</h2>
 
-<p>Copyright (C) 2001, 2002, <a href="mailto:theller@python.net">Thomas Heller</a> <!--...............................................................................-->
+<p>Copyright (C) 2001, 2002, 2003, Thomas Heller <!--...............................................................................-->
 </p>
 
 <h2>Abstract</h2>
@@ -46,6 +46,13 @@ href="LICENSE.txt">license</a>. <!--............................................
 
 <h2>News</h2>
 <dl>
+      <dt><b>2003/05/09</b></dt>
+      <dd><i>Release 0.3.4:
+	  After one year of silence a new py2exe-release. Not much has changed,
+	  there is now support for including early bound COM code (I'm not sure
+	  if this is a good idea), and a binary distribution for the beta Python 2.3 version.
+	</i></dd>
+
       <dt><b>2002/05/07</b></dt>
       <dd><i>Release 0.3.3:
 	  Services now print a readable traceback to the eventlog (or the console
@@ -336,8 +343,12 @@ py2exe --help</tt> for an up-to-date list):</p>
       <dd>This options allows to change the icon in the exe-file. You can
 	only use this flag if you run the build process under Windows NT
 	or Windows 2000.</dd>
-    </dl>
-  </dd>
+  <dt><b>--progids</b> <i>list</i></dt>
+    <dd>comma separated list of progids like "Excel.Application" for example.
+      This makes sure the <tt>makepy</tt> generated module in the <tt>gen_py</tt>
+      directory is included in the exe-file. These files are sometimes very large,
+      and take quite some time for py2exe to compile and analyze.
+      </dd>
 </dl>
 
 <p>The following flags are planned but not yet implemented:</p>
@@ -358,23 +369,6 @@ documentation</a>. <!--.........................................................
 </p>
 
 
-<h2>Requirements for using <b>py2exe</b></h2>
-
-<h3>Python 1.5</h3>
-
-<p><a href="http://www.python.org/sigs/distutils-sig/">Distutils</a> is
-required. You can download and install the latest release from <a
-href="http://www.python.org/sigs/distutils-sig/download.html">python.org</a>.</p>
-
-<p><b>py2exe</b> needs a <tt>zip.exe</tt>
-utility which understands the <tt>-rq</tt> flag
-somewhere on the PATH, or Jim Ahlstrom's zipfile-module.</p>
-
-<h3>Python 2.0 and later</h3>
-
-<p>Everything is already included in the python distribution. <!--...............................................................................-->
-</p>
-
 <h2>Download and project information</h2>
 <p>I'm switching again to the sourceforge file release system. <br>
 All downloads are available at
@@ -386,22 +380,16 @@ in the <em>files</em> section.
 <p>The binary distributions now contain an uninstaller, you can uninstall
 <b>py2exe</b> from the Control Panel applet (but you won't ;-).</p>
 
+<p>For Python 2.3: <a
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.win32-py2.2.exe">py2exe-0.3.4.win32-py2.2.exe</a>.
 <p>For Python 2.2: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.2.exe">py2exe-0.3.3.win32-py2.2.exe</a>.
-<br>
-For Python 2.1: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.1.exe">py2exe-0.3.3.win32-py2.1.exe</a>.
-<br>
-For Python 2.0: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.0.exe">py2exe-0.3.3.win32-py2.0.exe</a>.
-<br>
-For Python 1.5: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py1.5.exe">py2exe-0.3.3.win32-py1.5.exe</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.win32-py2.2.exe">py2exe-0.3.4.win32-py2.2.exe</a>.
+</p>
 
 <h3>Source code</h3>
 
 <p>Download <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.zip">py2exe-0.3.3.zip</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.zip">py2exe-0.3.4.zip</a>.</p>
 
 <h3>Sample files</h3>
 <p>(not too many, currently)</p>
@@ -448,6 +436,12 @@ sometimes even crash.</p>
 <p>The solution to this is to rebuild with the --force-imports flag. This
 will ensure that these modules are injected into sys.modules before your
 scripts starts, and so PyImport_ImportModule can find them. <!--...............................................................................-->
+</p>
+
+<h3>Other problems</h3>
+<p>py2exe has problems with too much import trickery. Search the web or google groups
+for possible solutions if you have problems. You may also ask for help on comp.lang.python,
+please don't email me directly. 
 </p>
 
 <h2>Future plans</h2>
