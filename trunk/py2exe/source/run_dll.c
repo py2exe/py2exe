@@ -101,7 +101,8 @@ int load_pythoncom(void)
 		while (temp>dll_path && *temp != '\\')
 			temp--;
 		// and printf directly in the buffer.
-		snprintf(temp, sizeof(dll_path)-strlen(temp),
+		// don't overwrite the backslash, so temp+1!
+		snprintf(temp+1, sizeof(dll_path)-strlen(temp+1),
 			 "pythoncom%s%s%s.dll", major, minor, suffix);
 		gPythoncom = LoadLibraryEx(dll_path, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
