@@ -17,7 +17,7 @@
 
 .. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=1.4
 
-.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=1.16
+.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=1.17
 
 .. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
 
