@@ -35,18 +35,21 @@ windows programs, which are able to run without requiring a python installation.
 other standalone programs.
 <p>I would like to thank everyone who tried out this little utility and gave me feedback.
 
+<p><b>py2exe</b> is distributed under an open-source <a href=LICENSE.txt>license</a>.
 <!--...............................................................................-->
 
 <h2>News</h2>
 
 <dl>
-<dt><b>2001/03/23</b></dt>
-<dd><i>Release 0.2.4: <br>
+<dt><b>2001/04/05</b></dt>
+<dd><i>Release 0.2.5:
 Full Tkinter support, <b>py2exe</b> automatically copies your
-tcl/tk installation into the dist directory.
-<br>Does no longer copy system dlls, which should prevent several errors when the final
-executable is run on other systems.</i>
-<br><font color="red">This is probably the final 0.2 release. For future development please look below.</font>
+tcl/tk installation into the dist directory if your script uses Tkinter.
+<br>Does no longer copy system dlls, which should prevent strange errors
+when the final executable is run on other systems.
+<br>The binary distributions contain an uninstaller, <b>py2exe</b> can be uninstalled
+from the Control Panel applet.
+</i>
 </dd>
 
 <dt><b>2001/02/13</b></dt>
@@ -183,12 +186,7 @@ directory).
 dependencies for all pyd's and dll's copied to the dist directory recursively,
 and copies all these dependend files into the dist directory. <b>py2exe</b>
 has a build in list of some system dlls which are not copied, but this
-list can never be complete. Before distributing these files please make
-sure that you have the rights to do so.
-<p>Also make sure that you observe the requirements for installing/replacing
-system dlls on the target system: usually these dlls must only be updated
-with proper version checking and into the correct location, so that your
-application as well as other ones work and continue to work correctly.
+list can never be complete.
 
 <!--...............................................................................-->
 
@@ -300,12 +298,17 @@ Python 1.6 and later</h3>
 
 <h3>Binaries (windows installer)</h3>
 
-<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.win32-py2.0.exe">py2exe-0.2.4.win32-py2.0.exe</a>.
+<p>The binary distributions now contain an uninstaller, you can uninstall <b>py2exe</b>
+from the Control Panel applet (but you won't ;-).<br>
 
-<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.win32-py1.5.exe">py2exe-0.2.4.win32-py1.5.exe</a>.
+<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.win32-py2.0.exe">py2exe-0.2.5.win32-py2.0.exe</a>.
+
+<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.win32-py1.5.exe">py2exe-0.2.5.win32-py1.5.exe</a>.
+
+<p>A Python 2.1 version will be published as soon as the final release is out.
 
 <h3>Source code</h3>
-<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.zip">py2exe-0.2.4.zip</a>.
+<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.zip">py2exe-0.2.5.zip</a>.
 <h3>
 Project hosting</h3>
 <p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
@@ -341,22 +344,31 @@ your scripts starts, and so PyImport_ImportModule can find them.
 
 <h2>Future plans</h2>
 
+<p>More aggressive strategy to find modules needed: This will (hopefully) obsolete
+some of the more difficult command line flags, also less warnings should be printed
+when building.
+
+<p>Clean up and document the environment in which the script is run, provide
+a way to add hooks so that the build executable can import modules
+from the file system (may be usefull for extensible applications).
+
+<p>Allow local (dll) and inproc (exe) COM servers to be built.
+
 <p>Provide a way to require even less files: provide more custom prebuilt
 interpreters, so that eventually everything can be packed into a <i>single</i>
 file (which can be run without unpacking anything).
-
-<p>Pack COM servers written in python? (Should already be possible for local servers,
-but I have to fix up the registration)
 
 <!--...............................................................................-->
 
 <h2>Related work</h2>
 
 <p>Fredrik Lundh's <a href=http://www.pythonware.com/products/python/squeeze/index.htm>squeeze</a>
-is <i>a simple utility which compiles your Python program into a bytecode package,
-allowing you do distribute Python programs as one or two files</i>.
+is <i>"a simple utility which compiles your Python program into a bytecode package,
+allowing you do distribute Python programs as one or two files"</i>.
+
 <p>Christian Tismer's <a href=http://starship.python.net/crew/pirx/>sqfreeze</a>
 is based on an early version of squeeze.
+
 <p>Gordon McMillan's <a href="http://www.mcmillan-inc.com/install1.html">installer</a>
 is similar to <b>py2exe</b>.
 </ul>
