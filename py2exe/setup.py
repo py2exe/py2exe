@@ -129,22 +129,39 @@ class BuildInterpreters(build_ext.build_ext):
                 objects.extend(inter.extra_objects)
             extra_args = inter.extra_link_args or []
 
+            if inter.export_symbols:
+                # The mingw32 compiler writes a .def file containing
+                # the export_symbols.  Since py2exe uses symbols in
+                # the extended form 'DllCanUnloadNow,PRIVATE' (to
+                # avoid MS linker warnings), we have to replace the
+                # comma(s) with blanks, so that the .def file can be
+                # properly parsed.
+                # XXX MingW32CCompiler, or CygwinCCompiler ?
+                from distutils.cygwinccompiler import Mingw32CCompiler
+                if isinstance(self.compiler, Mingw32CCompiler):
+                    inter.export_symbols = [s.replace(",", " ") for s in inter.export_symbols]
+                    inter.export_symbols = [s.replace("=", "\t") for s in inter.export_symbols]
+
             # XXX - is msvccompiler.link broken?  From what I can see, the
             # following should work, instead of us checking the param:
 #            self.compiler.link(inter.target_desc,
             if inter.target_desc == 'executable':
-                linker = self.compiler.link_executable
+                self.compiler.link_executable(
+                    objects, exe_filename, 
+                    libraries=self.get_libraries(inter),
+                    library_dirs=inter.library_dirs,
+                    runtime_library_dirs=inter.runtime_library_dirs,
+                    extra_postargs=extra_args,
+                    debug=self.debug)
             else:
-                linker = self.compiler.link_shared_lib
-            linker(
-                objects, exe_filename, 
-                libraries=self.get_libraries(inter),
-                library_dirs=inter.library_dirs,
-                runtime_library_dirs=inter.runtime_library_dirs,
-                extra_postargs=extra_args,
-                debug=self.debug)
-            # cannot use upx any longer, since this collides with
-            # the update resource code.
+                self.compiler.link_shared_lib(
+                    objects, exe_filename, 
+                    libraries=self.get_libraries(inter),
+                    library_dirs=inter.library_dirs,
+                    runtime_library_dirs=inter.runtime_library_dirs,
+                    export_symbols=inter.export_symbols,
+                    extra_postargs=extra_args,
+                    debug=self.debug)
 
     # build_extensions ()
 
@@ -281,24 +298,23 @@ class deinstall(Command):
 
 run = Interpreter("py2exe.run",
                   ["source/run.c", "source/start.c", "source/icon.rc"],
-                  extra_link_args=["/NOD:LIBC"],
-                  define_macros=[("_WINDOWS", None)],
                   )
 
 run_w = Interpreter("py2exe.run_w",
                     ["source/run_w.c", "source/start.c", "source/icon.rc"],
                     libraries=["user32"],
-                    extra_link_args=["/NOD:LIBC"],
-                    define_macros=[("_WINDOWS", None)],
                     )
 
 run_dll = Interpreter("py2exe.run_dll",
-                    ["source/run_dll.c", "source/start.c", "source/icon.rc"],
-                    libraries=["user32"],
-                    extra_link_args=["/NOD:LIBC", "/def:source/run_dll.def"],
-                    define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
-                    target_desc = "shared_library",
-                    )
+                      ["source/run_dll.c", "source/start.c", "source/icon.rc"],
+                      libraries=["user32"],
+                      export_symbols=["DllCanUnloadNow,PRIVATE",
+                                      "DllGetClassObject,PRIVATE",
+                                      "DllRegisterServer,PRIVATE",
+                                      "DllUnregisterServer,PRIVATE",
+                                      ],
+                      target_desc = "shared_library",
+                      )
 
 interpreters = [run, run_w, run_dll]
 
@@ -313,7 +329,7 @@ setup(name="py2exe",
       url="http://starship.python.net/crew/theller/py2exe/",
       license="MIT/X11",
       platforms="Windows",
-      download_url="http://sourceforge.net/project/showfiles.php?group_id=15583&release_id=158217",
+      download_url="http://sourceforge.net/project/showfiles.php?group_id=15583",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
