@@ -20,25 +20,27 @@ src="py2exe.jpg" alt="py2exe" border="0"></a></center>
 
 <h2>Convert python scripts into standalone windows programs</h2>
 
-<p>Copyright (C) 2001, 2002, 2003, Thomas Heller <!--...............................................................................-->
-</p>
+<p>Copyright (C) 2001, 2002, 2003, Thomas Heller, Mark Hammond</p>
 
 <h2>Abstract</h2>
 
 <p><b>py2exe</b> is a <a
 href="http://www.python.org/doc/current/dist/">distutils</a> extension to
 convert python scripts into executable windows programs, which are able to
-run without requiring a python installation. <!--...............................................................................-->
+run without requiring a python installation.
 </p>
-
+<!--
 <h2>Status</h2>
 
 <p><b>py2exe</b> is reaching a stable state.  <br>
+-->
+<p>
 It has been used to create wxPython, Tkinter, Pmw, PyGTK, pygame, win32com
 client and other standalone programs.</p>
-
+<!--
 <p>I would like to thank everyone who tried out this little utility and gave
 me feedback.</p>
+-->
 
 <p><b>py2exe</b> is distributed under an open-source <a
 href="LICENSE.txt">license</a>. <!--...............................................................................-->
@@ -46,78 +48,28 @@ href="LICENSE.txt">license</a>. <!--............................................
 
 <h2>News</h2>
 <dl>
-      <dt><b>2003/05/09</b></dt>
-      <dd><i>Release 0.3.4:
-	  After one year of silence a new py2exe-release. Not much has changed,
-	  there is now support for including early bound COM code (I'm not sure
-	  if this is a good idea), and a binary distribution for the beta Python 2.3 version.
-	</i></dd>
+      <dt><b>2003/07/24</b></dt>
+      <dd><i>Release 0.4.1:
+	  <br>
+	  <font color=red><b>Mark Hammond</b> has contributed code to create dll
+	  (inprocess) and exe (localserver) COM servers with
+	  py2exe.</font> Many thanks to him.
+	  <br>
+	  Dll servers can only be created with Python 2.3, but exe
+	  servers work with Python 2.2 as well. You must install the
+	  newest pywin32 builds 154 or 155 to use this feature. A COM
+	  server sample is contained in the samples.zip file mentioned
+	  below.
+	  <br>
+	  <b>py2exe</b> now uses the much improved <b>modulefinder</b>
+	  from Python 2.3.  This gives a lot less unneeded warnings,
+	  and also works much better. It should now be possible to use
+	  py2exe on programs using the <b>PyXML</b> extensions.
+	  <br>
+	  It is now possible with the <tt>--typelib</tt> command line option
+	  to include a typelibrary into the executable.
+	  </i></dd>
 
-      <dt><b>2002/05/07</b></dt>
-      <dd><i>Release 0.3.3:
-	  Services now print a readable traceback to the eventlog (or the console
-	  if run with the --debug flag).<br>
-	  Services' _svc_deps_ are now supported - thanks to Matthew King for the patches.<br>
-	  Fixed the broken ModuleFinder included in previous releases.<br>
-	  py2exe should run again under Win98.<br>
-	  Yasushi Masuda has translated this page into Japanese:
-	  <a href="http://www.python.jp/Zope/articles/tips/py2exe">
-	    http://www.python.jp/Zope/articles/tips/py2exe
-	  </a>.
-	</i></dd>
-  <dt><b>2002/02/01</b></dt>
-    <dd><i>Release 0.3.1: Fixed a bug which prevented using the -O flag.
-	   Many thanks to Peter Goode for finding this!</i></dd>
-  <dt><b>2002/01/29</b></dt>
-    <dd><i>Release 0.3.0: <font color=red><b>py2exe</b> can now build windows NT services.</font><br>
-      The exe-file will now contain a version resource.</i></dd>
-  <dt><b>2002/01/03</b></dt>
-    <dd><i>Release 0.2.7: Support (and a binary distribution) for Python 2.2.
-      Fixed the problems with readonly source files.<br>
-      Parsing the <tt>setup.cfg</tt> file should now work correctly.<br>
-      Other small bug fixes as well.</i></dd>
-  <dt><b>2001/04/26</b></dt>
-    <dd><i>Release 0.2.6: Support (and a binary distribution) for Python
-      2.1.<br>
-      Some changes from Barry Scott (thanks, Barry): <br>
-      </i><tt>PYTHONHOME</tt><i> and</i><tt>PYTHONPATH</tt><i> do no longer
-      pollute subprocesses: running</i><tt> os.system('python -c "import
-      os"')</tt><i> now works as expected from the executable.<br>
-      The packed executable now returns an exit code of 0 or the value given
-      to</i><tt> sys.exit(n)</tt><i>.</i></dd>
-  <dt><b>2001/04/05</b></dt>
-    <dd><i>Release 0.2.5: Full Tkinter support, <b>py2exe</b> automatically
-      copies your tcl/tk installation into the dist directory if your script
-      uses Tkinter. <br>
-      Does no longer copy system dlls, which should prevent strange errors
-      when the final executable is run on other systems. <br>
-      The binary distribution contains an uninstaller, <b>py2exe</b> can be
-      uninstalled from the Control Panel applet.</i></dd>
-  <dt><b>2001/02/13</b></dt>
-    <dd><i>Release 0.2.3: <b>py2exe</b> now can change the icon in the
-      resulting executable, see the</i> <tt>--icon</tt> <i>command line
-      flag.</i></dd>
-  <dt><b>2001/02/08</b></dt>
-    <dd><i>Release 0.2.2: New command line flags to fine-tune the building
-      process, several bugfixes. <b>py2exe</b> can now copy additional files
-      into the dist directory. <b>py2exe</b> has been used to create a
-      standalone COM server exe-file, although this is currently in a very
-      early stage.</i></dd>
-  <dt><b>2001/02/02</b></dt>
-    <dd><i>Release 0.2.1:</i><tt>--includes</tt><i> now understands
-      hierachical (dotted) module names, fixed the</i> <tt>AttributeError:
-      __ispkg__</tt> <i>bug, which prevented running the built executables in
-      rare cases.</i></dd>
-  <dt><b>2001/01/31</b></dt>
-    <dd><i>Release 0.2.0 finds needed dlls automatically, has new
-      command-line options, can build programs containing modules imported
-      via the registry (pythoncom, pywintypes).</i></dd>
-  <dt><b>2001/01/24</b></dt>
-    <dd><i>Release 0.1.1 fixes the bugs of the first beta-release and should
-      work as advertised.</i></dd>
-  <dt><b>2001/01/19</b></dt>
-    <dd><i>First public beta-version released and announced on
-      comp.lang.python.</i></dd>
 </dl>
 <!--...............................................................................-->
 
@@ -228,10 +180,7 @@ Usually the service will be started or stopped by windows (see the Services Cont
 but you can debug the service by running the exe-file with the <tt>-debug</tt> flag,
 and it will even print tracebacks to the console.
 </p>
-<p>To help you getting started, a service sample is available
-<a href="http://prdownloads.sourceforge.net/py2exe/py2exe-samples-0.3.1.zip">here</a>.
-
-<!--...............................................................................-->
+<p>To help you getting started, a service sample is available in the samples zipfile.
 </p>
 
 <h2>Version resources</h2>
@@ -239,7 +188,7 @@ and it will even print tracebacks to the console.
 <p>By default <b>py2exe</b> will try to construct a version resource from the metadata
 supplied in the setup-script: <em>version</em>, <em>description</em>,
 and <em>name</em>.
-This can only succeed if the version number you specify consists simply of integers
+This can only succeed if the version number you specify consists only of numbers
 separated by dots (something like '1.2.3' or '0.7' will work, '1.2a3' or '5.7alpha' will
 not).
 <p>You can customize this behaviour by writing a distutils configuration file, usually
@@ -299,65 +248,7 @@ but this list can never be complete. <!--.......................................
 <h2>Reference</h2>
 
 <p>Command line flags for the <b>py2exe</b> command (run <tt>python setup.py
-py2exe --help</tt> for an up-to-date list):</p>
-<dl>
-  <dt><b>--debug</b> or <b>-g</b></dt>
-    <dd>Create runtime with debugging information. Default is to create a
-      release runtime binary. Note that for debug builds, <i>all</i>
-      extension modules must be available in debug versions.</dd>
-  <dt><b>--optimize</b> or <b>-O</b> <i>0|1|2</i></dt>
-    <dd>optimization level: -O1 for "python -O", -O2 for "python -OO" and -O0
-      to disable (default: -O0)</dd>
-  <dt><b>--dist-dir</b> or <b>-d</b> <i>directory</i></dt>
-    <dd>directory to put the final files in</dd>
-  <dt><b>--force</b> or <b>-f</b></dt>
-    <dd>force a rebuild of everything</dd>
-  <dt><b>--keep-temp</b> or <b>-k</b></dt>
-    <dd>keep the pseudo installation tree around after creating the
-      distribution files</dd>
-  <dt><b>--console</b> or </dt>
-    <dd>build a console application, similar to running the script with
-      <tt>python.exe</tt>. The default is to create a console application if
-      the script has the extension <tt>.py</tt>, a console-less GUI
-      application if the script has the extension <tt>.pyw</tt></dd>
-  <dt><b>--windows</b> or <b>-w</b></dt>
-    <dd>build a windows application, similar to running the script with
-      <tt>pythonw.exe</tt></dd>
-
-  <dt><b>--service</b> or <b>-s</b> <i>classname</i></dt>
-    <dd>build a windows NT service. You must specify the classname
-	implementing the service, which must be contained in your script.
-      </dd>
-
-  <dt><b>--excludes</b> or <b>-e</b> <i>list</i></dt>
-    <dd>comma separated list of modules to exclude</dd>
-  <dt><b>--includes</b> or <b>-i</b> <i>list</i></dt>
-    <dd>comma separated list of modules to include. Note that <i>includes</i>
-      overrides <i>excludes</i>.</dd>
-  <dt><b>--packages</b> or <b>-p</b> <i>list</i></dt>
-    <dd>comma separated list of packages to include.</dd>
-  <dt><b>--force-imports</b> <i>list</i></dt>
-    <dd>comma separated list of modules to inject into sys.modules before
-      running the script.</dd>
-  <dt><b>--icon</b> <i>ico-file</i></dt>
-      <dd>This options allows to change the icon in the exe-file. You can
-	only use this flag if you run the build process under Windows NT
-	or Windows 2000.</dd>
-  <dt><b>--progids</b> <i>list</i></dt>
-    <dd>comma separated list of progids like "Excel.Application" for example.
-      This makes sure the <tt>makepy</tt> generated module in the <tt>gen_py</tt>
-      directory is included in the exe-file. These files are sometimes very large,
-      and take quite some time for py2exe to compile and analyze.
-      </dd>
-</dl>
-
-<p>The following flags are planned but not yet implemented:</p>
-<dl>
-  <dt><b>--unbuffered</b> or <b>-u</b></dt>
-    <dd>unbuffered binary <i>stdout</i> and <i>stderr</i></dd>
-  <dt><b>--unicode</b> or <b>-U</b></dt>
-    <dd>treat string literals as unicode</dd>
-</dl>
+py2exe --help</tt> for an up-to-date list).</p>
 
 <p><i>Note that you can supply these options to</i> <b>py2exe</b> <i>on the
 command line, or put them into a setup configuration file</i>
@@ -367,6 +258,97 @@ command line, or put them into a setup configuration file</i>
 href="http://www.python.org/doc/current/dist/setup-config.html">distutils
 documentation</a>. <!--...............................................................................-->
 </p>
+
+
+<h3>Flags specifying what to build:</h3>
+<dl>
+
+  <dt><b>--console</b> or <b>-c</b></dt>
+    <dd>build a console application, similar to running the script with
+      <tt>python.exe</tt>. The default is to create a console application if
+      the script has the extension <tt>.py</tt>, a console-less GUI
+      application if the script has the extension <tt>.pyw</tt></dd>
+
+  <dt><b>--windows</b> or <b>-w</b></dt>
+    <dd>build a windows application, similar to running the script with
+      <tt>pythonw.exe</tt></dd>
+
+  <dt><b>--service</b> or <b>-s</b> <i>classname</i></dt>
+    <dd>build a windows NT service. You must specify the classname
+	implementing the service, which must be contained in your script.
+      </dd>
+
+  <dt><b>--com-dll</b></dt>
+    <dd>Build a dll hosting a COM object. When this option is used,
+	the meaning of the scripts argument to the setup function changes:
+	It must be a list of class names hosting COM objects. A single dll
+	will be built in the <tt>dist</tt> subdirectory.
+      </dd>
+
+  <dt><b>--com-exe</b></dt> <dd>Build an exe hosting a COM object.
+	The scripts argument to the setup function again is a list of class
+	names hosting COM objects. A single exe will be built in the
+	<tt>dist</tt> subdirectory.
+      </dd>
+
+  <dt><b>--optimize</b> or <b>-O</b> <i>0|1|2</i></dt>
+    <dd>optimization level: -O1 for "python -O", -O2 for "python -OO" and -O0
+      to disable (default: -O0)</dd>
+
+  <dt><b>--debug</b> or <b>-g</b></dt>
+    <dd>Create runtime with debugging information. Default is to create a
+	release runtime binary. Note that for debug builds,
+	Python itself and <i>all</i> extension modules must be available
+	in debug versions.</dd>
+
+  <dt><b>--icon</b> <i>ico-file</i></dt>
+      <dd>This options allows to change the icon in the exe-file. You can
+	only use this flag if you run the build process under Windows NT/2000/XP.
+	</dd>
+
+</dl>
+<h3>Flags to include or exclude modules or packages:</h3>
+<dl>
+
+  <dt><b>--excludes</b> or <b>-e</b> <i>list</i></dt>
+    <dd>comma separated list of modules to exclude</dd>
+
+  <dt><b>--includes</b> or <b>-i</b> <i>list</i></dt>
+    <dd>comma separated list of modules to include. Note that <i>includes</i>
+      overrides <i>excludes</i>.</dd>
+
+  <dt><b>--packages</b> or <b>-p</b> <i>list</i></dt>
+    <dd>comma separated list of packages to include.</dd>
+
+  <dt><b>--typelib</b> <i>pathname</i></dt>
+    <dd>the filename of a typelibrary to include as TYPELIB resource into the exe file</dd>
+
+  <dt><b>--progids</b> <i>list</i></dt>
+    <dd>comma separated list of progids like "Excel.Application" for example.
+      This makes sure the <tt>makepy</tt> generated module in the <tt>gen_py</tt>
+      directory is included in the exe-file. These files are sometimes very large,
+      and take quite some time for py2exe to compile and analyze.
+      </dd>
+
+  <dt><b>--force-imports</b> <i>list</i></dt>
+    <dd>comma separated list of modules to inject into sys.modules before
+      running the script.</dd>
+
+</dl>
+
+<h3>Flags specifying how to build:</h3>
+<dl>
+
+  <dt><b>--dist-dir</b> or <b>-d</b> <i>directory</i></dt>
+    <dd>directory to put the final files in</dd>
+
+  <dt><b>--force</b> or <b>-f</b></dt>
+    <dd>force a rebuild of everything</dd>
+
+  <dt><b>--keep-temp</b> or <b>-k</b></dt>
+    <dd>keep the pseudo installation tree around after creating the
+      distribution files</dd>
+</dl>
 
 
 <h2>Download and project information</h2>
@@ -380,21 +362,27 @@ in the <em>files</em> section.
 <p>The binary distributions now contain an uninstaller, you can uninstall
 <b>py2exe</b> from the Control Panel applet (but you won't ;-).</p>
 
+<p><font color=red><b>Important:</b> The exe-files are windows installer programs, containing a
+zip-compatible archive.  It is important that you <em>run</em> these
+installers to install <b>py2exe</b>, you should <em>not</em> extract
+the files with WinZip and copy them manually.</font>
+</p>
+
 <p>For Python 2.2: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.win32-py2.2.exe?download">py2exe-0.3.4.win32-py2.2.exe</a>.
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.4.1.win32-py2.2.exe?download">py2exe-0.4.1.win32-py2.2.exe</a>.
 <p>For Python 2.3 beta: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.win32-py2.3.exe?download">py2exe-0.3.4.win32-py2.3.exe</a>.
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.4.1.win32-py2.3.exe?download">py2exe-0.4.1.win32-py2.3.exe</a>.
 </p>
 
 <h3>Source code</h3>
 
 <p>Download <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.4.zip?download">py2exe-0.3.4.zip</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.4.1.zip?download">py2exe-0.4.1.zip</a>.</p>
 
 <h3>Sample files</h3>
-<p>(not too many, currently)</p>
+<p>A Windows NT service, and a COM server</p>
 <p>Download <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-samples-0.3.1.zip?download">py2exe-samples-0.3.1.zip</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-samples-0.4.1.zip?download">py2exe-samples-0.4.1.zip</a>.</p>
 
 <h3>Project hosting</h3>
 
@@ -446,22 +434,7 @@ please don't email me directly.
 
 <h2>Future plans</h2>
 
-<p>More aggressive strategy to find modules needed: This will (hopefully)
-obsolete some of the more difficult command line flags, also less warnings
-should be printed when building. <!--
-<p>Clean up and document the environment in which the script is run, provide
-a way to add hooks so that the build executable can import modules
-from the file system (may be usefull for extensible applications).
--->
-</p>
-
-<p>Allow local (exe) and inproc (dll) COM servers to be built. <!--
-<p>Provide a way to require even less files: provide more custom prebuilt
-interpreters, so that eventually everything can be packed into a <i>single</i>
-file (which can be run without unpacking anything).
--->
- <!--...............................................................................-->
-</p>
+<p>Use the new Python 2.3 zipimport</p>
 
 <h2>Links</h2>
 <p>Yasushi Masuda has translated this page into Japanese:
@@ -475,6 +448,82 @@ build local <b>COM servers</b> with <b>py2exe</b>, and <a
 href="http://aspn.activestate.com/ASPN/Mail/Message/766627">here</a> is
 another one. <!--...............................................................................-->
 </p>
+
+<H2>History (older news):</H2>
+<dl>
+      <dt><b>2003/05/09</b></dt>
+      <dd><i>Release 0.3.4:
+	  After one year of silence a new py2exe-release. Not much has changed,
+	  there is now support for including early bound COM code (I'm not sure
+	  if this is a good idea), and a binary distribution for the beta Python 2.3 version.
+	</i></dd>
+
+      <dt><b>2002/05/07</b></dt>
+      <dd><i>Release 0.3.3:
+	  Services now print a readable traceback to the eventlog (or the console
+	  if run with the --debug flag).<br>
+	  Services' _svc_deps_ are now supported - thanks to Matthew King for the patches.<br>
+	  Fixed the broken ModuleFinder included in previous releases.<br>
+	  py2exe should run again under Win98.<br>
+	  Yasushi Masuda has translated this page into Japanese:
+	  <a href="http://www.python.jp/Zope/articles/tips/py2exe">
+	    http://www.python.jp/Zope/articles/tips/py2exe
+	  </a>.
+	</i></dd>
+  <dt><b>2002/02/01</b></dt>
+    <dd><i>Release 0.3.1: Fixed a bug which prevented using the -O flag.
+	   Many thanks to Peter Goode for finding this!</i></dd>
+  <dt><b>2002/01/29</b></dt>
+    <dd><i>Release 0.3.0: <font color=red><b>py2exe</b> can now build windows NT services.</font><br>
+      The exe-file will now contain a version resource.</i></dd>
+  <dt><b>2002/01/03</b></dt>
+    <dd><i>Release 0.2.7: Support (and a binary distribution) for Python 2.2.
+      Fixed the problems with readonly source files.<br>
+      Parsing the <tt>setup.cfg</tt> file should now work correctly.<br>
+      Other small bug fixes as well.</i></dd>
+  <dt><b>2001/04/26</b></dt>
+    <dd><i>Release 0.2.6: Support (and a binary distribution) for Python
+      2.1.<br>
+      Some changes from Barry Scott (thanks, Barry): <br>
+      </i><tt>PYTHONHOME</tt><i> and</i><tt>PYTHONPATH</tt><i> do no longer
+      pollute subprocesses: running</i><tt> os.system('python -c "import
+      os"')</tt><i> now works as expected from the executable.<br>
+      The packed executable now returns an exit code of 0 or the value given
+      to</i><tt> sys.exit(n)</tt><i>.</i></dd>
+  <dt><b>2001/04/05</b></dt>
+    <dd><i>Release 0.2.5: Full Tkinter support, <b>py2exe</b> automatically
+      copies your tcl/tk installation into the dist directory if your script
+      uses Tkinter. <br>
+      Does no longer copy system dlls, which should prevent strange errors
+      when the final executable is run on other systems. <br>
+      The binary distribution contains an uninstaller, <b>py2exe</b> can be
+      uninstalled from the Control Panel applet.</i></dd>
+  <dt><b>2001/02/13</b></dt>
+    <dd><i>Release 0.2.3: <b>py2exe</b> now can change the icon in the
+      resulting executable, see the</i> <tt>--icon</tt> <i>command line
+      flag.</i></dd>
+  <dt><b>2001/02/08</b></dt>
+    <dd><i>Release 0.2.2: New command line flags to fine-tune the building
+      process, several bugfixes. <b>py2exe</b> can now copy additional files
+      into the dist directory. <b>py2exe</b> has been used to create a
+      standalone COM server exe-file, although this is currently in a very
+      early stage.</i></dd>
+  <dt><b>2001/02/02</b></dt>
+    <dd><i>Release 0.2.1:</i><tt>--includes</tt><i> now understands
+      hierachical (dotted) module names, fixed the</i> <tt>AttributeError:
+      __ispkg__</tt> <i>bug, which prevented running the built executables in
+      rare cases.</i></dd>
+  <dt><b>2001/01/31</b></dt>
+    <dd><i>Release 0.2.0 finds needed dlls automatically, has new
+      command-line options, can build programs containing modules imported
+      via the registry (pythoncom, pywintypes).</i></dd>
+  <dt><b>2001/01/24</b></dt>
+    <dd><i>Release 0.1.1 fixes the bugs of the first beta-release and should
+      work as advertised.</i></dd>
+  <dt><b>2001/01/19</b></dt>
+    <dd><i>First public beta-version released and announced on
+      comp.lang.python.</i></dd>
+</dl>
 
 <h2>Related work</h2>
 
@@ -491,6 +540,11 @@ early version of squeeze.</p>
 <p>Gordon McMillan's <a
 href="http://www.mcmillan-inc.com/install1.html">installer</a> is similar to
 <b>py2exe</b>, but also works on Linux. </p>
+
+<p>Anthony Tuininga's <a
+href="http://starship.python.net/crew/atuining">cx_Freeze</a> is
+another cross-platform freeze tool.</p>
+
 <hr>
 <!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" -->
  <script type="text/javascript" language="JavaScript">
