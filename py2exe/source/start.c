@@ -244,7 +244,7 @@ BOOL Load_Module(char *name)
     if (data) {
 	PyObject *marshaldict;
 	PyObject *module;
-	PyObject *marshal = PyImport_Import("marshal");
+	PyObject *marshal = PyImport_Import(PyString_FromString("marshal"));
 	PyObject *loadsfunc;
 	PyObject *pdata = PyString_FromStringAndSize(data+8, size-8);
 
