@@ -1,15 +1,7 @@
-import marshal, imp, sys, strop
-
+import sys, imp
 sys.importers = []
 
-_StringType = type("")
-
-_c_suffixes = []
-
-import imp
 for desc in imp.get_suffixes():
-    if desc[2] == imp.C_EXTENSION:
-        _c_suffixes.append(desc)
     if desc[2] == imp.PY_COMPILED:
         _pyc_suffix = desc
 del desc
@@ -20,9 +12,9 @@ del desc
 # So we have to sublcass imputil.ImportManager.
 #
 class _MyImportManager(imputil.ImportManager):
-    def _import_top_module(self, name):
+    def _import_top_module(self, name, _stringtype=type(""), sys=sys):
         for item in sys.importers + sys.path:
-            if isinstance(item, _StringType):
+            if isinstance(item, _stringtype):
                 module = self.fs_imp.import_from_dir(item, name)
             else:
                 module = item.import_top(name)
@@ -75,7 +67,7 @@ class _MyImporter(imputil.Importer):
         # if the form is "from a.b import c, d" then return "b"
         return bottom
 
-    def get_code(self, parent, modname, fqname, get_code=get_code):
+    def get_code(self, parent, modname, fqname, get_code=get_code, _pyc_suffix=_pyc_suffix):
         # Greg's importers return a dict containing the
         # following items:
         #
@@ -92,6 +84,8 @@ class _MyImporter(imputil.Importer):
         # third item and thus inserted into the new module.
         # If importing a normal module, __file__ is inserted into the module.
         # XXX What should WE do?
+
+        import imp, marshal, strop, sys
 
         dict = {}
 
@@ -130,6 +124,13 @@ _MyImportManager().install()
 sys.importers.append(imputil.BuiltinImporter())
 sys.importers.append(_MyImporter())
 
+del _MyImportManager
+del _MyImporter
+
+del _pyc_suffix
+
 del get_code
+del sys, imp
+del imputil
 
 # XXX We should not clobber the namespace this severe!!!
