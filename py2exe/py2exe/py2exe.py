@@ -21,7 +21,6 @@ from distutils.errors import *
 from distutils.dep_util import newer
 from distutils.spawn import spawn
 import imp
-import py2exe_util
 
 _c_suffixes = ['.pyd', '.dll'] #+ ['_d.pyd', '_d.dll']
 
@@ -376,6 +375,7 @@ class py2exe (Command):
         raise "Error"
 
     def copy_dependend_dlls(self, final_dir, use_runw, dlls):
+        import py2exe_util
         sysdir = py2exe_util.get_sysdir()
         windir = py2exe_util.get_windir()
         # This is the tail of the path windows uses when looking for dlls
@@ -519,6 +519,7 @@ class py2exe (Command):
 # class py2exe
 
 def bin_depends(path, images):
+    import py2exe_util
     images = list(images[:])
     dependents = []
     while images:
