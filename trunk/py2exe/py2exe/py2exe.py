@@ -21,6 +21,8 @@
 ## WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##
 
+# $Log$
+
 """distutils.command.py2exe
 
 Implements the Distutils 'py2exe' command: create executable
@@ -35,7 +37,7 @@ __version__ = "0.2.7a"
 import sys, os, string
 from distutils.core import Command
 from distutils.util import get_platform
-from distutils.dir_util import create_tree, remove_tree, copy_tree
+from distutils.dir_util import copy_tree
 from distutils import file_util
 from distutils.errors import *
 from distutils.dep_util import newer
@@ -279,7 +281,8 @@ class py2exe (Command):
             excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
                         "MACFS", "pwd", "MacOS", "macostools",
                         "EasyDialogs", "termios", "TERMIOS",
-                        "java.lang", "org.python.core",
+                        "java.lang", "org.python.core", "riscos",
+                        "riscosenviron", "riscospath", "ce",
                         ] + self.excludes
             mf = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
@@ -488,10 +491,10 @@ class py2exe (Command):
             if unfriendly_dlls or missing:
                 self.warn("*" * 73)
             if not self.keep_temp:
-                remove_tree(collect_dir, self.verbose, self.dry_run)
+                force_remove_tree(collect_dir, self.verbose, self.dry_run)
                 
         if not self.keep_temp:
-            remove_tree(self.bdist_dir, self.verbose, self.dry_run)
+            force_remove_tree(self.bdist_dir, self.verbose, self.dry_run)
     # run()
 
     def find_suffix(self, filename):
@@ -886,3 +889,45 @@ byte_compile(files, optimize=%s, force=%s,
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
 # byte_compile()
+
+# utilities stolen from distutils.dir_util and extended
+
+def _chmod(file):
+    os.chmod(file, 0777)
+
+# Helper for force_remove_tree()
+def _build_cmdtuple(path, cmdtuples):
+    for f in os.listdir(path):
+        real_f = os.path.join(path,f)
+        if os.path.isdir(real_f) and not os.path.islink(real_f):
+            _build_cmdtuple(real_f, cmdtuples)
+        else:
+            cmdtuples.append((_chmod, real_f))
+            cmdtuples.append((os.remove, real_f))
+    cmdtuples.append((os.rmdir, path))
+
+def force_remove_tree (directory, verbose=0, dry_run=0):
+    """Recursively remove an entire directory tree.  Any errors are ignored
+    (apart from being reported to stdout if 'verbose' is true).
+    """
+    import distutils
+    from distutils.util import grok_environment_error
+    _path_created = distutils.dir_util._path_created
+
+    if verbose:
+        print "removing '%s' (and everything under it)" % directory
+    if dry_run:
+        return
+    cmdtuples = []
+    _build_cmdtuple(directory, cmdtuples)
+    for cmd in cmdtuples:
+        try:
+            apply(cmd[0], (cmd[1],))
+            # remove dir from cache if it's already there
+            abspath = os.path.abspath(cmd[1])
+            if _path_created.has_key(abspath):
+                del _path_created[abspath]
+        except (IOError, OSError), exc:
+            if verbose:
+                print grok_environment_error(
+                    exc, "error removing %s: " % directory)
