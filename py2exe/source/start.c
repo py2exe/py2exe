@@ -1,16 +1,16 @@
 /*
- * ToDo:
+ * $Id$
  *
- *    Make sure that sys.path contains NOTHING from
- *    another python installation
  */
 #include <Python.h>
 #include <windows.h>
 #include "archive.h"
 #include "zlib.h"
 
+#define SCRIPT_INFO_TAG 0x0bad3bad
+
 struct script_info {
-    int length;
+    int module_mapping_length;
     int optimize;
     int verbose;
     int tag;
@@ -19,7 +19,6 @@ struct script_info {
 char *arc_data;	/* memory mapped archive */
 DWORD arc_size;	/* number of bytes in archive */
 PyObject *toc;	/* Dictionary mapping filenames to file offsets */
-char *script_name; /* name of startup script */
 
 struct script_info *p_script_info;
 
@@ -155,10 +154,9 @@ GetScriptInfo(char *data, int size)
     /* read meta_data info */
     p_script_info =  (struct script_info *)&data[ofs];
 
-    if (p_script_info->tag != 0x0bad2bad || ofs < 0)
+    if (p_script_info->tag != SCRIPT_INFO_TAG || ofs < 0)
 	return FALSE;
 
-    script_name = (char *)p_script_info - p_script_info->length;
     return TRUE;
 }
 
@@ -407,7 +405,7 @@ int start(int argc, char **argv)
     /* Extract the script as string and run it */
     {
 	int size;
-	char *data = GetContents(script_name, arc_data, arc_size, &size);
+	char *data = GetContents("Scripts\\__main__.py", arc_data, arc_size, &size);
 	if (data) {
 	    char *script = realloc(data, size+2);
 	    if (script) {

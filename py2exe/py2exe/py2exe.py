@@ -220,7 +220,7 @@ class py2exe (Command):
 
             self.copy_file(script,
                            os.path.join(collect_dir,
-                                        "Scripts\\%s.py" % script_base))
+                                        "Scripts\\__main__.py"))
                            
             # The archive must not be in collect-dir, otherwise
             # it may include a (partial) copy of itself
@@ -342,10 +342,6 @@ class py2exe (Command):
     def create_exe (self, exe_name, arcname, script_name):
         import struct
 
-        base_name = os.path.splitext(os.path.basename(arcname))[0]
-        if self.debug:
-            base_name = base_name + '_d'
-
         self.announce("creating %s" % exe_name)
 
         # Make sure script_name uses backward slashes!
@@ -353,12 +349,10 @@ class py2exe (Command):
 
         # Create a header which contains the name of the script to run
         l = len(script_name)+1
-        header = struct.pack("<%dsiiii" % l,
-                             script_name,
-                             l,
+        header = struct.pack("<iii",
                              self.optimize, # optimize
-                             0, # unbuffered
-                             0x0bad2bad,
+                             0, # verbose
+                             0x0bad3bad,
                              )
         ext = os.path.splitext(script_name)[1]
         use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
