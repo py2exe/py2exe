@@ -22,6 +22,10 @@
 ##
 
 # $Log$
+# Revision 1.13  2003/05/09 20:28:03  theller
+# New --typelib command line flag, specifies a type library to embed
+# into the exe-file.
+#
 # Revision 1.12  2003/05/09 19:26:41  theller
 # No more warnings from modulefinder any more!
 #
@@ -434,6 +438,14 @@ class py2exe (Command):
             pass
         else:
             AddPackagePath("win32com", res[1] + 'ext')
+
+        # XXX Use imp, and simulate the magic ctypes does?
+        try:
+            import ctypes
+        except ImportError:
+            pass
+        else:
+            AddPackagePath("ctypes", ctypes.__path__[0])
 
         for script in self.distribution.scripts:
             self.announce("+----------------------------------------------------")
