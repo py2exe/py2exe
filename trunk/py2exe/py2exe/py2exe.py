@@ -403,6 +403,9 @@ class py2exe (Command):
             # Scripts.py2exe\\support.py must be forced to be rewritten!
             dst = os.path.join(collect_dir, "Scripts.py2exe\\support.py")
             file_util.copy_file(src, dst, update=0,
+                                # Since we want to modify support.py,
+                                # readonly status must not be preserved.
+                                preserve_mode=0,
                                 verbose=self.verbose,
                                 dry_run=self.dry_run)
 
