@@ -26,8 +26,9 @@ py2exe options, to be specified in the options keyword to the setup function:
     optimize - string or int (0, 1, or 2)
 
     includes - list of module names to include
-    excludes - list of module names to exclude
     packages - list of packages to include with subpackages
+    ignores - list of modules to ignore if they are not found
+    excludes - list of module names to exclude
     dll_excludes - list of dlls to exclude
 
     dist_dir - directory where to build the final files
