@@ -66,7 +66,7 @@ test_wx = Target(
     # what to build
     script = "test_wx.py",
     other_resources = [(RT_MANIFEST, 1, manifest_template % dict(prog="test_wx"))],
-    icon_resources = [(1, "icon.ico")],
+##    icon_resources = [(1, "icon.ico")],
     dest_base = "test_wx")
 
 test_wx_console = Target(
