@@ -22,6 +22,10 @@
 ##
 
 # $Log$
+# Revision 1.6  2002/05/07 13:01:49  theller
+# Fix some small problems reported by pychecker.
+# Don't crash on Win98, where add_resource is nonfunctional.
+#
 # Revision 1.5  2002/04/04 17:07:02  theller
 # Issue a warning instead of crashing when VersionInfo cannot be
 # imported: This is only the case with Python 1.5.2 without win32all.
@@ -816,11 +820,14 @@ class py2exe (Command):
                 RESOURCE_SERVICE_NAME = 1016
 
                 st = StringTable()
-                svc_name, svc_display_name = self.get_service_names()
+                svc_name, svc_display_name, svc_deps = self.get_service_names()
                 st.add_string(RESOURCE_SERVICE_NAME,
                               "__service__.%s" % self.service)
                 st.add_string(RESOURCE_SERVICE_NAME+1, svc_name)
                 st.add_string(RESOURCE_SERVICE_NAME+2, svc_display_name)
+                # XXX service probably won't have a | in them?
+                st.add_string(RESOURCE_SERVICE_NAME+3, \
+                              string.join(svc_deps, "|"))
 
                 for id, data in st.binary():
                     add_resource(exe_name, data, RT_STRING, id, delete)
@@ -891,7 +898,10 @@ class py2exe (Command):
         exec compile(open(self.script).read(), self.script, "exec") in mod.__dict__
 
         klass = getattr(mod, self.service)
-        return klass._svc_name_, klass._svc_display_name_
+        deps = ()
+        if hasattr(klass, "_svc_deps_"):
+            deps = klass._svc_deps_
+        return klass._svc_name_, klass._svc_display_name_, deps
 
     def get_exe_stub(self, use_runw):
         thismod = sys.modules['distutils.command.py2exe']
