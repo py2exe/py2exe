@@ -47,9 +47,14 @@ void SystemError(int error, char *msg)
 	fprintf(stderr, msg);
 }
 
+extern int init(void);
 extern int start(int argc, char **argv);
 
 int main (int argc, char **argv)
 {
+    int result;
+    result = init();
+    if (result)
+	return result;
     return start(argc, argv);
 }
