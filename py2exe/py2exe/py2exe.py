@@ -9,6 +9,9 @@ __revision__ = "$Id$"
 
 __version__ = "0.1.1a"
 
+# ToDo:
+#
+
 import sys, os, string
 from distutils.core import Command
 from distutils.util import get_platform
@@ -148,7 +151,8 @@ class py2exe (Command):
 
             # Use the modulefinder to find dependend modules.
             #
-            self.announce("Searching modules needed to run '%s' on path:" % script)
+            self.announce("Searching modules needed to run '%s' on path:" % \
+                          script)
             self.announce(repr(extra_path + sys.path))
 
             m = ModuleFinder (path=extra_path + sys.path,
@@ -186,7 +190,8 @@ class py2exe (Command):
             final_dir = os.path.join(self.dist_dir, script_base)
             self.mkpath(final_dir)
 
-            missing = filter(lambda n, e=excludes: n not in e, m.badmodules.keys())
+            missing = filter(lambda n, e=excludes: n not in e, \
+                             m.badmodules.keys())
             
             # if build debug binary, use debug extension modules
             # instead of the release versions.
@@ -263,42 +268,34 @@ class py2exe (Command):
         # XXX On Windows NT, the SYSTEM directory is also searched
         # (sysdir is SYSTEM32)
         exedir = os.path.dirname(sys.executable)
-        loadpath = string.join([exedir, sysdir, windir, os.getenv('PATH')], ';')
+        syspath = os.getenv('PATH')
+        loadpath = string.join([exedir, sysdir, windir, syspath], ';')
 
         images = [self.get_exe_stub(use_runw)] + dlls
 
         self.announce("Resolving binary dependencies")
         
-        otherdlls = {}
-        for y in images:
-            for x in self.find_dependend_dlls(y, loadpath):
-                deps = []
-                # We want a case insensitive match for the filename,
-                # but we want to preserve the case of the filenames:
-                # map the lowercase filename to the real one.
-                otherdlls[string.lower(x)] = x
-                deps.append(x)
-                if deps:
-                    self.announce("  Needed for %s:" % y)
-                    for dep in deps:
-                        self.announce("    %s" % dep)
+        alldlls = bin_depends(loadpath, images)
+        alldlls.remove(self.get_exe_stub(use_runw))
 
-        # get the original filenames
-        otherdlls = otherdlls.values()
-        
-        for src in otherdlls:
-            dst = os.path.join(final_dir, os.path.basename(src))
+        for src in alldlls:
+            basename = os.path.basename(src)
+            if string.lower(basename) in self.EXCLUDE:
+                continue
+            dst = os.path.join(final_dir, basename)
             try:
                 self.copy_file(src, dst)
             except Exception, detail:
                 import traceback
                 traceback.print_exc()
- 
- 
+
+         
     # DLLs to be excluded
     # XXX This list is NOT complete
-    EXCLUDE = map(string.lower, (
+    # Note: ALL ENTRIES MUST BE IN LOWER CASE!
+    EXCLUDE = (
         "advapi32.dll",
+        "comctl32.dll",
         "gdi32.dll",
         "kernel32.dll",
         "msvcirt.dll",  # XXX
@@ -307,11 +304,13 @@ class py2exe (Command):
         "ntdll.dll",
         "ole32.dll",
         "oleaut32.dll",
+        "rpcrt4.dll",
         "shell32.dll",
+        "shlwapi.dll",
         "user32.dll",
         "winmm.dll",
         "wsock32.dll",
-        ))
+        )
 
     def find_dependend_dlls(self, dll, loadpath):
         # XXX should walk recursively XXX
@@ -433,6 +432,23 @@ class py2exe (Command):
     # get_exe_bytes()
 
 # class py2exe
+
+def bin_depends(path, images):
+    images = list(images[:])
+    dependents = []
+    while images:
+        for image in images:
+            images.remove(image)
+            image = os.path.abspath(image)
+            if image not in dependents:
+                dependents.append(image)
+                loadpath = os.path.dirname(image) + ';' + path
+                for dll in py2exe_util.depends(image, loadpath):
+                    if dll not in images:
+                        images.append(dll)
+    return dependents
+    
+
 
 def endswith(str, substr):
     return str[-len(substr):] == substr
