@@ -30,7 +30,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.6"
+__version__ = "0.2.7a"
 
 import sys, os, string
 from distutils.core import Command
@@ -185,8 +185,15 @@ class py2exe (Command):
         install.root = os.path.join(self.bdist_dir, "lib")
         install.optimize = install.compile = 0
 
-        # build everything and do a fake install
+        # finalize the install command, so that install_lib is valid
+        install.ensure_finalized()
+        sys_path_old = sys.path[:]
+        # extend sys.path to remove bogus warning about installing
+        # into a directory not on the path
+        sys.path.append(install.install_lib)
+        # build everything, do a fake install, and restore the old path
         install.run()
+        sys.path = sys_path_old
 
         self.mkpath(self.dist_dir)
 
@@ -384,20 +391,22 @@ class py2exe (Command):
             # This distionary will later be written to the source file
             # used to install the import hook.
             #
-            ext_mapping = {}
+            self.ext_mapping = {}
             dlls = []
             for ext_module in extensions:
                 pathname = ext_module.__file__
                 suffix = self.find_suffix(pathname)
-                ext_mapping[ext_module.__name__] = (os.path.basename(pathname), suffix)
+                self.ext_mapping[ext_module.__name__] = (os.path.basename(pathname), suffix)
                 dlls.append(pathname)
             self.announce("force_imports = %s" % string.join(force_imports, ', '))
+
+            dlls, unfriendly_dlls = self.find_dependend_dlls(use_runw, dlls,
+                                                             extra_path + sys.path)
+
             self.announce("ext_mapping = {")
-            for key, value in ext_mapping.items():
+            for key, value in self.ext_mapping.items():
                 self.announce(" %s: %s" % (`key`, `value`))
             self.announce("}")
-
-            dlls, unfriendly_dlls = self.find_dependend_dlls(use_runw, dlls)
 
             # copy support files and the script itself
             #
@@ -414,7 +423,7 @@ class py2exe (Command):
 
             if not self.dry_run:
                 file = open(dst, "a")
-                file.write("_extensions_mapping = %s\n" % `ext_mapping`)
+                file.write("_extensions_mapping = %s\n" % `self.ext_mapping`)
                 if force_imports:
                     file.write("def _force_imports():\n")
                     for item in force_imports:
@@ -431,7 +440,8 @@ class py2exe (Command):
 
             self.copy_file(script,
                            os.path.join(collect_dir,
-                                        "Scripts.py2exe\\__main__.py"))
+                                        "Scripts.py2exe\\__main__.py"),
+                           preserve_mode=0)
                            
             # The archive must not be in collect-dir, otherwise
             # it may include a (partial) copy of itself
@@ -449,7 +459,7 @@ class py2exe (Command):
             # remove those unfriendly dlls which are known to us
             for dll in unfriendly_dlls.items():
                 basename = os.path.basename(dll)
-                for key, value in ext_mapping.items():
+                for key, value in self.ext_mapping.items():
                     if basename == value[0]:
                         modname = key
                         break
@@ -496,7 +506,7 @@ class py2exe (Command):
         raise "Error"
     # find_suffix()
     
-    def find_dependend_dlls(self, use_runw, dlls):
+    def find_dependend_dlls(self, use_runw, dlls, pypath):
         import py2exe_util
         sysdir = py2exe_util.get_sysdir()
         windir = py2exe_util.get_windir()
@@ -505,6 +515,11 @@ class py2exe (Command):
         exedir = os.path.dirname(sys.executable)
         syspath = os.environ['PATH']
         loadpath = string.join([exedir, sysdir, windir, syspath], ';')
+
+        # Found by Duncan Booth:
+        # It may be possible that bin_depends needs extension modules,
+        # so the loadpath must be extended by our python path.
+        loadpath = loadpath + string.join(pypath, ';')
 
         images = [self.get_exe_stub(use_runw)] + dlls
 
@@ -515,6 +530,17 @@ class py2exe (Command):
             self.announce("  %s" % dll)
         alldlls.remove(self.get_exe_stub(use_runw))
 
+        for dll in alldlls:
+            if dll in dlls:
+                continue
+            fname, ext = os.path.splitext(os.path.basename(dll))
+            try:
+                result = imp.find_module(fname, pypath)
+            except ImportError:
+                pass
+            else:
+                self.ext_mapping[fname] = (os.path.basename(dll), result[2])
+                    
         return alldlls, warnings
     # find_dependend_dlls()
 
