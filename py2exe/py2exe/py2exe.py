@@ -162,9 +162,28 @@ class py2exe (Command):
         # Examples: (from python 2.0)
         #   _sre imports copy_reg
         #   cPickle imports string, copy_reg
-        #   cStrringIO imports string
+        #   cStringIO imports string
         #   parser imports copy_reg
         #   codecs imports encodings
+        #
+        # Update: The problem is even worse, because
+        # cPickle imports string. copy_reg, types
+        # with PyImport_ImportModule, which does not call the
+        # import hook. So, we are not able the import them
+        # from within the import of cPickle.
+        #
+        # Our solution:
+        # Add them to the py_files we need, and additionally
+        # 'import' them directly after installing the import hook.
+        # We do this by collectiong them into the force_imports
+        # list and writing an 'import ...' line to Scripts\support.py.
+        import_hack = {
+            "cPickle": ["copy_reg", "types", "string"],
+            "cStringIO": ["copy_reg"],
+            "parser": ["copy_reg"],
+            "codecs": ["encodings"],
+            "_sre": ["copy_reg"],
+            }
         from tools.modulefinder import ModuleFinder
 
         for script in self.distribution.scripts:
@@ -202,7 +221,7 @@ class py2exe (Command):
                     file, pathname, desc = imp.find_module(f, extra_path + sys.path)
                 except ImportError:
                     # Strange! Modules found via registry entries are only
-                    # found by imp.find_module if no path specified.
+                    # found by imp.find_module if NO path specified.
                     try:
                         file, pathname, desc = imp.find_module(f)
                     except ImportError:
@@ -210,6 +229,16 @@ class py2exe (Command):
                 mf.load_module(f, file, pathname, desc)
 
             mf.run_script(script)
+
+            force_imports = []
+            # first pass over modulefinder results, insert modules from import_hack
+            for item in mf.modules.values():
+                if item.__name__ in import_hack.keys():
+                    mods = import_hack[item.__name__]
+                    force_imports.extend(mods)
+                    for f in mods:
+                        file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                        mf.load_module(f, file, pathname, desc)
 
             # Retrieve modules from modulefinder
             py_files = []
@@ -301,8 +330,11 @@ class py2exe (Command):
             if not self.dry_run:
                 file = open(dst, "a")
                 file.write("_extensions_mapping = %s\n" % `ext_mapping`)
+                if force_imports:
+                    file.write("import %s\n" % string.join(force_imports, ', '))
                 file.close()
 
+            self.announce("force_imports = %s" % string.join(force_imports, ', '))
             self.announce("ext_mapping = {")
             for key, value in ext_mapping.items():
                 self.announce(" %s: %s" % (`key`, `value`))
@@ -350,7 +382,7 @@ class py2exe (Command):
         # XXX On Windows NT, the SYSTEM directory is also searched
         # (sysdir is SYSTEM32)
         exedir = os.path.dirname(sys.executable)
-        syspath = os.getenv('PATH')
+        syspath = os.environ['PATH']
         loadpath = string.join([exedir, sysdir, windir, syspath], ';')
 
         images = [self.get_exe_stub(use_runw)] + dlls
