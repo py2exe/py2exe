@@ -5,6 +5,7 @@ README.txt
 setup.py
 docs\index.html
 docs\py2exe.css
+docs\py2exe.jpg
 py2exe\__init__.py
 py2exe\py2exe.py
 py2exe\support.py
