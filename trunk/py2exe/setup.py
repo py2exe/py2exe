@@ -279,9 +279,30 @@ run_w = Interpreter("py2exe.run_w",
                     define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                     )
 
-PYWIN32DIR = "c:/PWin32"
+msg = """PYWIN32DIR invalid.
+
+    To build py2exe from source, you must either:
+
+    - Download and build Mark Hammond's pywin32 source code
+      from http://starship.python.net/crew/mhammond, and set
+      the PYWIN32DIR variable to point to this directory
+
+    - or change this setup script to not build run_svc target,
+      then you will not be able to build Windows NT services
+      with py2exe.
+"""
+
+PYWIN32DIR = r"c:\pywin32"
+
+if not os.path.isdir(PYWIN32DIR):
+    raise RuntimeError, msg
 
 PyWin32_BuildDir = PYWIN32DIR + "/build/temp.win32-%s/Release" % sys.winver
+
+pywintypes_lib = PyWin32_BuildDir + "/pywintypes.lib"
+
+if not os.path.isfile(pywintypes_lib):
+    raise RuntimeError, msg
 
 run_svc = Interpreter("py2exe.run_svc",
                       ["source/PythonService.cpp",
@@ -308,13 +329,6 @@ run_svc = Interpreter("py2exe.run_svc",
                                      ]
                       )
 
-pywintypes_lib = PyWin32_BuildDir + "/pywintypes.lib"
-
-if not os.path.isdir(PYWIN32DIR):
-    print "Please set the PYWIN32DIR variable in this setup script"
-if not os.path.isfile(pywintypes_lib):
-    print "Please build pywintypes first"
-
 setup(name="py2exe",
       version=__version__,
       description="Build standalone executables for windows",
@@ -322,7 +336,7 @@ setup(name="py2exe",
       author="Thomas Heller",
       author_email="theller@python.net",
       url="http://starship.python.net/crew/theller/py2exe/",
-      licence="MIT/X11",
+      license="MIT/X11",
 ##      platforms="Windows",
       
       distclass = Dist,
