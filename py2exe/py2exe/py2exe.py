@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.40  2002/01/03 13:33:24  theller
+# Version 0.2.7.
+#
 # Revision 1.39  2002/01/03 12:35:06  theller
 # Removed the 'aggressive' option from the command line.
 # Renamed import_hack to 'invisible_imports'.
@@ -103,7 +106,7 @@ class py2exe (Command):
          "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
         ('windows', 'w',
          "Create a Windows application"),
-        ('console', None,
+        ('console', 'c',
          "Create a Console application"),
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
