@@ -562,10 +562,21 @@ class py2exe(Command):
 ##         "pythoncom": ["win32com.server.policy", "win32com.server.util", "pywintypes"],
 ##         }
 
-        # XXX Tkinter magic. Move into self.run() ?
         tcl_src_dir = tcl_dst_dir = None
         if "Tkinter" in mf.modules.keys():
-            pass # XXX
+            import Tkinter
+            import _tkinter
+            tk = _tkinter.create()
+            tcl_dir = tk.call("info", "library")
+            tcl_src_dir = os.path.split(tcl_dir)[0]
+            tcl_dst_dir = os.path.join(self.lib_dir, "tcl")
+
+            self.announce("Copying TCL files from %s..." % tcl_src_dir)
+            self.copy_tree(os.path.join(tcl_src_dir, "tcl%s" % _tkinter.TCL_VERSION),
+                           os.path.join(tcl_dst_dir, "tcl%s" % _tkinter.TCL_VERSION))
+            self.copy_tree(os.path.join(tcl_src_dir, "tk%s" % _tkinter.TK_VERSION),
+                           os.path.join(tcl_dst_dir, "tk%s" % _tkinter.TK_VERSION))
+            del tk, _tkinter, Tkinter
 
         # Retrieve modules from modulefinder
         py_files = []
