@@ -1,3 +1,16 @@
+2004-09-22  Thomas Heller  <theller@python.net>
+
+	*  py2exe\build_exe.py: Added the .pyw extension for Python modules.
+
+2004-09-06 Mark Hammond <mhammond@skippinet.com.au>
+
+	* Support for stand-alone ISAPI DLL.
+
+2004-06-02  Mark Hammond <mhammond@skippinet.com.au>
+2004-08-24  Mark Hammond <mhammond@skippinet.com.au>
+
+	* Various 'thread-state' issues in COM DLL support.
+
 2004-07-30  Thomas Heller  <theller@python.net>
 
 	* py2exe\build_exe.py: zipfile can now be specified as None, in
@@ -132,11 +145,3 @@
 	http://sourceforge.net/tracker/index.php?func=detail&aid=887856&group_id=15583&atid=115583
 	http://sourceforge.net/tracker/index.php?func=detail&aid=887855&group_id=15583&atid=115583
 
-2004-06-02  Mark Hammond <mhammond@skippinet.com.au>
-2004-08-24  Mark Hammond <mhammond@skippinet.com.au>
-
-	* Various 'thread-state' issues in COM DLL support.
-
-2004-09-06 Mark Hammond <mhammond@skippinet.com.au>
-
-	* Support for stand-alone ISAPI DLL.
