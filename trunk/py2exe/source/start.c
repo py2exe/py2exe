@@ -46,6 +46,8 @@ PyObject *toc;	/* Dictionary mapping filenames to file offsets */
 struct script_info *p_script_info;
 
 extern void SystemError(int error, char *msg);
+run_script(char *contents_name);
+void fini(void);
 
 static char *MapExistingFile(char *pathname, DWORD *psize)
 {
@@ -325,14 +327,14 @@ void fix_string(char *src)
 /*
  * returns an error code if initialization fails
  */
-int init(void)
+int init_with_instance(HMODULE hmod)
 {
     int result = 255;
     char modulename[_MAX_PATH];
     char dirname[_MAX_PATH];
     
     /* Open the executable file and map it to memory */
-    if(!GetModuleFileName(NULL, modulename, sizeof(modulename))) {
+    if(!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
 	SystemError(GetLastError(), "Retrieving module name");
 	return result;
     }
@@ -421,47 +423,40 @@ int init(void)
     Py_InitModule("__main__", methods);
 
     /* Extract support script as string and run it */
-    {
-	int size;
-	char *data = GetContents("Scripts.py2exe\\support.py",
-				 arc_data, arc_size, &size);
-	if (data) {
-	    char *script = realloc(data, size+2);
-	    if (script) {
-		data = script;
-		script[size] = '\n';
-		script[size+1] = '\0';
-		fix_string(script);
-		PyRun_SimpleString(script);
-	    } else {
-		SystemError(0, "Not enough memory");
-	    }
-	    free(data);
-	    return 0;
-	} else {
-	    PyErr_Print();
-	    goto done;
-	}
-    }
-    return 0;
-  done:
-    Py_Finalize();
-  finish:
-    UnmapViewOfFile(arc_data);
+    return run_script("Scripts.py2exe\\support.py");
+finish:
+    fini();
     return 255;
 }
 
+int init(void)
+{
+    init_with_instance(NULL);
+}
+
+void fini(void)
+{
+    /* Clean up */
+    Py_Finalize();
+    UnmapViewOfFile (arc_data);
+}
+
 int start (int argc, char **argv)
+{
+    int rc;
+    PySys_SetArgv(argc, argv);
+    rc = run_script("Scripts.py2exe\\__main__.py");
+    fini();
+    return rc;
+}
+
+int run_script(char *contents_name)
 {
     int result = 255;
     /* Extract the script as string and run it */
     int size;
     char *data;
-
-    PySys_SetArgv(argc, argv);
-
-    data = GetContents("Scripts.py2exe\\__main__.py", arc_data, arc_size, &size);
-
+    data = GetContents(contents_name, arc_data, arc_size, &size);
     if (data) {
 	char *script = realloc(data, size+2);
 	if (script) {
@@ -470,18 +465,16 @@ int start (int argc, char **argv)
 	    script[size+1] = '\0';
 	    fix_string(script);
 	    PyRun_SimpleString(script);
-
+	    free(script);
 	    result = 0;
 	} else {
+	    free(data); // no mem for "script", but data remains valid
 	    SystemError(0, "Not enough memory");
 	}
-	free(data);
     } else {
+	// is this right - would a Python error be set due to
+	// GetContents() failure?
 	PyErr_Print();
     }
-    Py_Finalize();
-    /* Clean up */
-    UnmapViewOfFile (arc_data);
-    
     return result;
 }
