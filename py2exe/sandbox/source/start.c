@@ -40,7 +40,8 @@ extern void SystemError(int error, char *msg);
 int run_script(void);
 void fini(void);
 char *pScript;
-char dirname[_MAX_PATH];
+char dirname[_MAX_PATH]; // my directory
+char libdirname[_MAX_PATH]; // library directory - probably same as above.
 char modulename[_MAX_PATH];
 struct scriptinfo *p_script_info;
 
@@ -87,13 +88,32 @@ int init_with_instance(HMODULE hmod)
 	    return 255;
     }
     pScript += strlen(p_script_info->zippath) + 1;
-
     {
+	/* If the zip path has any path component, then build our Python
+	   home directory from that.
+	*/
 	char buffer[_MAX_PATH + 32];
+	char *p_zip_filename = pScript - 1;
+	char *fname;
+	int lib_dir_len;
+	while (p_zip_filename > p_script_info->zippath && \
+		   *(p_zip_filename-1) != '\\')
+		p_zip_filename--;
+	strcpy(libdirname, dirname);
+	lib_dir_len = p_zip_filename-p_script_info->zippath; /* incl. tail slash */
+	if (lib_dir_len) {
+		char *p = libdirname+strlen(libdirname);
+		*p++ = '\\';
+		strncpy(p, p_script_info->zippath, lib_dir_len-1);
+		p += lib_dir_len-1;
+		*p++ = '\0';
+	}
+	/* Fully-qualify it */
+	GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
 	/* From Barry Scott */
 	/* Must not set the PYTHONHOME env var as this prevents
 	   python being used in os.system or os.popen */
-	Py_SetPythonHome(dirname);
+	Py_SetPythonHome(libdirname);
 
 /*
  * PYTHONPATH entries will be inserted in front of the
@@ -103,7 +123,7 @@ int init_with_instance(HMODULE hmod)
  * We need the module's directory, because zipimport needs zlib.pyd.
  * And, of course, the zipfile itself.
  */
-	sprintf(buffer, "PYTHONPATH=%s;%s\\%s", dirname, dirname, p_script_info->zippath);
+	sprintf(buffer, "PYTHONPATH=%s;%s\\%s", libdirname, libdirname, p_zip_filename);
 	_putenv (buffer);
 	_putenv ("PYTHONSTARTUP=");
 	_putenv ("PYTHONOPTIMIZE=");
