@@ -538,7 +538,7 @@ class py2exe(Command):
         dist.service = FixupTargets(dist.service, "modules")
         dist.windows = FixupTargets(dist.windows, "script")
         dist.console = FixupTargets(dist.console, "script")
-        dist.isapi = FixupTargets(dist.isapi, "modules")
+        dist.isapi = FixupTargets(dist.isapi, "script")
 
         # make sure all targets use the same directory, this is
         # also the directory where the pythonXX.dll must reside
