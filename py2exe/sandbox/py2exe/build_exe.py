@@ -605,16 +605,20 @@ class py2exe(Command):
             def visit(arg, dirname, names):
                 if '__init__.py' in names:
                     arg.append(dirname)
-            # Very weird...
-            # Find path of package
-            # XXX - MarkH isn't sure what is particularly weird here, but note
-            # that mf.modules[f] appears to work for packages ModuleFinder
-            # has seen a reference to.
-            try:
-                path = imp_find_module(f)[1]
-            except ImportError:
-                self.warn("No package named %s" % f)
-                continue
+            # If modulefinder has seen a reference to the package, then
+            # we prefer to believe that (imp_find_module doesn't seem to locate
+            # sub-packages)
+            if f in mf.modules:
+                path = mf.modules[f].__path__[0]
+            else:
+                # Very weird...
+                # Find path of package
+                # has seen a reference to.
+                try:
+                    path = imp_find_module(f)[1]
+                except ImportError:
+                    self.warn("No package named %s" % f)
+                    continue
 
             packages = []
             # walk the path to find subdirs containing __init__.py files
