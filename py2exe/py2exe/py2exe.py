@@ -30,7 +30,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.5"
+__version__ = "0.2.6"
 
 import sys, os, string
 from distutils.core import Command
