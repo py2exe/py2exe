@@ -4,6 +4,12 @@
 # enhanced to track dependencies of modules whether they are
 # found or not
 
+#
+# $Log$
+#
+#
+
+
 import dis
 import imp
 import marshal
@@ -87,6 +93,7 @@ def _try_registry(name):
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes = [], replace_paths = [],
+                 mod_attrs = {},
                  aggressive=0):
         if path is None:
             path = sys.path
@@ -100,6 +107,7 @@ class ModuleFinder:
         self.indent = 0
         self.excludes = excludes
         self.replace_paths = replace_paths
+        self.mod_attrs = mod_attrs
         self.processed_paths = []   # Used in debugging only
         self.aggressive = aggressive
         self.os_path = os.environ['PATH'] # save this
@@ -263,7 +271,8 @@ class ModuleFinder:
             return None
         try:
             fp, pathname, stuff = self.find_module(partname,
-                                                   parent and parent.__path__)
+                                                   parent and parent.__path__,
+                                                   parent)
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
@@ -369,7 +378,13 @@ class ModuleFinder:
         self.modules[fqname] = m = Module(fqname)
         return m
 
-    def find_module(self, name, path):
+    def find_module(self, name, path, parent=None):
+        if parent:
+            attrs = self.mod_attrs.get(parent.__name__, [])
+            if name in attrs:
+                self.excludes.append(name)
+                raise ImportError, name
+            
         if name in self.excludes:
             self.msgout(3, "find_module -> Excluded")
             raise ImportError, name
