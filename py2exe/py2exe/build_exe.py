@@ -793,6 +793,9 @@ class py2exe(Command):
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
 
+        # sort on the file names, the output is nicer to read
+        py_files.sort(lambda a, b: cmp(a.__file__, b.__file__))
+        extensions.sort(lambda a, b: cmp(a.__file__, b.__file__))
         return py_files, extensions
 
     def plat_finalize(self, modules, py_files, extensions, dlls):
