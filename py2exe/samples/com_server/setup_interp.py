@@ -6,5 +6,5 @@ import py2exe
 
 setup(name="win32com 'interp' sample",
       scripts=["win32com.servers.interp"],
-      output_base="interp" # Create 'interp.{exe/dll}
+#      output_base="interp" # Create 'interp.{exe/dll}
 )
