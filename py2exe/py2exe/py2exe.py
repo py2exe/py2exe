@@ -18,6 +18,7 @@ from distutils.errors import *
 from distutils.dep_util import newer
 from distutils.spawn import spawn
 import imp
+import py2exe_util
 
 _c_suffixes = ['.pyd', '.dll'] #+ ['_d.pyd', '_d.dll']
 
@@ -204,10 +205,14 @@ class py2exe (Command):
             # copy extension modules, massaging filenames so that they
             # contain the package-name they belong to (if any).
             # They are copied  directly to dist_dir.
+            # Collect all the dlls, so that binary dependencies can be
+            # resolved.
+            dlls = []
             for ext_module in extensions:
                 src, dst = self.get_extension_filenames(ext_module)
-                self.copy_file(src,
-                          os.path.join(final_dir, dst))
+                dst = os.path.join(final_dir, dst)
+                self.copy_file(src, dst)
+                dlls.append(src)
 
             # copy support files and the script itself
             #
@@ -236,15 +241,94 @@ class py2exe (Command):
             else:
                 exe_name = os.path.join(final_dir, script_base+'.exe')
 
-            self.create_exe(exe_name, arcname, script_path)
+            ext = os.path.splitext(script)[1]
+            use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
+                       and not self.console
+
+            self.create_exe(exe_name, arcname, use_runw)
 
             self.copy_additional_files(final_dir)
+
+            self.copy_dependend_dlls(final_dir, use_runw, dlls)
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, self.verbose, self.dry_run)
 
     # run()
 
+    def copy_dependend_dlls(self, final_dir, use_runw, dlls):
+        sysdir = py2exe_util.get_sysdir()
+        windir = py2exe_util.get_windir()
+        # This is the tail of the path windows uses when looking for dlls
+        # XXX On Windows NT, the SYSTEM directory is also searched
+        # (sysdir is SYSTEM32)
+        exedir = os.path.dirname(sys.executable)
+        loadpath = string.join([exedir, sysdir, windir, os.getenv('PATH')], ';')
+
+        images = [self.get_exe_stub(use_runw)] + dlls
+
+        self.announce("Resolving binary dependencies")
+        
+        otherdlls = {}
+        for y in images:
+            for x in self.find_dependend_dlls(y, loadpath):
+                deps = []
+                # We want a case insensitive match for the filename,
+                # but we want to preserve the case of the filenames:
+                # map the lowercase filename to the real one.
+                otherdlls[string.lower(x)] = x
+                deps.append(x)
+                if deps:
+                    self.announce("  Needed for %s:" % y)
+                    for dep in deps:
+                        self.announce("    %s" % dep)
+
+        # get the original filenames
+        otherdlls = otherdlls.values()
+        
+        for src in otherdlls:
+            dst = os.path.join(final_dir, os.path.basename(src))
+            try:
+                self.copy_file(src, dst)
+            except Exception, detail:
+                import traceback
+                traceback.print_exc()
+ 
+ 
+    # DLLs to be excluded
+    # XXX This list is NOT complete
+    EXCLUDE = map(string.lower, (
+        "advapi32.dll",
+        "gdi32.dll",
+        "kernel32.dll",
+        "msvcirt.dll",  # XXX
+        "msvcrt.dll",   # redistributable?
+        "msvcrtd.dll",  # XXX redistributable?
+        "ntdll.dll",
+        "ole32.dll",
+        "oleaut32.dll",
+        "shell32.dll",
+        "user32.dll",
+        "winmm.dll",
+        "wsock32.dll",
+        ))
+
+    def find_dependend_dlls(self, dll, loadpath):
+        # XXX should walk recursively XXX
+        mypath = os.path.abspath(os.path.dirname(dll)) + ';' + loadpath
+        found = []
+        print "BINDEPENDS FOR", dll
+        for dep in py2exe_util.depends(dll, mypath):
+            # XXX should stop on EXCLUDE here
+            if string.lower(os.path.basename(dep)) not in self.EXCLUDE:
+                found.append(dep)
+                print "  ", dep
+        for x in found[:]:
+            for y in self.find_dependend_dlls(x, mypath):
+                if y not in found:
+                    found.append(y)
+        return found
+ 
     def fix_extmodules(self, missing, extensions, path):
         if not self.debug:
             return missing, extensions
@@ -304,33 +388,6 @@ class py2exe (Command):
                          verbose=self.verbose,
                          dry_run=self.dry_run)
 
-        
-        version = string.split(sys.version[:3], '.')
-        if self.debug:
-            template = "python%s%s_d.dll"
-        else:
-            template = "python%s%s.dll"
-        pythondll = (template % tuple(version))
-        searchpath = string.split(os.environ["PATH"], ';')
-        try:
-            windir = os.environ['windir']
-        except KeyError:
-            pass
-        else:
-            searchpath.extend( \
-                [os.path.join(windir, 'system'),
-                 os.path.join(windir, 'system32')])
-        searchpath.extend(sys.path)
-        for path in searchpath:
-            fullpath = os.path.join(path, pythondll)
-            if os.path.isfile(fullpath):
-                self.copy_file(fullpath,
-                          os.path.join(final_dir, pythondll))
-                break
-        else:
-            self.warn("Could not find %s, must copy manually into %s" %\
-                      (pythondll, final_dir))
-
     def support_modules(self):
         import imp
         try:
@@ -339,7 +396,7 @@ class py2exe (Command):
             import tools
             return [imp.find_module("imputil", tools.__path__)[1]]
 
-    def create_exe (self, exe_name, arcname, script_name):
+    def create_exe (self, exe_name, arcname, use_runw):
         import struct
 
         self.announce("creating %s" % exe_name)
@@ -349,15 +406,6 @@ class py2exe (Command):
                              0, # verbose
                              0x0bad3bad,
                              )
-        ext = os.path.splitext(script_name)[1]
-        use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
-                   and not self.console
-
-        if use_runw:
-            self.announce("Creating a GUI application")
-        else:
-            self.announce("Creating a CONSOLE application")
-
         file = open(exe_name, "wb")
         file.write(self.get_exe_bytes(use_runw))
         file.write(header)
@@ -366,7 +414,7 @@ class py2exe (Command):
 
     # create_exe()
 
-    def get_exe_bytes(self, use_runw):
+    def get_exe_stub(self, use_runw):
         thismod = sys.modules['distutils.command.py2exe']
         directory = os.path.dirname(thismod.__file__)
         if use_runw:
@@ -375,7 +423,10 @@ class py2exe (Command):
             basename = "run"
         if self.debug:
             basename = basename + '_d'
-        fname = os.path.join(directory, basename+'.exe')
+        return os.path.join(directory, basename+'.exe')
+
+    def get_exe_bytes(self, use_runw):
+        fname = self.get_exe_stub(use_runw)
         self.announce("Using stub '%s'" % fname)
         return open(fname, "rb").read()
 
