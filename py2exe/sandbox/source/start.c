@@ -129,8 +129,8 @@ int init_with_instance(HMODULE hmod, char *frozen)
  * We need the module's directory, because zipimport needs zlib.pyd.
  * And, of course, the zipfile itself.
  */
-		sprintf(buffer, "PYTHONPATH=%%s\\%s",
-			libdirname, pZipBaseName);
+		sprintf(buffer, "PYTHONPATH=%s;%s\\%s",
+			libdirname, libdirname, pZipBaseName);
 		_putenv (buffer);
 		_putenv ("PYTHONSTARTUP=");
 		_putenv ("PYTHONOPTIMIZE=");
