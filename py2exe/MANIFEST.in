@@ -1,5 +1,6 @@
 recursive-include source *.rc *.ico *.c *.h *.lib
 recursive-include py2exe *.py
+recursive-include tools2.1 *.py
 recursive-include tools2.0 *.py
 recursive-include tools1.5 *.py
 recursive-include docs *.html *.css *.jpg
