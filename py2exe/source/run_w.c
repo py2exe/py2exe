@@ -50,11 +50,16 @@ void SystemError(int error, char *msg)
     MessageBox(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
 }
 
+extern int init();
 extern int start(int argc, char **argv);
 
 int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 	LPSTR lpCmdLine, int nCmdShow)
 {
+    int result;
+    result = init();
+    if (result)
+	return result;
     return start(__argc, __argv);
 }
