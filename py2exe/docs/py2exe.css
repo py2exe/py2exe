@@ -1,0 +1,62 @@
+BODY 	{
+	font-family: verdana;
+	font-size: 10pt;
+}
+
+CODE	{
+	font-family: courier;
+	font-weight: bold;
+}
+
+H2, H3, H4, H5, H6 {
+	color: #802800;
+}
+
+H1	{
+	font-size: 24pt;
+	margin-left: 100pt;
+}
+
+H2	{
+	font-size: 19pt;
+	margin-left: 10pt;
+}
+
+H3	{
+	font-size: 15pt;
+	margin-left: 20pt;
+	font-style: italic;
+}
+
+H4	{
+	margin-left: 30pt;
+}
+
+H5	{
+	margin-left: 40pt;
+}
+
+H6	{
+	margin-left: 50pt;
+}
+
+P, DL, UL	{
+	margin-left: 60pt;
+	margin-right: 60pt;
+	}
+
+DD	{
+	margin-left: -1pt;
+	margin-right: -70pt;
+	}
+
+PRE	{
+
+	border: solid;
+	border-width: thin;
+	width: 100%;
+	background: rgb(220,220,220);
+	white-space: pre;
+	margin-left: 60pt;
+	margin-right: 60pt;
+	}
