@@ -1,27 +1,22 @@
 # This support script is executed as the entry point for py2exe.
 
 import sys
+if 0:
+    ################################################################
+    # XXX Remove later!
+    class LOGGER:
+        def __init__(self):
+            self.softspace = None
+            self.ofi = open(r"c:\comerror.txt", "w")
+        def write(self, text):
+            self.ofi.write(text)
+            self.ofi.flush()
+    sys.stderr = sys.stdout = LOGGER()
+    sys.stderr.write("PATH is %s\n" % sys.path)
 ################################################################
-# XXX Remove later!
-class LOGGER:
-    def __init__(self):
-        self.ofi = open(r"c:\comerror.txt", "w")
-    def write(self, text):
-        self.ofi.write(text)
-        self.ofi.flush()
-sys.stderr = LOGGER()
-
-sys.stderr.write("PATH is %s\n" % sys.path)
-################################################################
-import pythoncom
-
-# Add some extra imports here, just to avoid putting them as "hidden imports"
-# anywhere else - this script has the best idea about what it needs.
-# (and hidden imports are currently disabled :)
-import win32com.server.policy, win32com.server.util
-
 # tell the win32 COM registering/unregistering code that we're inside
 # of an EXE/DLL
+import pythoncom
 if not hasattr(sys, "frozen"):
     # standard exes have none.
     sys.frozen = pythoncom.frozen = 1
@@ -29,8 +24,27 @@ else:
     # com DLLs already have sys.frozen set to 'dll'
     pythoncom.frozen = sys.frozen
 
+# Help out the gencache (later we will fix this!)
+import win32com, win32api, sys, os, new
+win32com.__gen_path__ = os.path.join(
+                        win32api.GetTempPath(), "gen_py",
+                        "%d.%d" % (sys.version_info[0], sys.version_info[1]))
+win32com.gen_py = new.module("win32com.gen_py")
+win32com.gen_py.__path__ = [ win32com.__gen_path__ ]
+sys.modules[win32com.gen_py.__name__]=win32com.gen_py
+
+# Add some extra imports here, just to avoid putting them as "hidden imports"
+# anywhere else - this script has the best idea about what it needs.
+# (and hidden imports are currently disabled :)
+import win32com.server.policy, win32com.server.util
+
+# Patchup sys.argv for our DLL
+if sys.frozen=="dll" and not hasattr(sys, "argv"):
+    sys.argv = [win32api.GetModuleFileName(sys.frozendllhandle)]
 # We assume that py2exe has magically set com_module_names
 # to the module names that expose the COM objects we host.
+# Note that here all the COM modules for the app are imported - hence any
+# environment changes (such as sys.stderr redirection) will happen now.
 com_modules = []
 try:
     for name in com_module_names:
@@ -63,12 +77,12 @@ def DllRegisterServer():
     # Enumerate each module implementing an object
     import win32com.server.register
     for mod in com_modules:
+        # register each class
+        win32com.server.register.RegisterClasses(*get_classes(mod))
         # see if the module has a custom registration function.
         extra_fun = getattr(mod, "DllRegisterServer", None)
         if extra_fun is not None:
             extra_fun()
-        # and register each class
-        win32com.server.register.RegisterClasses(*get_classes(mod))
 
 def DllUnregisterServer():
     # Enumerate each module implementing an object
@@ -80,7 +94,6 @@ def DllUnregisterServer():
             extra_fun()
         # and unregister each class
         win32com.server.register.UnregisterClasses(*get_classes(mod))
-
 
 # Mainline code - executed always
 # If we are running as a .EXE, check and process command-line args
