@@ -35,9 +35,15 @@ from distutils.spawn import spawn
 from distutils.errors import *
 import sys, os, imp, types
 import marshal
+import zipfile
 
 import _sre # any module known to be a .pyd
 is_debug_build = _sre.__file__.find("_d")>=0
+
+if is_debug_build:
+    python_dll = "python%d%d_d.dll" % sys.version_info[:2]
+else:
+    python_dll = "python%d%d.dll" % sys.version_info[:2]
 
 # resource constants
 RT_BITMAP=2
@@ -264,11 +270,8 @@ class py2exe(Command):
             self.copy_file(src, dst)
 
         archive_name = os.path.join(self.lib_dir, dist.zipfile)
-        # make_archive appends ".zip", but we already have it.
-        if os.path.splitext(archive_name)[1]==".zip":
-            archive_name = os.path.splitext(archive_name)[0]
-        arcname = make_lib_archive(archive_name, self.collect_dir,
-                                   self.verbose, self.dry_run)
+        arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
+                                   verbose=self.verbose, dry_run=self.dry_run)
 
         # find and copy binary dependencies
         dlls = [item.__file__ for item in extensions]
@@ -285,7 +288,14 @@ class py2exe(Command):
 
         print "*** copy dlls ***"
         for dll in dlls.items() + unfriendly_dlls.items():
-            dst = os.path.join(self.lib_dir, os.path.basename(dll))
+            if os.path.basename(dll).lower() == python_dll:
+                # The pythonxx.dll itself cannot be in the lib
+                # directory, because it will not be found by the
+                # executables.  Save the path for later, so that
+                # build_executable can copy it.
+                self.python_dll = dll
+            else:
+                dst = os.path.join(self.lib_dir, os.path.basename(dll))
             self.copy_file(dll, dst)
 
         if self.distribution.has_data_files():
@@ -393,6 +403,10 @@ class py2exe(Command):
         # just specify the parent directory for the .zip
         from distutils.dir_util import mkpath
         mkpath(os.path.dirname(exe_path))
+        # copy the python dll, it is needed in the same directory
+        self.copy_file(self.python_dll,
+                       os.path.join(os.path.dirname(exe_path),
+                                    os.path.basename(self.python_dll)))
 
         parent_levels = len(os.path.normpath(exe_base).split(os.sep))-1
         lib_leaf = self.lib_dir[len(self.dist_dir)+1:]
@@ -611,9 +625,7 @@ class py2exe(Command):
             if f in mf.modules:
                 path = mf.modules[f].__path__[0]
             else:
-                # Very weird...
                 # Find path of package
-                # has seen a reference to.
                 try:
                     path = imp_find_module(f)[1]
                 except ImportError:
@@ -634,6 +646,32 @@ class py2exe(Command):
                     mf.import_hook(package, None, ["*"])
 
         return mf
+
+    def make_lib_archive(self, zip_filename, base_dir, verbose=0,
+                         dry_run=0, compression=zipfile.ZIP_STORED):
+        # Like distutils "make_archive", except we can specify the
+        # compression to use - default is ZIP_STORED to keep the
+        # runtime performance up.
+        # Also, we don't append '.zip' to the filename.
+        from distutils.dir_util import mkpath
+        mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
+        def visit (z, dirname, names):
+            for name in names:
+                path = os.path.normpath(os.path.join(dirname, name))
+                if os.path.isfile(path):
+                    z.write(path, path)
+
+        if not dry_run:
+            z = zipfile.ZipFile(zip_filename, "w",
+                                compression=compression)
+            save_cwd = os.getcwd()
+            os.chdir(base_dir)
+            os.path.walk('', visit, z)
+            os.chdir(save_cwd)
+            z.close()
+
+        return zip_filename
+
 
 ################################################################
 
@@ -785,30 +823,6 @@ byte_compile(files, optimize=%s, force=%s,
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
 # byte_compile()
-
-# Like "make_archive", except we use ZIP_STORED to keep the perf of
-# the runtime up
-def make_lib_archive(base_name, base_dir, verbose=0, dry_run=0):
-    from distutils.dir_util import mkpath
-    import zipfile
-    zip_filename = base_name + ".zip"
-    mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
-    def visit (z, dirname, names):
-        for name in names:
-            path = os.path.normpath(os.path.join(dirname, name))
-            if os.path.isfile(path):
-                z.write(path, path)
-
-    if not dry_run:
-        z = zipfile.ZipFile(zip_filename, "w",
-                            compression=zipfile.ZIP_STORED)
-        save_cwd = os.getcwd()
-        os.chdir(base_dir)
-        os.path.walk('', visit, z)
-        os.chdir(save_cwd)
-        z.close()
-
-    return zip_filename
 
 # win32com makepy helper.
 def collect_win32com_genpy(path, typelibs):
