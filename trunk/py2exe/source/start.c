@@ -216,7 +216,7 @@ int run_script(void)
 	int rc;
 	char buffer[_MAX_PATH * 3];
 	snprintf(buffer, sizeof(buffer),
-		 "import sys; sys.path=[r'%s\\%s']; del sys",
+		 "import sys; sys.path=[r\"\"\"%s\\%s\"\"\"]; del sys",
 		 libdirname, pZipBaseName);
 	rc = PyRun_SimpleString(buffer);
 	if (rc == 0) {

@@ -1,5 +1,9 @@
 2004-06-08  Thomas Heller  <theller@python.net>
 
+	* source\start.c (run_script): Triple-quote sys.path with double
+	quotes to avoid problems if the directory contains single quotes
+	(double quotes are impossible on Windows).
+
 	* py2exe\build_exe.py: Support for precompiled .pyc and .pyo
 	files, based on a patch from Shane Holloway.
 
