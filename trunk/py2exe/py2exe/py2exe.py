@@ -325,33 +325,21 @@ class py2exe (Command):
             missing, extensions = self.fix_extmodules(missing, extensions,
                                                       sys.path + extra_path)
 
-##             warn_tcl = tcl_src_dir = tcl_dst_dir = None
-##             if "Tkinter" in mf.modules.keys():
-##                 import FixTk
-##                 try:
-##                     # The python2.0 way:
-##                     tcl_dir = os.environ["TCL_LIBRARY"]
-##                 except KeyError:
-##                     # The python1.5 way:
-##                     tcl_dir = FixTk.tcldir
-##                     if tcl_dir is not None:
-##                         tcl_src_dir = os.path.split(tcl_dir)[0]
-##                         tcl_src_dir = os.path.join(tcl_src_dir, "lib")
-##                         tcl_dst_dir = os.path.join(final_dir, "lib")
-##                 else:
-##                     # ... python2.0 way continued
-##                     tcl_src_dir = os.path.split(tcl_dir)[0]
-##                     tcl_dst_dir = os.path.join(final_dir, "tcl")
-##                 del FixTk
-
-##                 if tcl_src_dir:
-##                     self.announce("Copying TCL files...")
-##                     copy_tree(tcl_src_dir,
-##                               tcl_dst_dir,
-##                               verbose=self.verbose,
-##                               dry_run=self.dry_run)
-##                 else:
-##                     warn_tcl = 1 
+            tcl_src_dir = tcl_dst_dir = None
+            if "Tkinter" in mf.modules.keys():
+                import Tkinter
+                import _tkinter
+                tk = _tkinter.create()
+                tcl_dir = tk.call("info", "library")
+                del tk, _tkinter, Tkinter
+                tcl_src_dir = os.path.split(tcl_dir)[0]
+                tcl_dst_dir = os.path.join(final_dir, "tcl")
+                
+                self.announce("Copying TCL files...")
+                copy_tree(tcl_src_dir,
+                          tcl_dst_dir,
+                          verbose=self.verbose,
+                          dry_run=self.dry_run)
 
             # Collect all the dlls, so that binary dependencies can be
             # resolved.
@@ -437,11 +425,6 @@ class py2exe (Command):
                 if modname in import_hack.keys():
                     unfriendly_dlls.remove(dll)
 
-##            if warn_tcl:
-##                self.warn("*" * 73)
-##                self.warn("* The script %s seems to use Tkinter," % script)
-##                self.warn("* but no TCL installation was found.")
-                
             if unfriendly_dlls:
                 self.warn("*" * 73)
                 self.warn("* The following module(s) call PyImport_ImportModule:")
@@ -708,6 +691,8 @@ EXCLUDED_DLLS = (
     "comdlg32.dll",
     "crtdll.dll",
     "gdi32.dll",
+    "glu32.dll",
+    "opengl32.dll",
     "imm32.dll",
     "kernel32.dll",
     "mfc42.dll",
