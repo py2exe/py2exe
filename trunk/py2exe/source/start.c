@@ -452,5 +452,5 @@ int start(int argc, char **argv)
     /* Clean up */
     UnmapViewOfFile (arc_data);
     
-    return result;
+    return 0;
 }
