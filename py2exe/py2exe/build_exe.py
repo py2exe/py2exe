@@ -155,6 +155,16 @@ class py2exe(Command):
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
 
     def run(self):
+        build = self.reinitialize_command('build')
+        build.run()
+        sys_old_path = sys.path[:]
+        sys.path[:0] = [build.build_lib, build.build_platlib]
+        try:
+            self._run()
+        finally:
+            sys.path = sys_old_path
+
+    def _run(self):
         self.create_directories()
         self.plat_prepare()
         self.fixup_distribution()
