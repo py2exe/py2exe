@@ -9,8 +9,8 @@ Creates a single directory, which must be deployed completely.
 
 (Most of this is based on ideas of Mark Hammond:) Can create any
 number of console and gui executables in this directory, plus
-optionally a windows service exe, plus optionally an exe and dll com
-server.  The com servers can expose one or more com object classes.
+optionally windows service exes, plus optionally exe and dll com
+servers.  The com servers can expose one or more com object classes.
 
 All pure Python files are contained in a single zip archive, which is
 shared by all the executables.  The zip archive may also be used by

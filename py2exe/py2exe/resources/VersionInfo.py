@@ -26,6 +26,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.3  2003/12/29 13:44:57  theller
+# Adapt for Python 2.3.
+#
 # Revision 1.2  2003/09/18 20:19:57  theller
 # Remove a 2.3 warning, but mostly this checkin is to test the brand new
 # py2exe-checkins mailing list.

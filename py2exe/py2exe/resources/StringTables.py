@@ -28,6 +28,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.1  2003/08/29 12:30:52  mhammond
+# New py2exe now uses the old resource functions :)
+#
 # Revision 1.1  2002/01/29 09:30:55  theller
 # version 0.3.0
 #
