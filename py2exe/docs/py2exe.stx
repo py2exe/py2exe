@@ -6,12 +6,16 @@ py2exe
 
   Abstract
   
-    **py2exe** is a distutils extension to "compile" python scripts into
+    **py2exe** is a distutils extension to onvert python scripts into
     executable windows programs.
 
   News
 
-    **2000/01/24** -- *New release 0.1.1 fixes the bugs of the first beta-release
+    **2000/01/24** -- *<font color="red">Release 0.2.0 finds needed dlls automatically, has
+    new command-line options, can build programs containing modules
+    imported via the registry (pythoncom, pywintypes).</font>*
+
+    **2000/01/24** -- *Release 0.1.1 fixes the bugs of the first beta-release
     and should work as advertised.*
 
     **2000/01/19** -- *First public beta-version released and announced on comp.lang.python.*
@@ -47,10 +51,7 @@ py2exe
     and a sub-directory 'dist\myscript' will be created,
     containing the files 'myscript.exe' and 'python20.dll'.
     If your script uses compiled c-extension modules, they will be copied here
-    as well.
-    <br><small><font color="red">Currently dlls are not always found automatically: This
-    will be fixed in a later release.
-    In this case you have to copy them manually into the destination directory.</font></small>
+    as well, also all dlls needed at runtime.
 
     These files include everything that is needed for your program,
     even if the target computer doesn't have python installed.
@@ -60,6 +61,9 @@ py2exe
     **py2exe** uses python's modulefinder to load your script and find all
     python and extension modules needed to run it. Pure python modules
     are compiled into '.pyc' or '.pyo' files in a temporary directory.
+    Compiled extension modules ('.pyd') are also found and parsed for binary
+    dependencies.
+
     A zip-compatible archive will be built, containing all files from this
     directory as well as your script, and appended to a custom python
     interpreter supplied with **py2exe**.
@@ -70,9 +74,18 @@ py2exe
 
     In simple cases, only 'pythonxx.dll' is needed in addition to
     'myscript.exe'. If, however, your script needs extension modules,
-    unfortunately those cannot (currently) be included or imported
+    unfortunately those cannot be included or imported
     from the zip-archive, so they are needed as separate files (and
     are copied into the 'dist\myscript' directory).
+
+    Attention: **py2exe** tries to track down _all_ binary dependencies
+    for all pyd's and dll's copied to the dist directory recursively,
+    and copy all these dependend files into the dist directory.
+    **py2exe** has a builtin list of some windows system dlls which are
+    not copied, but this list can never be complete.
+    Before distributing these files please make sure that you
+    have the right to do so.
+    
 
   Reference
     
@@ -102,6 +115,11 @@ py2exe
     **--windows** or **-w** -- build a windows application, similar to
     running the script with 'pythonw.exe'
 
+    **--excludes** or **-e** *list* -- comma separated list of modules to exclude
+
+    **--includes** or **-i** *list* -- comma separated list of modules to include.
+    Note that *includes* overrides *excludes*.
+
     The following flags are not yet implemented:
 	
     **--unbuffered** or **-u** -- unbuffered binary *stdout* and *stderr*
@@ -118,7 +136,7 @@ py2exe
 	   "python.org":http://www.python.org/sigs/distutils-sig/download.html".
 
 	   To build the zip-compatible archive **py2exe** needs either a 'zip.exe'
-	   utility somewhere on the $PATH, or Jim Ahlstrom's zipfile-module.
+	   utility somewhere on the PATH, or Jim Ahlstrom's zipfile-module.
 
     Python 1.6 and later
 
@@ -128,19 +146,30 @@ py2exe
 
     Binaries (windows installer)
 
-	For Python 1.5: "py2exe-0.1.1.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py1.5.exe.
+      For Python 1.5: "py2exe-0.2.0.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py1.5.exe.
 
-	For Python 2.0: "py2exe-0.1.1.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py2.0.exe.
+      For Python 2.0: "py2exe-0.2.0.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py2.0.exe.
 
     Source code
 
-        Download "py2exe-0.1.1.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.zip.
+      Download "py2exe-0.2.0.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.zip.
+
+    Older versions still available
+
+      "py2exe-0.1.1.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py1.5.exe
+
+      "py2exe-0.1.1.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py2.0.exe
+
+      "py2exe-0.1.1.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.zip
 
     The project is hosted at "http://sourceforge.net/projects/py2exe/":http://sourceforge.net/projects/py2exe/.
 
   Feedback
 
-    Please send all suggestions, comments, flames, bug reports to "me":mailto:theller@python.net.
+    This is still an early release. <font color="red">I need feedback!</font>
+
+    If this works for you, or if it doesn't work at all, please drop "me":mailto:theller@python.net
+    a note.
 
     For bug reports it is most useful to include information about the python and windows version
     you use and the output of the "python setup.py py2exe" command.
@@ -152,7 +181,12 @@ py2exe
     prebuilt interpreters, so that eventually everything can be packed
     into a *single* file (which can be run without unpacking anything).
 
-    Look into the pythoncom and pywintypes issue.
+    Provide a possibility to copy a set of additional files and/or directories
+    to the dist directory.
+
+    Pack Tkinter programs?
+
+    Pack COM servers written in python?
 
   Related work
 
