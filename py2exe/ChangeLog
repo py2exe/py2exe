@@ -1,5 +1,7 @@
 2004-07-09  Thomas Heller  <theller@python.net>
 
+	*  (Message): py2exe 0.5.2 released.
+
 	* source\run_dll.c: I took out again Mark's threadstate patch, it
 	breaks registering dll COM servers.
 
