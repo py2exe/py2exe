@@ -26,6 +26,9 @@
 # $Id$
 #
 # $Log$
+# Revision 1.3  2004/01/16 10:45:31  theller
+# Move py2exe from the sandbox directory up to the root dir.
+#
 # Revision 1.3  2003/12/29 13:44:57  theller
 # Adapt for Python 2.3.
 #
@@ -173,6 +176,18 @@ class StringFileInfo(VS_STRUCT):
         self.items = [StringTable(name, strings)]
 
 class Var(VS_STRUCT):
+    # MSDN says:
+    # If you use the Var structure to list the languages your
+    # application or DLL supports instead of using multiple version
+    # resources, use the Value member to contain an array of DWORD
+    # values indicating the language and code page combinations
+    # supported by this file. The low-order word of each DWORD must
+    # contain a Microsoft language identifier, and the high-order word
+    # must contain the IBM® code page number. Either high-order or
+    # low-order word can be zero, indicating that the file is language
+    # or code page independent. If the Var structure is omitted, the
+    # file will be interpreted as both language and code page
+    # independent.
     wType = 0
     name = "Translation"
 
@@ -247,7 +262,7 @@ class Version(object):
         vs = VS_VERSIONINFO(self.version,
                             [StringFileInfo("040904B0",
                                             self.strings),
-                             VarFileInfo(0x040904B0)])
+                             VarFileInfo(0x04B00409)])
         return str(vs)
 
 def test():

@@ -1,3 +1,8 @@
+2004-03-12  Thomas Heller  <theller@python.net>
+
+	* py2exe\resources\VersionInfo.py: Version resource built by
+	py2exe was wrong: found by Roger Upole, reported on c.l.p
+
 2004-03-02  Thomas Heller  <theller@python.net>
 
 	* py2exe\boot_service.py: Print a message when a service exe is
