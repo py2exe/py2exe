@@ -1,3 +1,11 @@
+2004-04-28  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py: Run the 'build' command before actually
+	building the exe, and insert the lib and plat_lib directories to
+	sys.path.  After the exe is built, sys.path is restored.
+
+	http://sourceforge.net/tracker/?func=detail&atid=115583&aid=911596&group_id=15583
+
 2004-04-27  Thomas Heller  <theller@python.net>
 
 	* py2exe\build_exe.py: Fix ModuleFinders import_module() method,
