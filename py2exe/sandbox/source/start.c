@@ -37,7 +37,7 @@ struct scriptinfo {
 };
 
 extern void SystemError(int error, char *msg);
-run_script(void);
+int run_script(void);
 void fini(void);
 char *pScript;
 char dirname[_MAX_PATH];
