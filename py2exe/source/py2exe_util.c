@@ -6,24 +6,12 @@ static char module_doc[] =
 "Utility functions for the py2exe package";
 
 static char* searchpath;
-static PyListObject *py_result;
 
-static void SystemError(int error)
-{
-    LPVOID lpMsgBuf;
-    FormatMessage( 
-	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-	FORMAT_MESSAGE_FROM_SYSTEM,
-	NULL,
-	error,
-	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-	(LPSTR)&lpMsgBuf,
-	0,
-	NULL 
-	);
-    PyErr_SetString(PyExc_RuntimeError, lpMsgBuf);
-    LocalFree(lpMsgBuf);
-}
+static PyObject *py_result;
+
+/* Exception */
+static PyObject *BindError;
+
 
 BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
 			  PSTR ImageName,
@@ -40,7 +28,14 @@ BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
     case BindRvaToVaFailed:
     case BindNoRoomInImage:
     case BindImportProcedureFailed:
+	break;
+
     case BindImportProcedure:
+	if (0 == strcmp((LPSTR)Parameter, "PyImport_ImportModule")) {
+	    PyDict_SetItemString(py_result, ImageName, PyInt_FromLong(1));
+	}
+	break;
+
     case BindForwarder:
     case BindForwarderNOT:
     case BindImageModified:
@@ -56,9 +51,9 @@ BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
 	    return FALSE;
 	result = SearchPath(searchpath, DllName, NULL, sizeof(fname), fname, NULL);
 	if (result)
-	    PyList_Append((PyObject *)py_result, PyString_FromString(fname));
+	    PyDict_SetItemString(py_result, fname, PyInt_FromLong(0));
 	else
-	    PyList_Append((PyObject *)py_result, PyString_FromString(DllName));
+	    PyDict_SetItemString(py_result, DllName, PyInt_FromLong(0));
 	break;
     }
     return TRUE;
@@ -67,7 +62,7 @@ BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
 static PyObject *depends(PyObject *self, PyObject *args)
 {
     char *imagename;
-    PyListObject *plist;
+    PyObject *pdict;
     HINSTANCE hLib;
     BOOL(__stdcall *pBindImageEx)(
 	DWORD Flags,
@@ -95,7 +90,7 @@ static PyObject *depends(PyObject *self, PyObject *args)
 	return NULL;
     }
 
-    py_result = (PyListObject *)PyList_New(0);
+    py_result = PyDict_New();
     if (!pBindImageEx(BIND_NO_BOUND_IMPORTS | BIND_NO_UPDATE | BIND_ALL_IMAGES,
 		     imagename,
 		     searchpath,
@@ -103,13 +98,17 @@ static PyObject *depends(PyObject *self, PyObject *args)
 		     StatusRoutine)) {
 	FreeLibrary(hLib);
 	Py_DECREF(py_result);
-	PyErr_SetString(PyExc_RuntimeError, "could not bind");
+	PyErr_SetString(BindError, imagename);
 	return NULL;
     }
     FreeLibrary(hLib);
-    plist = py_result;
+    if (PyErr_Occurred()) {
+	Py_DECREF(py_result);
+	return NULL;
+    }
+    pdict = py_result;
     py_result = NULL;
-    return (PyObject *)plist;
+    return (PyObject *)pdict;
 }
 
 static PyObject *get_windir(PyObject *self, PyObject *args)
@@ -150,5 +149,14 @@ static PyMethodDef methods[] = {
 DL_EXPORT(void)
 initpy2exe_util(void)
 {
-    Py_InitModule3("py2exe_util", methods, module_doc);
+    PyObject *m, *d;
+
+    m = Py_InitModule3("py2exe_util", methods, module_doc);
+    if (m) {
+	d = PyModule_GetDict(m);
+
+	BindError = PyErr_NewException("py2exe_util.bind_error", NULL, NULL);
+	if (BindError)
+	    PyDict_SetItemString(d, "bind_error", BindError);
+    }
 }
