@@ -980,7 +980,7 @@ EXCLUDED_DLLS = (
     )
 
 def isSystemDLL(pathname):
-    if (string.lower(os.path.basename(pathname))) in EXCLUDED_DLLS:
+    if os.path.basename(pathname).lower() in EXCLUDED_DLLS:
         return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
     # Is it sufficient to use the Image Load Address?
