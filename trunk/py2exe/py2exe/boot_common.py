@@ -24,16 +24,16 @@ if sys.frozen == "windows_exe":
         softspace = 0
         _file = None
         _error = None
-        def write(self, text, alert=sys._MessageBox):
+        def write(self, text, alert=sys._MessageBox, fname=sys.executable + '.log'):
             if self._file is None and self._error is None:
-                fname = sys.executable + '.log'
                 try:
                     self._file = open(fname, 'a')
                 except Exception, details:
                     self._error = details
                     import atexit
                     atexit.register(alert, 0,
-                                    "The logfile '%s' could be opened:\n %s" % (fname, details),
+                                    "The logfile '%s' could not be opened:\n %s" % \
+                                    (fname, details),
                                     "Errors occurred")
                 else:
                     import atexit
