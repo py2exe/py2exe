@@ -1,3 +1,7 @@
+2004-07-08  Thomas Heller  <theller@python.net>
+
+	*  (Message): py2exe 0.5.1 released.
+
 2004-06-09  Thomas Heller  <theller@python.net>
 
 	* source\start.c (run_script): Return an exit code of 255 when
