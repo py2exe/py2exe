@@ -102,6 +102,7 @@ class ModuleFinder:
         self.replace_paths = replace_paths
         self.processed_paths = []   # Used in debugging only
         self.scan_extdeps = scan_extdeps
+        self.os_path = os.environ['PATH'] # save this
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -263,7 +264,7 @@ class ModuleFinder:
         try:
             fp, pathname, stuff = self.find_module(partname,
                                                    parent and parent.__path__)
-        except ImportError:
+        except ImportError:string.join(self.path, os.pathsep)
             self.msgout(3, "import_module ->", None)
             return None
         try:
@@ -418,10 +419,18 @@ class ModuleFinder:
         # the error output for '# cleanup[1] ....' lines.
         import re
         os.environ['PYTHONPATH'] = string.join(self.path, os.pathsep)
+        # We must include sys.path into PATH because otherwise dll's
+        # may not be found.
+        # Example: 'import dde' fails with 'win32ui.pyd not
+        # found on PATH' if 'import win32ui' is not done before.
+        os.environ['PATH'] = self.os_path + os.pathsep + string.join(self.path, os.pathsep)
+
         pattern = re.compile("import ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*) #")
         _, out, err = os.popen3('%s -S -v -c "import %s"' % \
                        (sys.executable, name))
         _ = out.read()
+        os.environ['PATH'] = self.os_path
+
         for line in err.readlines():
             result = pattern.match(line)
             if result:
