@@ -43,8 +43,6 @@ class py2exe (Command):
 
     # XXX need more options: unbuffered, includes, excludes, ???
     user_options = [
-##        ('bdist-dir=', 'd',
-##         "temporary directory for creating the distribution"),
         ('debug', 'g',
          "create runtime with debugging information"),
         ('dist-dir=', 'd',
@@ -149,8 +147,7 @@ class py2exe (Command):
 
             # Use the modulefinder to find dependend modules.
             #
-            self.announce("Searching modules needed to run '%s'" % script)
-            self.announce("Search path is:")
+            self.announce("Searching modules needed to run '%s' on path:" % script)
             self.announce(repr(extra_path + sys.path))
 
             m = ModuleFinder (path=extra_path + sys.path,
@@ -188,8 +185,8 @@ class py2exe (Command):
             final_dir = os.path.join(self.dist_dir, script_base)
             self.mkpath(final_dir)
 
-            missing = filter(lambda m, e=excludes: m not in e, m.badmodules.keys())
-
+            missing = filter(lambda n, e=excludes: n not in e, m.badmodules.keys())
+            
             # if build debug binary, use debug extension modules
             # instead of the release versions.
             missing, extensions = self.fix_extmodules(missing, extensions,
@@ -198,8 +195,9 @@ class py2exe (Command):
             if missing:
                 self.warn("*" * 48)
                 self.warn("* The following modules were not found:")
-                for n in missing:
-                    self.warn("*    " + n)
+                for name in missing:
+                    mod = m.badmodules.get(name, None)
+                    self.warn("*   %15s: %s" % (name, mod))
                 self.warn("*" * 48)
 
 
@@ -265,7 +263,7 @@ class py2exe (Command):
 
         # extension modules may be in missing because they may be present
         # in debug but not in release mode: search again
-        for name in missing[:]: # copy it, because we want to modify it
+        for name in missing[:]:
             try:
                 _, file, desc = imp.find_module(name + '_d', path)
             except ImportError:
@@ -313,7 +311,17 @@ class py2exe (Command):
         else:
             template = "python%s%s.dll"
         pythondll = (template % tuple(version))
-        for path in string.split(os.environ["PATH"], ';') + sys.path:
+        searchpath = string.split(os.environ["PATH"], ';')
+        try:
+            windir = os.environ['windir']
+        except KeyError:
+            pass
+        else:
+            searchpath.extend( \
+                [os.path.join(windir, 'system'),
+                 os.path.join(windir, 'system32')])
+        searchpath.extend(sys.path)
+        for path in searchpath:
             fullpath = os.path.join(path, pythondll)
             if os.path.isfile(fullpath):
                 self.copy_file(fullpath,
