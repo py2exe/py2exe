@@ -212,6 +212,41 @@ class py2exe(Command):
         # extension modules from packages, so we override the method
         # in charge here.
         class FixedModuleFinder(ModuleFinder):
+
+            def import_module(self, partname, fqname, parent):
+                # And another fix: unbounded recursion in ModuleFinder,
+                # see http://python.org/sf/876278
+                self.msgin(3, "import_module", partname, fqname, parent)
+                try:
+                    m = self.modules[fqname]
+                except KeyError:
+                    pass
+                else:
+                    self.msgout(3, "import_module ->", m)
+                    return m
+                if self.badmodules.has_key(fqname):
+                    self.msgout(3, "import_module -> None")
+                    return None
+                # start fix...
+                if parent and parent.__path__ is None:
+                    self.msgout(3, "import_module -> None")
+                    return None
+                # ...end fix
+                try:
+                    fp, pathname, stuff = self.find_module(partname,
+                                                           parent and parent.__path__, parent)
+                except ImportError:
+                    self.msgout(3, "import_module ->", None)
+                    return None
+                try:
+                    m = self.load_module(fqname, fp, pathname, stuff)
+                finally:
+                    if fp: fp.close()
+                if parent:
+                    setattr(parent, partname, m)
+                self.msgout(3, "import_module ->", m)
+                return m
+
             def find_all_submodules(self, m):
                 if not m.__path__:
                     return
