@@ -11,7 +11,7 @@ py2exe
 
   News
 
-    **2000/01/24** -- *New release 0.1.1 fixes all known bugs from the first beta-release
+    **2000/01/24** -- *New release 0.1.1 fixes the bugs of the first beta-release
     and should work as advertised.*
 
     **2000/01/19** -- *First public beta-version released and announced on comp.lang.python.*
@@ -45,17 +45,15 @@ py2exe
 	 python setup.py py2exe
 
     and a sub-directory 'dist\myscript' will be created,
-    containing the files 'myscript.exe' and 'python20.dll' [1].
+    containing the files 'myscript.exe' and 'python20.dll'.
     If your script uses compiled c-extension modules, they will be copied here
     as well.
+    <br><small><font color="red">Currently dlls are not always found automatically: This
+    will be fixed in a later release.
+    In this case you have to copy them manually into the destination directory.</font></small>
 
     These files include everything that is needed for your program,
     even if the target computer doesn't have python installed.
-
-    Note
-
-      Note about what disutils can do for the python community AND you.
-
 
   How does it work?
 
@@ -112,33 +110,31 @@ py2exe
 
   Requirements for using **py2exe**
 
-    Python 1.5:
-    
-	"Distutils":http://www.python.org/sigs/distutils-sig/" is required.
-	It is included in Python 1.6 and later, if you are using python 1.5
-	you can download and install the latest release from
-	"python.org":http://www.python.org/sigs/distutils-sig/download.html".
+    Python 1.5
 
-	To build the zip-compatible archive **py2exe** needs either a 'zip.exe'
-	utility somewhere on the $PATH, or Jim Ahlstrom's zipfile-module.
+	   "Distutils":http://www.python.org/sigs/distutils-sig/" is required.
+	   It is included in Python 1.6 and later, if you are using python 1.5
+	   you can download and install the latest release from
+	   "python.org":http://www.python.org/sigs/distutils-sig/download.html".
 
-    Python 1.6 or later:
+	   To build the zip-compatible archive **py2exe** needs either a 'zip.exe'
+	   utility somewhere on the $PATH, or Jim Ahlstrom's zipfile-module.
+
+    Python 1.6 and later
 
         Everything is already included in the python distribution.
-
-    A C-compiler is *not* required.
 
   Download and project information
 
     Binaries (windows installer)
 
-	For Python 1.5: "py2exe-0.1.1.win32-py1.5.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.1.win32-py1.5.exe.
+	For Python 1.5: "py2exe-0.1.1.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py1.5.exe.
 
-	For Python 2.0: "py2exe-0.1.1.win32-py2.0.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.1.win32-py2.0.exe.
+	For Python 2.0: "py2exe-0.1.1.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py2.0.exe.
 
     Source code
 
-        Download "py2exe-0.1.1.zip":http://download.sourceforge.net/py2exe/py2exe-0.1.1.zip.
+        Download "py2exe-0.1.1.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.zip.
 
     The project is hosted at "http://sourceforge.net/projects/py2exe/":http://sourceforge.net/projects/py2exe/.
 
@@ -147,7 +143,7 @@ py2exe
     Please send all suggestions, comments, flames, bug reports to "me":mailto:theller@python.net.
 
     For bug reports it is most useful to include information about the python and windows version
-    you use and the output of the py2exe-command.
+    you use and the output of the "python setup.py py2exe" command.
 
 
   Future plans
@@ -169,16 +165,14 @@ py2exe
 
     Advantages:
 
+      - Builds also debug versions of your programs.
+
       - Complete control over python's optimization (-O and -OO flags)
         and buffering of stdout and stderr (-u flag) in the resulting
         executable.
 
-      - You can build debug versions of your program, which
-        will also use the debugging python dll and debugging
-        versions of c-extension modules.
-
-      - **py2exe** is provided with complete source-code so that you can easily
-      rebuild the binaries (C-compiler required).
+      - The sourcecode is distributed with a distutils setup script,
+      so you can easily rebuild it yourself (C-compiler required).
 
     Disadvantages:
 
@@ -186,7 +180,3 @@ py2exe
           programs.
 
       - Since I do not use Tkinter, I did not care about that.
-
-
-  .. [1] Currently the python interpreter dlls are not always found automatically.
-    In this case you have to copy them manually into the destination directory.
