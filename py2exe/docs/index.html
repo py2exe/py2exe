@@ -41,6 +41,19 @@ other standalone programs.
 <h2>News</h2>
 
 <dl>
+<dt><b>2001/04/26</b></dt>
+<dd><i>Release 0.2.6:
+Support (and a binary distribution) for Python 2.1.<br>
+Some changes from Barry Scott (thanks, Barry): <br>
+</i><tt>PYTHONHOME</tt><i> and </i><tt>PYTHONPATH</tt><i>
+do no longer pollute subprocesses:
+running </i><tt>os.system('python -c "import os"')</tt><i>
+now works as expected from the executable.<br>
+The packed executable now returns an exit code of 0 or the value given to
+</i><tt>sys.exit(n)</tt><i>.
+</i>
+</dd>
+
 <dt><b>2001/04/05</b></dt>
 <dd><i>Release 0.2.5:
 Full Tkinter support, <b>py2exe</b> automatically copies your
@@ -301,14 +314,16 @@ Python 1.6 and later</h3>
 <p>The binary distributions now contain an uninstaller, you can uninstall <b>py2exe</b>
 from the Control Panel applet (but you won't ;-).<br>
 
-<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.win32-py2.0.exe">py2exe-0.2.5.win32-py2.0.exe</a>.
+<p>For Python 2.1: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.1.exe">py2exe-0.2.6.win32-py2.1.exe</a>.
 
-<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.win32-py1.5.exe">py2exe-0.2.5.win32-py1.5.exe</a>.
+<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.0.exe">py2exe-0.2.6.win32-py2.0.exe</a>.
+
+<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py1.5.exe">py2exe-0.2.6.win32-py1.5.exe</a>.
 
 <p>A Python 2.1 version will be published as soon as the final release is out.
 
 <h3>Source code</h3>
-<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.5.zip">py2exe-0.2.5.zip</a>.
+<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.zip">py2exe-0.2.6.zip</a>.
 <h3>
 Project hosting</h3>
 <p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
