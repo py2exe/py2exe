@@ -699,10 +699,11 @@ class py2exe(Command):
 
 class FileSet:
     # A case insensitive but case preserving set of files
-    def __init__(self, *args):
+    def __init__(self, iterable=None):
         self._dict = {}
-        for arg in args:
-            self.add(arg)
+        if iterable is not None:
+            for arg in iterable:
+                self.add(arg)
 
     def __repr__(self):
         return "<FileSet %s at %x>" % (self._dict.values(), id(self))
@@ -713,7 +714,7 @@ class FileSet:
     def remove(self, fname):
         del self._dict[fname.upper()]
 
-    def contains(self, fname):
+    def __contains__(self, fname):
         return fname.upper() in self._dict.keys()
 
     def __getitem__(self, index):
@@ -723,24 +724,29 @@ class FileSet:
     def __len__(self):
         return len(self._dict)
 
+    def copy(self):
+        res = FileSet()
+        res._dict.update(self._dict)
+        return res
+
 # class FileSet()
 
 def bin_depends(path, images, excluded_dlls):
     import py2exe_util
     warnings = FileSet()
-    images = FileSet(*images)
+    images = FileSet(images)
     dependents = FileSet()
     while images:
-        for image in images:
+        for image in images.copy():
             images.remove(image)
-            if not dependents.contains(image):
+            if not image in dependents:
                 dependents.add(image)
                 abs_image = os.path.abspath(image)
                 loadpath = os.path.dirname(abs_image) + ';' + path
                 for result in py2exe_util.depends(image, loadpath).items():
                     dll, uses_import_module = result
-                    if not images.contains(dll) \
-                       and not dependents.contains(dll) \
+                    if not dll in images \
+                       and not dll in dependents \
                        and not os.path.basename(dll).lower() in excluded_dlls \
                        and not isSystemDLL(dll):
                         images.add(dll)
