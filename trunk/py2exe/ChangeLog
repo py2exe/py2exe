@@ -1,3 +1,8 @@
+2004-06-09  Thomas Heller  <theller@python.net>
+
+	* source\start.c (run_script): Return an exit code of 255 when
+	there's an uncatched exception in the main script.
+
 2004-06-08  Thomas Heller  <theller@python.net>
 
 	* py2exe\boot_service.py: Register service dependencies when a
