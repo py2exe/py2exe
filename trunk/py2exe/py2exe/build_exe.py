@@ -193,7 +193,7 @@ class py2exe(Command):
 
         # all of these contain module names
         required_modules = []
-        for target in dist.com_server + dist.service:
+        for target in dist.com_server + dist.service + dist.ctypes_com_server:
             required_modules.extend(target.modules)
         # and these contains file names
         required_files = [target.script
@@ -221,7 +221,7 @@ class py2exe(Command):
         self.find_needed_modules(mf, required_files, required_modules)
 
         print "*** parsing results ***"
-        py_files, extensions = self.parse_mf_results(mf)
+        py_files, extensions, builtins = self.parse_mf_results(mf)
 
         if self.xref:
             mf.create_xref()
@@ -450,6 +450,11 @@ class py2exe(Command):
                                            arcname)
                 self.comserver_files.append(dst)
 
+        for target in dist.ctypes_com_server:
+                dst = self.build_comserver(target, self.get_ctypes_comdll_template(),
+                                           arcname, boot_script="ctypes_com_server")
+                self.comserver_files.append(dst)
+
         if dist.zipfile is None:
             os.unlink(arcname)
 
@@ -472,11 +477,15 @@ class py2exe(Command):
     def get_comdll_template(self):
         return is_debug_build and "run_dll_d.dll" or "run_dll.dll"
 
+    def get_ctypes_comdll_template(self):
+        return is_debug_build and "run_ctypes_dll_d.dll" or "run_ctypes_dll.dll"
+
     def fixup_distribution(self):
         dist = self.distribution
         
         # Convert our args into target objects.
         dist.com_server = FixupTargets(dist.com_server, "modules")
+        dist.ctypes_com_server = FixupTargets(dist.ctypes_com_server, "modules")
         dist.service = FixupTargets(dist.service, "modules")
         dist.windows = FixupTargets(dist.windows, "script")
         dist.console = FixupTargets(dist.console, "script")
@@ -511,7 +520,7 @@ class py2exe(Command):
         return os.path.join(os.path.dirname(thisfile),
                             "boot_" + boot_type + ".py")
 
-    def build_comserver(self, target, template, arcname):
+    def build_comserver(self, target, template, arcname, boot_script="com_servers"):
         # Build a dll and an exe executable hosting all the com
         # objects listed in module_names.
         # The basename of the dll/exe is the last part of the first module.
@@ -519,7 +528,7 @@ class py2exe(Command):
 
         # Setup the variables our boot script needs.
         vars = {"com_module_names" : target.modules}
-        boot = self.get_boot_script("com_servers")
+        boot = self.get_boot_script(boot_script)
         # and build it
         return self.build_executable(target, template, arcname, boot, vars)
 
@@ -555,6 +564,8 @@ class py2exe(Command):
         return self.build_executable(target, template, arcname, None, vars)
 
     def build_executable(self, target, template, arcname, script, vars={}):
+        print "build_executable\n\t", target, template, arcname, script, vars
+
         # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
@@ -812,8 +823,7 @@ class py2exe(Command):
         # Retrieve modules from modulefinder
         py_files = []
         extensions = []
-
-##        needed_builtins = sets.Set()
+        builtins = []
         
         for item in mf.modules.values():
             # There may be __main__ modules (from mf.run_script), but
@@ -831,7 +841,6 @@ class py2exe(Command):
                 if suffix in _py_suffixes:
                     py_files.append(item)
                 elif suffix in _c_suffixes:
-##                    needed_builtins.add(item.__name__)
                     extensions.append(item)
                     loader = self.create_loader(item)
                     if loader:
@@ -839,18 +848,14 @@ class py2exe(Command):
                 else:
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
-##            else:
-##                needed_builtins.add(item.__name__)
-
-##        for name in needed_builtins:
-##            print "extern void init%s(void);" % name
-##        for name in needed_builtins:
-##            print '    {"%s", init%s}' % (name, name)
+            else:
+                builtins.append(item.__name__)
 
         # sort on the file names, the output is nicer to read
         py_files.sort(lambda a, b: cmp(a.__file__, b.__file__))
         extensions.sort(lambda a, b: cmp(a.__file__, b.__file__))
-        return py_files, extensions
+        builtins.sort()
+        return py_files, extensions, builtins
 
     def plat_finalize(self, modules, py_files, extensions, dlls):
         # platform specific code for final adjustments to the
@@ -963,6 +968,9 @@ class py2exe(Command):
 
         if self.distribution.com_server:
             mf.run_script(self.get_boot_script("com_servers"))
+
+        if self.distribution.ctypes_com_server:
+            mf.run_script(self.get_boot_script("ctypes_com_server"))
 
         if self.distribution.service:
             mf.run_script(self.get_boot_script("service"))
