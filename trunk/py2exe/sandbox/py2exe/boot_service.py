@@ -1,5 +1,5 @@
 # boot_service.py
-
+import sys
 # We assume that py2exe has magically set service_module_names
 # to the module names that expose the services we host.
 service_modules = []
@@ -23,11 +23,5 @@ def fake_getline(filename, lineno):
     return ''
 linecache.orig_getline = linecache.getline
 linecache.getline = fake_getline
-
-try:
-    import servicemanager
-    print "It looks like we are being run as a service!"
-except ImportError:
-    print "It looks like we are running as a normal program"
 
 # nothing more to do!
