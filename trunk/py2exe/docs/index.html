@@ -46,6 +46,18 @@ href="LICENSE.txt">license</a>. <!--............................................
 
 <h2>News</h2>
 <dl>
+      <dt><b>2002/05/07</b></dt>
+      <dd><i>Release 0.3.3:
+	  Services now print a readable traceback to the eventlog (or the console
+	  if run with the --debug flag).<br>
+	  Services' _svc_deps_ are now supported - thanks to Matthew King for the patches.<br>
+	  Fixed the broken ModuleFinder included in previous releases.<br>
+	  py2exe should run again under Win98.<br>
+	  Yasushi Masuda has translated this page into Japanese:
+	  <a href="http://www.python.jp/Zope/articles/tips/py2exe">
+	    http://www.python.jp/Zope/articles/tips/py2exe
+	  </a>.
+	</i></dd>
   <dt><b>2002/02/01</b></dt>
     <dd><i>Release 0.3.1: Fixed a bug which prevented using the -O flag.
 	   Many thanks to Peter Goode for finding this!</i></dd>
@@ -115,6 +127,7 @@ setup function.</p>
 
 <p>Here's a simple one:</p>
 <pre>
+
 # setup.py
 from distutils.core import setup
 import py2exe
@@ -122,11 +135,14 @@ import py2exe
 setup(name="myscript",
       scripts=["myscript.py"],
 )
+
 </pre>
 
 <p>Running:</p>
 <pre>
+
 python setup.py py2exe --help
+
 </pre>
 
 <p>will display all available command-line flags for the <b>py2exe</b>
@@ -134,7 +150,9 @@ command.</p>
 
 <p>Now you can call the setup script like this:</p>
 <pre>
+
 python setup.py py2exe
+
 </pre>
 
 <p>and a sub-directory <tt>dist\myscript</tt> will be created, containing the
@@ -159,6 +177,7 @@ copied.</p>
 
 <p>Here's an example:</p>
 <pre>
+
 # setup.py
 from distutils.core import setup
 import glob
@@ -171,6 +190,7 @@ setup(name="myscript",
                   ("fonts",
                    glob("fonts\\*.fnt"))],
 )
+
 </pre>
 
 <p>This would create a subdirectory <tt>bitmaps</tt> in
@@ -220,6 +240,7 @@ named <tt>setup.cfg</tt>, and placed in the same directory where your setup scri
 stored.<br>
 This sample shows the valid entries:
 <pre>
+
 [py2exe]
 version-companyname=Your company
 version-legalcopyright=No copyright
@@ -228,6 +249,7 @@ version-fileversion = 1.0.0.1
 version-legaltrademarks = The usual crap
 version-productname = A Product? LOL!
 version-productversion = 0.0.0.1
+
 </pre>
 </p>
 <p>
@@ -344,8 +366,9 @@ documentation</a>. <!--.........................................................
 required. You can download and install the latest release from <a
 href="http://www.python.org/sigs/distutils-sig/download.html">python.org</a>.</p>
 
-<p>To build the zip-compatible archive <b>py2exe</b> needs a <tt>zip.exe</tt>
-utility somewhere on the PATH, or Jim Ahlstrom's zipfile-module.</p>
+<p><b>py2exe</b> needs a <tt>zip.exe</tt>
+utility which understands the <tt>-rq</tt> flag
+somewhere on the PATH, or Jim Ahlstrom's zipfile-module.</p>
 
 <h3>Python 2.0 and later</h3>
 
@@ -364,21 +387,21 @@ in the <em>files</em> section.
 <b>py2exe</b> from the Control Panel applet (but you won't ;-).</p>
 
 <p>For Python 2.2: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.1.win32-py2.2.exe">py2exe-0.3.1.win32-py2.2.exe</a>.
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.2.exe">py2exe-0.3.3.win32-py2.2.exe</a>.
 <br>
 For Python 2.1: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.1.win32-py2.1.exe">py2exe-0.3.1.win32-py2.1.exe</a>.
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.1.exe">py2exe-0.3.3.win32-py2.1.exe</a>.
 <br>
 For Python 2.0: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.1.win32-py2.0.exe">py2exe-0.3.1.win32-py2.0.exe</a>.
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py2.0.exe">py2exe-0.3.3.win32-py2.0.exe</a>.
 <br>
 For Python 1.5: <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.1.win32-py1.5.exe">py2exe-0.3.1.win32-py1.5.exe</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.win32-py1.5.exe">py2exe-0.3.3.win32-py1.5.exe</a>.</p>
 
 <h3>Source code</h3>
 
 <p>Download <a
-href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.1.zip">py2exe-0.3.1.zip</a>.</p>
+href="http://prdownloads.sourceforge.net/py2exe/py2exe-0.3.3.zip">py2exe-0.3.3.zip</a>.</p>
 
 <h3>Sample files</h3>
 <p>(not too many, currently)</p>
@@ -447,7 +470,11 @@ file (which can be run without unpacking anything).
 </p>
 
 <h2>Links</h2>
-
+<p>Yasushi Masuda has translated this page into Japanese:
+<a href="http://www.python.jp/Zope/articles/tips/py2exe">
+http://www.python.jp/Zope/articles/tips/py2exe
+</a>.
+</p>
 <p>Here is a preliminary <a
 href="http://aspn.activestate.com/ASPN/Mail/Message/543305">recipe</a> how to
 build local <b>COM servers</b> with <b>py2exe</b>, and <a
