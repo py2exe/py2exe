@@ -9,8 +9,11 @@ import sys, os, imp, types
 import marshal
 import zipfile
 
-import _sre # any module known to be a .pyd
-is_debug_build = _sre.__file__.find("_d")>=0
+import imp
+is_debug_build = False
+for ext, _, _ in imp.get_suffixes():
+    if ext == "_d.pyd":
+        is_debug_build = True
 
 if is_debug_build:
     python_dll = "python%d%d_d.dll" % sys.version_info[:2]
@@ -463,11 +466,6 @@ class py2exe(Command):
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
         from py2exe_util import add_resource, add_icon
-        if is_debug_build:
-            base_d, ext_d = os.path.splitext(template)
-            template_d = base_d + "_d" + ext_d
-            template = template_d
-
         ext = os.path.splitext(template)[1]
         exe_base = target.get_dest_base()
         exe_path = os.path.join(self.dist_dir, exe_base + ext)
