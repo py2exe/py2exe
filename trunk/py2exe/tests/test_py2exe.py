@@ -6,6 +6,57 @@ def skip_TEST(*args):
     pass
 
 try:
+    import win32serviceutil
+except ImportError:
+    print "service not tested"
+except:
+    TEST(r"""
+>>> build('myservice', args=['-s', 'MyService', '-e', 'perfmon'])
+Built File dist\myservice\myservice.exe
+Z Scripts.py2exe/
+Z Scripts.py2exe/support.py
+Z StringIO.pyc
+Z UserDict.pyc
+Z __service__.pyc
+Z copy.pyc
+Z copy_reg.pyc
+Z dospath.pyc
+Z getopt.pyc
+Z imputil.pyc
+Z macpath.pyc
+Z ntpath.pyc
+Z os.pyc
+Z pickle.pyc
+Z popen2.pyc
+Z posixpath.pyc
+Z pre.pyc
+Z re.pyc
+Z repr.pyc
+Z sre.pyc
+Z sre_compile.pyc
+Z sre_constants.pyc
+Z sre_parse.pyc
+Z stat.pyc
+Z string.pyc
+Z tempfile.pyc
+Z types.pyc
+Z win32con.pyc
+Z win32evtlogutil.pyc
+Z win32serviceutil.pyc
+Z winerror.pyc
+------------------------------------------
+F PyWinTypes%(winver)s.dll
+F _sre.pyd
+F myservice.exe
+F python%(winver)s.dll
+F win32api.pyd
+F win32event.pyd
+F win32evtlog.pyd
+F win32service.pyd
+++++++++++++++++++++++++++++++++++++++++++
+""")
+
+try:
     import pygame
 except ImportError:
     print "pygame not tested"
@@ -15,6 +66,7 @@ else:
 """data_files=[('data', ['pygame-examples\\data\\liquid.gif'])], """
 """args=['-e', 'win32api,zlib', """
 """'-i', 'pygame.version, pygame.base, pygame.rect, pygame.surflock, pygame.surface,pygame.cdrom,pygame.display,pygame.event,pygame.key,pygame.mouse,pygame.time,pygame.joystick,pygame.rwobject,pygame.image,pygame.mixer_music'])
+Built File dist\liquid\liquid.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -409,6 +461,7 @@ F xmltok.dll
 
 TEST(r"""
 >>> build('test_popen', args=['-e', 'win32api'])
+Built File dist\test_popen\test_popen.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -443,6 +496,7 @@ F test_popen.exe
 
 TEST(r"""
 >>> build('test_system', args=['-e', 'win32api'])
+Built File dist\test_system\test_system.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -479,8 +533,9 @@ try:
 except ImportError:
     print "Numeric not tested"
 else:
-    TEST("""
+    TEST(r"""
 >>> build('test_numeric')
+Built File dist\test_numeric\test_numeric.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -499,8 +554,9 @@ try:
 except ImportError:
     print "dde not tested"
 else:
-    TEST("""
+    TEST(r"""
 >>> build('test_dde')
+Built File dist\test_dde\test_dde.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -519,8 +575,9 @@ try:
 except ImportError:
     print "win32 not tested"
 else:
-    TEST("""
+    TEST(r"""
 >>> build('win32')
+Built File dist\win32\win32.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -541,8 +598,9 @@ try:
 except ImportError:
     print "Tkinter not tested"
 else:
-    TEST("""
+    TEST(r"""
 >>> build('test_hanoi', args=['-e', 'win32api'])
+Built File dist\test_hanoi\test_hanoi.exe
 Z FixTk.pyc
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
@@ -589,8 +647,9 @@ try:
 except ImportError:
     print "wxPython not tested"
 else:
-    TEST("""
+    TEST(r"""
 >>> build('test_wx', args=['-e', 'win32api'])
+Built File dist\test_wx\test_wx.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
@@ -650,8 +709,9 @@ F wxmsw232.dll
 ++++++++++++++++++++++++++++++++++++++++++
 """)
 
-TEST("""
+TEST(r"""
 >>> build('test_import')
+Built File dist\test_import\test_import.exe
 Z Scripts.py2exe/
 Z Scripts.py2exe/__main__.py
 Z Scripts.py2exe/support.py
