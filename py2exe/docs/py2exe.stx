@@ -11,8 +11,8 @@ py2exe
 
   News
 
-    **2001/02/02** -- *<font color="red">Release 0.2.1: the* '--includes' *option
-    now understands hierachical (dotted) module names and fixes the*
+    **2001/02/02** -- *<font color="red">Release 0.2.1:* '--includes'
+    *now understands hierachical (dotted) module names, fixed the*
     'AttributeError: __ispkg__' *bug, which prevented running the built executables
     in rare cases.</font>*
 
