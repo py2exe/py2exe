@@ -5,9 +5,35 @@
 static char module_doc[] =
 "Utility functions for the py2exe package";
 
+static char *FormatError(DWORD code)
+{
+    LPVOID lpMsgBuf;
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
+		  | FORMAT_MESSAGE_FROM_SYSTEM,
+		  NULL,
+		  code,
+		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		  (LPSTR) &lpMsgBuf,
+		  0,
+		  NULL);
+    return (char *)lpMsgBuf;
+}
+
 static PyObject *SystemError(int code, char *msg)
 {
-    PyErr_SetString(PyExc_RuntimeError, msg);
+    LPVOID lpMsgBuf;
+    char Buffer[4096];
+    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
+		  | FORMAT_MESSAGE_FROM_SYSTEM,
+		  NULL,
+		  code,
+		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		  (LPSTR) &lpMsgBuf,
+		  0,
+		  NULL);
+    sprintf(Buffer, "%s: %s", msg, lpMsgBuf);
+    LocalFree (lpMsgBuf);
+    PyErr_SetString(PyExc_RuntimeError, Buffer);
     return NULL;
 }
 
@@ -139,11 +165,11 @@ static PyObject *update_icon(PyObject *self, PyObject *args)
     /* from the .ico file */
     ICONDIRHEADER *pidh;
     WORD idh_size;
-
+    
     /* for the resources */
     GRPICONDIRHEADER *pgidh = NULL;
     WORD gidh_size;
-
+    
     if (!PyArg_ParseTuple(args, "ss|i", &exename, &iconame, &bDelete))
 	return NULL;
 
