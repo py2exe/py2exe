@@ -44,6 +44,7 @@ extern void SystemError(int error, char *msg);
 int run_script(void);
 void fini(void);
 char *pScript;
+char *pZipBaseName;
 int numScriptBytes;
 char dirname[_MAX_PATH]; // my directory
 char libdirname[_MAX_PATH]; // library directory - probably same as above.
@@ -98,14 +99,14 @@ int init_with_instance(HMODULE hmod)
 	   home directory from that.
 	*/
 	char buffer[_MAX_PATH + 32];
-	char *p_zip_filename = pScript - 1;
 	char *fname;
 	int lib_dir_len;
-	while (p_zip_filename > p_script_info->zippath && \
-		   *(p_zip_filename-1) != '\\')
-		p_zip_filename--;
+	pZipBaseName = pScript - 1;
+	while (pZipBaseName > p_script_info->zippath && \
+		   *(pZipBaseName-1) != '\\')
+		pZipBaseName--;
 	strcpy(libdirname, dirname);
-	lib_dir_len = p_zip_filename-p_script_info->zippath; /* incl. tail slash */
+	lib_dir_len = pZipBaseName-p_script_info->zippath; /* incl. tail slash */
 	if (lib_dir_len) {
 		char *p = libdirname+strlen(libdirname);
 		*p++ = '\\';
@@ -128,7 +129,8 @@ int init_with_instance(HMODULE hmod)
  * We need the module's directory, because zipimport needs zlib.pyd.
  * And, of course, the zipfile itself.
  */
-	sprintf(buffer, "PYTHONPATH=%s;%s\\%s", libdirname, libdirname, p_zip_filename);
+	sprintf(buffer, "PYTHONPATH=%s;%s\\%s",
+			libdirname, libdirname, pZipBaseName);
 	_putenv (buffer);
 	_putenv ("PYTHONSTARTUP=");
 	_putenv ("PYTHONOPTIMIZE=");
@@ -201,8 +203,8 @@ int run_script(void)
     char buffer[_MAX_PATH * 3];
     snprintf(buffer, sizeof(buffer),
 	     "import sys; sys.path=[r'%s', r'%s\\%s']",
-	     dirname,
-	     dirname, p_script_info->zippath);
+	     libdirname,
+	     libdirname, pZipBaseName);
     rc = PyRun_SimpleString(buffer);
     if (rc == 0) {
 		/* load the code objects to execute */
