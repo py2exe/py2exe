@@ -98,7 +98,7 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		/* If the zip path has any path component, then build our Python
 		   home directory from that.
 		*/
-		char buffer[_MAX_PATH + 32];
+		char buffer[_MAX_PATH * 3 + _MAX_FNAME + _MAX_EXT];
 		char *fname;
 		int lib_dir_len;
 		pZipBaseName = pScript - 1;
