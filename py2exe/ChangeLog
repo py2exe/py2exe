@@ -1,0 +1,19 @@
+2004-03-02  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py: makepy code generation with bForDemand=True is buggy.
+	Use bForDemand=False instead.
+	
+
+2004-02-17  Thomas Heller  <theller@python.net>
+
+	* source\start.c (init_with_instance): Fixed a bufferoverflow when
+	the exe is run in a directory with a long name, found by Ralf Sieger.
+	http://sourceforge.net/tracker/index.php?func=detail&aid=893310&group_id=15583&atid=115583
+
+	* py2exe\boot_common.py: Fix two problems found by Mathew
+	Thornley: Could not open the logfile because the 'sys' symbol was
+	no longer defined. Wrong wording when the logfile could not be
+	opened.
+	http://sourceforge.net/tracker/index.php?func=detail&aid=887856&group_id=15583&atid=115583
+	http://sourceforge.net/tracker/index.php?func=detail&aid=887855&group_id=15583&atid=115583
+	
