@@ -42,6 +42,7 @@ if sys.frozen == "windows_exe":
                                     "Errors occurred")
             if self._file is not None:
                 self._file.write(text)
+                self._file.flush()
     sys.stderr = Stderr()
     del sys._MessageBox
     del Stderr
