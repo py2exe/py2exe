@@ -169,72 +169,22 @@ class py2exe(Command):
         self.dll_excludes = fancy_split(self.dll_excludes)
 
     def run(self):
-        # refactor, refactor, refactor!
-        abspath=os.path.abspath
-        bdist_base = self.get_finalized_command('bdist').bdist_base
-        self.bdist_dir = os.path.join(bdist_base, 'winexe')
-
-        self.collect_dir = abspath(os.path.join(self.bdist_dir, "collect"))
-        self.mkpath(self.collect_dir)
-        self.temp_dir = abspath(os.path.join(self.bdist_dir, "temp"))
-        self.dist_dir = abspath(self.dist_dir)
-        self.mkpath(self.temp_dir)
-        self.mkpath(self.dist_dir)
-
-        self.lib_dir = os.path.join(self.dist_dir,
-                                    os.path.dirname(self.distribution.zipfile))
-        self.mkpath(self.lib_dir)
-
+        self.create_directories()
         self.plat_prepare()
+        self.fixup_distribution()
 
-        if 1:
-            # XXX separate method?
-            dist = self.distribution
+        dist = self.distribution
 
-            # Convert our args into target objects.
-            dist.com_server = FixupTargets(dist.com_server, "modules")
-            dist.service = FixupTargets(dist.service, "modules")
-            dist.windows = FixupTargets(dist.windows, "script")
-            dist.console = FixupTargets(dist.console, "script")
+        # all of these contain module names
+        required_modules = []
+        for target in dist.com_server + dist.service:
+            required_modules.extend(target.modules)
+        # and these contains file names
+        required_files = [target.script
+                          for target in dist.windows + dist.console]
 
-            # make sure all targets use the same directory, this is
-            # also the directory where the pythonXX.dll must reside
-            import sets
-            paths = sets.Set()
-            for target in dist.com_server + dist.service \
-                    + dist.windows + dist.console:
-                paths.add(os.path.dirname(target.get_dest_base()))
-
-            if len(paths) > 1:
-                raise DistutilsOptionError, \
-                      "all targets must use the same directory: %s" % \
-                      [p for p in paths]
-            if paths:
-                exe_dir = paths.pop() # the only element
-                if os.path.isabs(exe_dir):
-                    raise DistutilsOptionError, \
-                          "exe directory must be relative: %s" % exe_dir
-                self.exe_dir = os.path.join(self.dist_dir, exe_dir)
-                self.mkpath(self.exe_dir)
-            else:
-                # Do we allow to specify no targets?
-                # We can at least build a zipfile...
-                self.exe_dir = self.lib_dir
-            # XXX end of separate method
-
-            # all of these contain module names
-            required_modules = []
-            for target in dist.com_server:
-                required_modules.extend(target.modules)
-            for target in dist.service:
-                required_modules.extend(target.modules)
-
-            # and these contains file names
-            required_files = []
-            for target in dist.windows:
-                required_files.append(target.script)
-            for target in dist.console:
-                required_files.append(target.script)
+        ################
+        # refactor, refactor, refactor!
 
         self.includes.append("zlib") # needed for zipimport
         self.includes.append("warnings") # needed by Python itself
@@ -262,7 +212,34 @@ class py2exe(Command):
         self.find_needed_modules(mf, required_files, required_modules)
 
         py_files, extensions = self.parse_mf_results(mf)
+        self.plat_finalize(mf.modules, py_files, extensions)
 
+        self.create_binaries(py_files, extensions)
+
+        if mf.any_missing():
+            print "The following modules appear to be missing"
+            print mf.any_missing()
+
+    def create_directories(self):
+        bdist_base = self.get_finalized_command('bdist').bdist_base
+        self.bdist_dir = os.path.join(bdist_base, 'winexe')
+
+        self.collect_dir = os.path.abspath(os.path.join(self.bdist_dir, "collect"))
+        self.mkpath(self.collect_dir)
+
+        self.temp_dir = os.path.abspath(os.path.join(self.bdist_dir, "temp"))
+        self.mkpath(self.temp_dir)
+
+        self.dist_dir = os.path.abspath(self.dist_dir)
+        self.mkpath(self.dist_dir)
+
+        self.lib_dir = os.path.join(self.dist_dir,
+                                    os.path.dirname(self.distribution.zipfile))
+        self.mkpath(self.lib_dir)
+
+    def create_binaries(self, py_files, extensions):
+        dist = self.distribution
+        
         # byte compile the python modules into the target directory
         print "*** byte compile python files ***"
         byte_compile(py_files,
@@ -332,13 +309,45 @@ class py2exe(Command):
 
         for target in dist.com_server:
             if getattr(target, "create_exe", True):
+                # XXX Mark: Hm, should there be an option to build a
+                # console version for debugging, or is the regular
+                # debug support in win32com sufficient?
                 self.build_comserver(target, "run_w.exe", arcname)
             if getattr(target, "create_dll", True):
                 self.build_comserver(target, "run_dll.dll", arcname)
 
-        if mf.any_missing():
-            print "The following modules appear to be missing"
-            print mf.any_missing()
+    def fixup_distribution(self):
+        dist = self.distribution
+        
+        # Convert our args into target objects.
+        dist.com_server = FixupTargets(dist.com_server, "modules")
+        dist.service = FixupTargets(dist.service, "modules")
+        dist.windows = FixupTargets(dist.windows, "script")
+        dist.console = FixupTargets(dist.console, "script")
+
+        # make sure all targets use the same directory, this is
+        # also the directory where the pythonXX.dll must reside
+        import sets
+        paths = sets.Set()
+        for target in dist.com_server + dist.service \
+                + dist.windows + dist.console:
+            paths.add(os.path.dirname(target.get_dest_base()))
+
+        if len(paths) > 1:
+            raise DistutilsOptionError, \
+                  "all targets must use the same directory: %s" % \
+                  [p for p in paths]
+        if paths:
+            exe_dir = paths.pop() # the only element
+            if os.path.isabs(exe_dir):
+                raise DistutilsOptionError, \
+                      "exe directory must be relative: %s" % exe_dir
+            self.exe_dir = os.path.join(self.dist_dir, exe_dir)
+            self.mkpath(self.exe_dir)
+        else:
+            # Do we allow to specify no targets?
+            # We can at least build a zipfile...
+            self.exe_dir = self.lib_dir
 
     def get_boot_script(self, boot_type):
         # return the filename of the script to use for com servers.
@@ -547,21 +556,38 @@ class py2exe(Command):
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
 
-        self.plat_finalize(mf.modules, py_files, extensions)
-
         return py_files, extensions
 
     def plat_finalize(self, modules, py_files, extensions):
         # platform specific code for final adjustments to the
         # file lists
         if sys.platform == "win32":
-            from modulefinder import Module
+            # For inproc com to work, the PythonCOMXX.dll and
+            # PyWinTypesXX.dll must be in the same directory as the
+            # com server dll. I guess.
+            # Or must they be on the PATH? At least they cannot be in
+            # the lib_dir.
+            #
+            # Starting an inproc com server with oleview, and listing
+            # the loaded dlls with sysinternals ProcessExplorer shows
+            # that PyWinTypes is loaded from the dll server's
+            # directory, but pythoncom is loaded from the system
+            # directory. At least when there is a python installation
+            # with win32all!
+            # 
+            # XXX Currently, at least PyWinTypesXX.dll is also found
+            # as binary dependency, so it is copied twice. Does no harm,
+            # but not so nice.
             if "pythoncom" in modules.keys():
                 import pythoncom
-                extensions.append(Module("pythoncom", pythoncom.__file__))
+                src = pythoncom.__file__
+                dst = os.path.join(self.exe_dir, os.path.basename(src))
+                self.copy_file(src, dst)
             if "pywintypes" in modules.keys():
                 import pywintypes
-                extensions.append(Module("pywintypes", pywintypes.__file__))
+                src = pywintypes.__file__
+                dst = os.path.join(self.exe_dir, os.path.basename(src))
+                self.copy_file(src, dst)
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
