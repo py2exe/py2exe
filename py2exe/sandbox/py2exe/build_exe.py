@@ -34,9 +34,12 @@ def imp_find_module(name):
 
 def fancy_split(str, sep=","):
     # a split which also strips whitespace from the items
-    if not str:
+    # passing a list or tuple will return it unchanged
+    if str is None:
         return []
-    return [item.strip() for item in str.split(sep)]
+    if hasattr(str, "split"):
+        return [item.strip() for item in str.split(sep)]
+    return str
 
 LOADER = """
 def __load():
