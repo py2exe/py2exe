@@ -946,7 +946,42 @@ def bin_depends(path, images, excluded_dlls):
                             warnings.add(dll)
     return dependents, warnings
     
+# DLLs to be excluded
+# XXX This list is NOT complete (it cannot be)
+# Note: ALL ENTRIES MUST BE IN LOWER CASE!
+EXCLUDED_DLLS = (
+    "advapi32.dll",
+    "comctl32.dll",
+    "comdlg32.dll",
+    "crtdll.dll",
+    "gdi32.dll",
+    "glu32.dll",
+    "opengl32.dll",
+    "imm32.dll",
+    "kernel32.dll",
+    "mfc42.dll",
+    "msvcirt.dll",
+    "msvcrt.dll",
+    "msvcrtd.dll",
+    "ntdll.dll",
+    "odbc32.dll",
+    "ole32.dll",
+    "oleaut32.dll",
+    "rpcrt4.dll",
+    "shell32.dll",
+    "shlwapi.dll",
+    "user32.dll",
+    "version.dll",
+    "winmm.dll",
+    "winspool.drv",
+    "ws2_32.dll",
+    "ws2help.dll",
+    "wsock32.dll",
+    )
+
 def isSystemDLL(pathname):
+    if (string.lower(os.path.basename(pathname))) in EXCLUDED_DLLS:
+        return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
     # Is it sufficient to use the Image Load Address?
     import struct
