@@ -175,7 +175,7 @@ InstallSubCommands()
 
 ############################################################################
 
-class deinstall(Command):
+class uninstall(Command):
     description = "Remove all installed files"
 
     user_options = []
@@ -201,6 +201,8 @@ class deinstall(Command):
                 self._removefiles(dstdir, srcdir)
 
     def _removefiles(self, dstdir, srcdir):
+        # Remove all files in dstdir which are present in srcdir
+        assert dstdir != srcdir
         if not os.path.isdir(srcdir):
             return
         for n in os.listdir(srcdir):
@@ -208,20 +210,28 @@ class deinstall(Command):
             if os.path.isfile(name):
                 self.announce("removing '%s'" % name)
                 if not self.dry_run:
-                    os.remove(name)
+                    try:
+                        os.remove(name)
+                    except OSError, details:
+                        self.warn("Could not remove file: %s" % details)
                     if os.path.splitext(name)[1] == '.py':
+                        # Try to remove .pyc and -pyo files also
                         try:
                             os.remove(name + 'c')
-                        except:
+                        except OSError:
                             pass
                         try:
                             os.remove(name + 'o')
-                        except:
+                        except OSError:
                             pass
             elif os.path.isdir(name):
                 self._removefiles(name, os.path.join(srcdir, n))
                 if not self.dry_run:
-                    os.rmdir(name)
+                    try:
+                        os.rmdir(name)
+                    except OSError, details:
+                        self.warn("Are there additional user files?\n"\
+                              "  Could not remove directory: %s" % details)
             else:
                 self.announce("skipping removal of '%s' (does not exist)" %\
                               name)
@@ -259,7 +269,7 @@ setup(name="py2exe",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
-                  'deinstall': deinstall},
+                  'uninstall': uninstall},
 
       ext_modules = [Extension("py2exe.py2exe_util",
                                sources=["source/py2exe_util.c"],
