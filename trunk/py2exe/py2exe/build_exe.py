@@ -995,6 +995,11 @@ class py2exe(Command):
             def visit(arg, dirname, names):
                 if '__init__.py' in names:
                     arg.append(dirname)
+
+            # Try to find the package using ModuleFinders's method to
+            # allow for modulefinder.AddPackagePath interactions
+            mf.import_hook(f)
+
             # If modulefinder has seen a reference to the package, then
             # we prefer to believe that (imp_find_module doesn't seem to locate
             # sub-packages)
