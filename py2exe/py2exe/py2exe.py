@@ -64,6 +64,8 @@ class py2exe (Command):
          "Create a Console application"),
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
+        ("includes=", 'i',
+         "comma-separated list of modules to include"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -78,6 +80,7 @@ class py2exe (Command):
         self.windows = None
         self.console = None
         self.excludes = None
+        self.includes = None
 
     # initialize_options()
 
@@ -107,6 +110,15 @@ class py2exe (Command):
             self.excludes = string.split(self.excludes, ',')
         else:
             self.excludes = []
+
+        if self.includes:
+            self.includes = string.split(self.includes, ',')
+            # includes is stronger than excludes
+            for m in self.includes:
+                if m in self.excludes:
+                    self.excludes.remove(m)
+        else:
+            self.includes = []
 
     # finalize_options()
 
@@ -163,18 +175,23 @@ class py2exe (Command):
                           script)
             self.announce(repr(extra_path + sys.path))
 
-            m = ModuleFinder (path=extra_path + sys.path,
+            mf = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
 
             for f in self.support_modules():
-                m.load_file(f)
-            m.run_script(script)
+                mf.load_file(f)
+
+            for f in self.includes:
+                file, pathname, desc = imp.find_module(f, extra_path + sys.path)
+                mf.load_module(f, file, pathname, desc)
+
+            mf.run_script(script)
 
             # Retrieve modules from modulefinder
             py_files = []
             extensions = []
-            for item in m.modules.values():
+            for item in mf.modules.values():
                 src = item.__file__
                 if src and src != script:
                     if src[-3:] == ".py":
@@ -200,7 +217,7 @@ class py2exe (Command):
             self.mkpath(final_dir)
 
             missing = filter(lambda n, e=excludes: n not in e, \
-                             m.badmodules.keys())
+                             mf.badmodules.keys())
             
             # if build debug binary, use debug extension modules
             # instead of the release versions.
@@ -211,7 +228,7 @@ class py2exe (Command):
                 self.warn("*" * 48)
                 self.warn("* The following modules were not found:")
                 for name in missing:
-                    mod = m.badmodules.get(name, None)
+                    mod = mf.badmodules.get(name, None)
                     self.warn("*   %15s: %s" % (name, mod))
                 self.warn("*" * 48)
 
