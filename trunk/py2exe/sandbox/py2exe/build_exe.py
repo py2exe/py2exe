@@ -147,7 +147,7 @@ class py2exe(Command):
             # if class/instance etc, get the dics.
             extra_options = getattr(extra_options, "__dict__", extra_options)
         except (ImportError, AttributeError):
-            extra_options = []
+            extra_options = {}
         
         self.unbuffered = extra_options.get("unbuffered", 0)
         self.optimize = extra_options.get("optimize", 0)
