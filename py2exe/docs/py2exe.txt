@@ -7,9 +7,9 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.5.2.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.2.win32-py2.3.exe?download
+.. _py2exe-0.5.3.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.3.win32-py2.3.exe?download
 
-.. _py2exe-0.5.2.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.2.win32-py2.4.exe?download
+.. _py2exe-0.5.3.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.3.win32-py2.4.exe?download
 
 .. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
@@ -50,11 +50,9 @@ News
 Please don't mail me directly about py2exe, please use the `py2exe
 mailing list`_, which is also available on gmane_, via http_ and nntp_.
 
-**py2exe 0.5.2** released
+**py2exe 0.5.3** released
 
 A bugfix release: the announcement_, and the ChangeLog_.
-
-(py2exe 0.5.1 didn't survive the pre-release testing ;-)
 
 What's new in py2exe 0.5
 ------------------------
@@ -232,8 +230,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.5.2.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.5.2.win32-py2.4.exe_ (for Python 2.4,
+Download and run the installer py2exe-0.5.3.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.5.3.win32-py2.4.exe_ (for Python 2.4,
 currently in alpha).
 
 This installs **py2exe** together with some samples, the samples are in
