@@ -155,6 +155,7 @@ class py2exe(Command):
         self.excludes = extra_options.get("excludes")
         self.packages = extra_options.get("packages")
         self.dist_dir = extra_options.get("dist_dir")
+        self.lib_dir = extra_options.get("lib_dir")
         self.dll_excludes = extra_options.get("dll_excludes", [])
         self.ext_mapping = extra_options.get("ext_mapping", {})
 
@@ -181,8 +182,10 @@ class py2exe(Command):
         self.mkpath(self.collect_dir)
         self.temp_dir = abspath(os.path.join(self.bdist_dir, "temp"))
         self.dist_dir = abspath(self.dist_dir)
+        self.lib_dir = os.path.join(self.dist_dir, self.lib_dir or '')
         self.mkpath(self.temp_dir)
         self.mkpath(self.dist_dir)
+        self.mkpath(self.lib_dir)
 
         self.plat_prepare()
 
@@ -237,10 +240,10 @@ class py2exe(Command):
             # pythoncom23.dll into pythoncom.dll, and win32com contains
             # magic which relies on this exact filename.
             # So we do it via a custom loader - see create_loader()
-            dst = os.path.join(self.dist_dir, os.path.basename(item.__file__))
+            dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
 
-        archive_name = os.path.join(self.dist_dir, dist.zipfile)
+        archive_name = os.path.join(self.lib_dir, dist.zipfile)
         # make_archive appends ".zip", but we already have it.
         if os.path.splitext(archive_name)[1]==".zip":
             archive_name = os.path.splitext(archive_name)[0]
@@ -263,8 +266,15 @@ class py2exe(Command):
 
         print "*** copy dlls ***"
         for dll in dlls.items() + unfriendly_dlls.items():
-            dst = os.path.join(self.dist_dir, os.path.basename(dll))
+            dst = os.path.join(self.lib_dir, os.path.basename(dll))
             self.copy_file(dll, dst)
+
+        if self.distribution.has_data_files():
+            print "*** copy data files ***"
+            install_data = self.reinitialize_command('install_data')
+            install_data.install_dir = self.dist_dir
+            install_data.ensure_finalized()
+            install_data.run()
 
         # build the executables
         for target in dist.console:
@@ -360,6 +370,16 @@ class py2exe(Command):
         ext = os.path.splitext(template)[1]
         exe_base = target.get_dest_base()
         exe_path = os.path.join(self.dist_dir, exe_base + ext)
+        # The user may specify a sub-directory for the exe - that's fine, we
+        # just specify the parent directory for the .zip
+        from distutils.dir_util import mkpath
+        mkpath(os.path.dirname(exe_path))
+
+        parent_levels = len(os.path.normpath(exe_base).split(os.sep))-1
+        lib_leaf = self.lib_dir[len(self.dist_dir)+1:]
+        relative_arcname = ((".." + os.sep) * parent_levels)
+        if lib_leaf: relative_arcname += lib_leaf + os.sep
+        relative_arcname += os.path.basename(arcname)
 
         src = os.path.join(os.path.dirname(__file__), template)
         self.copy_file(src, exe_path)
@@ -379,7 +399,7 @@ class py2exe(Command):
                          0x78563412, # a magic value,
                          self.optimize,
                          self.unbuffered,
-                         ) + os.path.basename(arcname) + "\000"
+                         ) + relative_arcname + "\000"
 
         script_bytes = si + boot_code + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
