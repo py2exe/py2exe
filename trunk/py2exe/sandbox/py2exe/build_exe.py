@@ -170,7 +170,7 @@ class py2exe(Command):
 
         from modulefinder import ModuleFinder, ReplacePackage
         ReplacePackage("_xmlplus", "xml")
-        mf = ModuleFinder(excludes=self.excludes)
+        mf = self.create_modulefinder()
 
         if self.typelibs:
             print "*** generate typelib stubs ***"
@@ -202,6 +202,49 @@ class py2exe(Command):
         if mf.any_missing():
             print "The following modules appear to be missing"
             print mf.any_missing()
+
+    def create_modulefinder(self):
+        from modulefinder import ModuleFinder, ReplacePackage
+        ReplacePackage("_xmlplus", "xml")
+
+        if sys.version_info >= (2, 4): 
+            return ModuleFinder(excludes=self.excludes)
+        # Up to Python 2.3, Modulefinder does not always find
+        # extension modules from packages, so we override the method
+        # in charge here.
+        class FixedModuleFinder(ModuleFinder):
+            def find_all_submodules(self, m):
+                if not m.__path__:
+                    return
+                modules = {}
+                # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
+                # But we must also collect Python extension modules - although
+                # we cannot separate normal dlls from Python extensions.
+                suffixes = []
+                for triple in imp.get_suffixes():
+                    suffixes.append(triple[0])
+                if not ".pyc" in suffixes:
+                    suffixes.append(".pyc")
+                if not ".pyo" in suffixes:
+                    suffixes.append(".pyo")
+                for dir in m.__path__:
+                    try:
+                        names = os.listdir(dir)
+                    except os.error:
+                        self.msg(2, "can't list directory", dir)
+                        continue
+                    for name in names:
+                        mod = None
+                        for suff in suffixes:
+                            n = len(suff)
+                            if name[-n:] == suff:
+                                mod = name[:-n]
+                                break
+                        if mod and mod != "__init__":
+                            modules[mod] = mod
+                return modules.keys()
+
+        return FixedModuleFinder(excludes=self.excludes)
 
     def fix_badmodules(self, mf):
         # This dictionary maps additional builtin module names to the
