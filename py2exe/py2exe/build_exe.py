@@ -439,7 +439,14 @@ class py2exe(Command):
         # should it fail that first time, or anything else go wrong.
         # So do it always (the function restores the file times so
         # dependencies still work correctly.)
-        self.patch_python_dll_winver(os.path.join(self.exe_dir, python_dll))
+        if not self.dry_run:
+            dll = os.path.join(self.exe_dir, python_dll)
+            # Now that I have static Pythons, built into the exe stubs,
+            # it may be that pythonxx.dll is not needed at all.
+            #
+            # XXX It may be neccessary to patch the exe instead, in this case?
+            if os.path.isfile(dll):
+                self.patch_python_dll_winver(dll)
 
         # build the executables
         for target in dist.console:
@@ -728,8 +735,24 @@ class py2exe(Command):
         # so the loadpath must be extended by our python path.
         loadpath = loadpath + ';' + ';'.join(pypath)
 
+        from sets import Set
+        templates = Set()
+        if self.distribution.console:
+            templates.add(self.get_console_template())
+        if self.distribution.windows:
+            templates.add(self.get_windows_template())
+        if self.distribution.service:
+            templates.add(self.get_service_template())
+        for target in self.distribution.com_server:
+            if getattr(target, "create_exe", True):
+                templates.add(get_comexe_template())
+            if getattr(target, "create_dll", True):
+                templates.add(get_comexe_template())
+
+        templates = [os.path.join(os.path.dirname(__file__), t) for t in templates]
+
         # We use Python.exe to track the dependencies of our run stubs ...
-        images = dlls + [sys.executable]
+        images = dlls + templates
 
         self.announce("Resolving binary dependencies:")
         
@@ -737,7 +760,8 @@ class py2exe(Command):
         for dll in alldlls:
             self.announce("  %s" % dll)
         # ... but we don't need python.exe
-        alldlls.remove(sys.executable)
+        for t in templates:
+            alldlls.remove(t)
 
         return alldlls, warnings
     # find_dependend_dlls()
