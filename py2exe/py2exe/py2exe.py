@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.41  2002/01/03 13:44:49  theller
+# Short option for console 'c' again.
+#
 # Revision 1.40  2002/01/03 13:33:24  theller
 # Version 0.2.7.
 #
@@ -104,10 +107,14 @@ class py2exe (Command):
         ('optimize=', 'O',
          "optimization level: -O1 for \"python -O\", "
          "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
+
         ('windows', 'w',
          "Create a Windows application"),
         ('console', 'c',
          "Create a Console application"),
+        ('service=', 's',
+         "Create w Windows NT service"),
+
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
         ("includes=", 'i',
@@ -129,8 +136,11 @@ class py2exe (Command):
         self.optimize = None
         self.force = 0
         self.debug = None
+
         self.windows = None
         self.console = None
+        self.service = None
+        
         self.excludes = None
         self.includes = None
         self.packages = None
@@ -141,6 +151,10 @@ class py2exe (Command):
 
 
     def finalize_options (self):
+        if self.service is not None and not self.service:
+            raise DistutilsOptionError, \
+                  "service must be a class name"
+
         if self.console and self.windows:
             raise DistutilsOptionError, \
                   "cannot select console and windows at the same time"
@@ -486,6 +500,10 @@ class py2exe (Command):
                     file.write("_force_imports(); del _force_imports\n")
                 file.close()
 
+
+            if self.service:
+                py_files.append(Module("__service__", script))
+
             # byte compile the python modules into the target directory
             byte_compile(py_files,
                          target_dir=collect_dir,
@@ -493,10 +511,13 @@ class py2exe (Command):
                          verbose=self.verbose,
                          dry_run=self.dry_run)
 
-            self.copy_file(script,
-                           os.path.join(collect_dir,
-                                        "Scripts.py2exe\\__main__.py"),
-                           preserve_mode=0)
+            if self.service:
+                pass
+            else:
+                self.copy_file(script,
+                               os.path.join(collect_dir,
+                                            "Scripts.py2exe\\__main__.py"),
+                               preserve_mode=0)
                            
             # The archive must not be in collect-dir, otherwise
             # it may include a (partial) copy of itself
@@ -679,14 +700,33 @@ class py2exe (Command):
             file = open(exe_name, "wb")
             file.write(self.get_exe_bytes(use_runw))
             file.close()
+
+            delete = 1 # delete existing resources
+
             if self.icon:
                 from py2exe_util import update_icon
                 try:
-                    update_icon(exe_name, self.icon, 1)
+                    update_icon(exe_name, self.icon, delete)
+                    delete = 0
                 except:
                     self.warn("Icons can only be changed on windows NT, see traceback")
                     import traceback
                     traceback.print_exc()
+
+            if self.service:
+                from StringTables import StringTable, RT_STRING
+                # resource id in the EXE of the servicename,
+                # see source/PythonService.cpp
+                RESOURCE_SERVICE_NAME = 1016
+                st = StringTable()
+                st.add_string(RESOURCE_SERVICE_NAME,
+                              "__service__.%s" % self.service)
+
+                from py2exe_util import add_resource
+
+                for id, data in st.binary():
+                    add_resource(exe_name, data, RT_STRING, id, delete)
+                    delete = 0
 
             file = open(exe_name, "ab")
             file.write(header)
@@ -701,6 +741,8 @@ class py2exe (Command):
             basename = "run_w"
         else:
             basename = "run"
+        if self.service:
+            basename = "run_svc"
         if self.debug:
             basename = basename + '_d'
         return os.path.join(directory, basename+'.exe')
