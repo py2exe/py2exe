@@ -31,6 +31,10 @@
 #include <eval.h>
 #include <windows.h>
 
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
+#include <fcntl.h>
+#endif
+
 struct scriptinfo {
 	int tag;
 	int optimize;
@@ -142,10 +146,22 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		else
 			_putenv ("PYTHONVERBOSE=");
 
-		if (p_script_info->unbuffered)
-			_putenv ("PYTHONUNBUFFERED=1");
-		else
-			_putenv ("PYTHONUNBUFFERED=");
+ 		if (p_script_info->unbuffered) {
+#if defined(MS_WINDOWS) || defined(__CYGWIN__)
+ 			_setmode(fileno(stdin), O_BINARY);
+ 			_setmode(fileno(stdout), O_BINARY);
+#endif
+#ifdef HAVE_SETVBUF
+ 			setvbuf(stdin,	(char *)NULL, _IONBF, BUFSIZ);
+ 			setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+ 			setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
+#else /* !HAVE_SETVBUF */
+ 			setbuf(stdin,  (char *)NULL);
+ 			setbuf(stdout, (char *)NULL);
+ 			setbuf(stderr, (char *)NULL);
+#endif /* !HAVE_SETVBUF */
+ 		}
+ 
 	}
 
 	Py_NoSiteFlag = 1;
@@ -181,7 +197,6 @@ int init_with_instance(HMODULE hmod, char *frozen)
 	/* Hm, actually it would be better to set them to values saved before
 	   changing them ;-) */
 	_putenv("PYTHONPATH=");
-	_putenv("PYTHONUNBUFFERED=");
 	_putenv("PYTHONVERBOSE=");
 	return 0;
 }
