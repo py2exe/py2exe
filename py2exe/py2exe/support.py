@@ -22,6 +22,9 @@ class _MyImportManager(imputil.ImportManager):
                 return module
         return None
 
+_ModuleType = type(sys)         ### doesn't work in JPython...
+
+
 class _MyImporter(imputil.Importer):
     # The following method is copied from imputil.Importer.
     # There seems to be a bug in imputil somewhere which
@@ -66,6 +69,33 @@ class _MyImporter(imputil.Importer):
 
         # if the form is "from a.b import c, d" then return "b"
         return bottom
+
+    def _process_result(self, (ispkg, code, values), fqname, imp=imp, sys=sys):
+        # did get_code() return an actual module? (rather than a code object)
+        is_module = isinstance(code, _ModuleType)
+
+        # use the returned module, or create a new one to exec code into
+        if is_module:
+            module = code
+        else:
+            module = imp.new_module(fqname)
+
+        ### record packages a bit differently??
+        module.__importer__ = self
+        module.__ispkg__ = ispkg
+
+        # insert additional values into the module (before executing the code)
+        module.__dict__.update(values)
+
+        # the module is almost ready... make it visible
+        sys.modules[fqname] = module
+
+        # execute the code within the module's namespace
+        if not is_module:
+            exec code in module.__dict__
+
+        # XXX (THe.) Here's the change from the original imputil:
+        return sys.modules[fqname]
 
     def get_code(self, parent, modname, fqname, get_code=get_code, _pyc_suffix=_pyc_suffix):
         # Greg's importers return a dict containing the
