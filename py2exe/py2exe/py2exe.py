@@ -30,7 +30,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 
 import sys, os, string
 from distutils.core import Command
@@ -217,7 +217,7 @@ class py2exe (Command):
         # Add them to the py_files we need, and additionally
         # 'import' them directly after installing the import hook.
         # We do this by collecting them into the force_imports
-        # list and writing an 'import ...' line to Scripts\support.py.
+        # list and writing an 'import ...' line to Scripts.py2exe\support.py.
         #
         # These are the known dependencies:
         #
@@ -253,7 +253,7 @@ class py2exe (Command):
 
             collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
             self.mkpath(collect_dir)
-            self.mkpath(os.path.join(collect_dir, "Scripts"))
+            self.mkpath(os.path.join(collect_dir, "Scripts.py2exe"))
 
             if self.debug:
                 exe_name = os.path.join(final_dir, script_base+'_d.exe')
@@ -354,15 +354,19 @@ class py2exe (Command):
                 import _tkinter
                 tk = _tkinter.create()
                 tcl_dir = tk.call("info", "library")
-                del tk, _tkinter, Tkinter
                 tcl_src_dir = os.path.split(tcl_dir)[0]
                 tcl_dst_dir = os.path.join(final_dir, "tcl")
                 
-                self.announce("Copying TCL files...")
-                copy_tree(tcl_src_dir,
-                          tcl_dst_dir,
+                self.announce("Copying TCL files from %s..." % tcl_src_dir)
+                copy_tree(os.path.join(tcl_src_dir, "tcl%s" % _tkinter.TCL_VERSION),
+                          os.path.join(tcl_dst_dir, "tcl%s" % _tkinter.TCL_VERSION),
                           verbose=self.verbose,
                           dry_run=self.dry_run)
+                copy_tree(os.path.join(tcl_src_dir, "tk%s" % _tkinter.TK_VERSION),
+                          os.path.join(tcl_dst_dir, "tk%s" % _tkinter.TK_VERSION),
+                          verbose=self.verbose,
+                          dry_run=self.dry_run)
+                del tk, _tkinter, Tkinter
 
             # Collect all the dlls, so that binary dependencies can be
             # resolved.
@@ -396,8 +400,8 @@ class py2exe (Command):
             #
             thisfile = sys.modules['py2exe.py2exe'].__file__
             src = os.path.join(os.path.dirname(thisfile), "support.py")
-            # Scripts\\support.py must be forced to be rewritten!
-            dst = os.path.join(collect_dir, "Scripts\\support.py")
+            # Scripts.py2exe\\support.py must be forced to be rewritten!
+            dst = os.path.join(collect_dir, "Scripts.py2exe\\support.py")
             file_util.copy_file(src, dst, update=0,
                                 verbose=self.verbose,
                                 dry_run=self.dry_run)
@@ -421,7 +425,7 @@ class py2exe (Command):
 
             self.copy_file(script,
                            os.path.join(collect_dir,
-                                        "Scripts\\__main__.py"))
+                                        "Scripts.py2exe\\__main__.py"))
                            
             # The archive must not be in collect-dir, otherwise
             # it may include a (partial) copy of itself
