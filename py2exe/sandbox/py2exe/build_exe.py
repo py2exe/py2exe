@@ -168,8 +168,6 @@ class py2exe(Command):
         required_files = [target.script
                           for target in dist.windows + dist.console]
 
-        from modulefinder import ModuleFinder, ReplacePackage
-        ReplacePackage("_xmlplus", "xml")
         mf = self.create_modulefinder()
 
         if self.typelibs:
