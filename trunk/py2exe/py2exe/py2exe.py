@@ -7,7 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.1.1"
+__version__ = "0.1.1a"
 
 import sys, os, string
 from distutils.core import Command
@@ -344,11 +344,6 @@ class py2exe (Command):
 
         self.announce("creating %s" % exe_name)
 
-        # Make sure script_name uses backward slashes!
-        script_name = string.replace(script_name, '/', '\\')
-
-        # Create a header which contains the name of the script to run
-        l = len(script_name)+1
         header = struct.pack("<iii",
                              self.optimize, # optimize
                              0, # verbose
