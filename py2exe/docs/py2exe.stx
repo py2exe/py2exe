@@ -4,28 +4,32 @@ py2exe
 
     Copyright (C) 2000, "Thomas Heller", mailto:theller@python.net
 
-  Warning
-
-    This is currently alpha-release software. Do not expect that it works
-    correctly.
-    
-    Look here for updates to appear soon.
-
   Abstract
   
-    **py2exe** is a distutils extension to compile python scripts into
+    **py2exe** is a distutils extension to "compile" python scripts into
     executable windows programs.
+
+  News
+
+    **2000/01/24** -- *New release 0.1.1 fixes all known bugs from the first beta-release
+    and should work as advertised.*
+
+    **2000/01/19** -- *First public beta-version released and announced on comp.lang.python.*
 
   Using **py2exe**
 
     Assuming you have a python script 'myscript.py' which you
     want to convert into an executable windows program.
-    Write the *distutils* setup script as usual, including the statement
+    If you don't already have written a *distutils* setup-script,
+    write a simple one, including the statement
     'import py2exe' before calling the setup function.
-    Here's a simple setup script::
 
+    Here's a simple one::
+
+	 # setup.py
 	 from distutils.core import setup
 	 import py2exe
+
 	 setup(name="myscript",
 	       scripts=["myscript.py"],
 	 )
@@ -41,19 +45,24 @@ py2exe
 	 python setup.py py2exe
 
     and a sub-directory 'dist\myscript' will be created,
-    containing all the files 'myscript.exe' and 'python20.dll'.
-    If your script uses c-extension modules, they will be copied here
+    containing the files 'myscript.exe' and 'python20.dll' [1].
+    If your script uses compiled c-extension modules, they will be copied here
     as well.
 
-    These files are all what is needed to distribute for your program,
+    These files include everything that is needed for your program,
     even if the target computer doesn't have python installed.
+
+    Note
+
+      Note about what disutils can do for the python community AND you.
+
 
   How does it work?
 
     **py2exe** uses python's modulefinder to load your script and find all
     python and extension modules needed to run it. Pure python modules
     are compiled into '.pyc' or '.pyo' files in a temporary directory.
-    A zip-Archive will be built, containing all files from this
+    A zip-compatible archive will be built, containing all files from this
     directory as well as your script, and appended to a custom python
     interpreter supplied with **py2exe**.
 
@@ -69,60 +78,77 @@ py2exe
 
   Reference
     
-    Command line flags for **py2exe**
+    Command line flags for the **py2exe** command (run
+    'python setup.py py2exe --help' for an up-to-date list):
   
 
-    **debug (-d)** -- Create runtime with debugging information.
-    (default: create a release runtime)
+    **--debug** or **-g** -- Create runtime with debugging information.
+    Default is to create a release runtime binary. Note that for debug
+    builds, *all* extension modules must be available in debug versions.
 
-    **optimize (-On)** -- optimization level: -O1 for "python -O", -O2 for "python -OO",
-	and -O0 to disable (default: -O0)
+    **--optimize** or **-O** *0|1|2* -- optimization level: -O1 for "python -O",
+    -O2 for "python -OO" and -O0 to disable (default: -O0)
+
+    **--dist-dir** or **-d** *directory* -- directory to put the final files in
+
+    **--force** or **-f** -- force a rebuild of everything
+
+    **--keep-temp** or **-k** -- keep the pseudo installation tree around after
+    creating the distribution files
+
+    **--console** or **-c** -- build a console application, similar to
+    running the script with 'python.exe'. The default is to create
+    a console application if the script has the extension '.py',
+    a console-less GUI application if the script has the extension '.pyw'
+
+    **--windows** or **-w** -- build a windows application, similar to
+    running the script with 'pythonw.exe'
 
     The following flags are not yet implemented:
 	
-    **unbuffered (-u)** -- unbuffered binary *stdout* and *stderr*
+    **--unbuffered** or **-u** -- unbuffered binary *stdout* and *stderr*
 
-    **unicode (-U)** -- treat string literals as unicode
+    **--unicode** or **-U** -- treat string literals as unicode
 
-  Requirements
+  Requirements for using **py2exe**
 
-    Python 1.5, 1.6, or 2.0.
+    Python 1.5:
+    
+	"Distutils":http://www.python.org/sigs/distutils-sig/" is required.
+	It is included in Python 1.6 and later, if you are using python 1.5
+	you can download and install the latest release from
+	"python.org":http://www.python.org/sigs/distutils-sig/download.html".
 
-    "Distutils":http://www.python.org/sigs/distutils-sig/" is required.
-    It is included in Python 1.6 and later, if you are using python 1.5
-    you can download and install the latest release from
-    "python.org":http://www.python.org/sigs/distutils-sig/download.html".
+	To build the zip-compatible archive **py2exe** needs either a 'zip.exe'
+	utility somewhere on the $PATH, or Jim Ahlstrom's zipfile-module.
+
+    Python 1.6 or later:
+
+        Everything is already included in the python distribution.
 
     A C-compiler is *not* required.
 
-  Related work
+  Download and project information
 
-    Gordon McMillan's
-    "installer":http://www.mcmillan-inc.com/install1.html
-    is similar to **py2exe**, but more mature.
-    Gordon goes in great detail explaining his (and this) approach,
-    and also discusses other solutions
+    Binaries (windows installer)
 
-    **py2exe** compared to **installer**
+	For Python 1.5: "py2exe-0.1.1.win32-py1.5.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.1.win32-py1.5.exe.
 
-    Disadvantages:
+	For Python 2.0: "py2exe-0.1.1.win32-py2.0.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.1.win32-py2.0.exe.
 
-      - **py2exe** only creates what Gordon calls 'standalone'
-          programs.
+    Source code
 
-      - Since I do not use Tkinter, I did not care about that.
+        Download "py2exe-0.1.1.zip":http://download.sourceforge.net/py2exe/py2exe-0.1.1.zip.
 
-    Advantages:
+    The project is hosted at "http://sourceforge.net/projects/py2exe/":http://sourceforge.net/projects/py2exe/.
 
-      - **py2exe** is under active development (hear, hear! :-)
+  Feedback
 
-      - Complete control over python's optimization (-O and -OO flags)
-        and buffering of stdout and stderr (-u flag) in the resulting
-        executable
+    Please send all suggestions, comments, flames, bug reports to "me":mailto:theller@python.net.
 
-      - You can build debug versions of your program, which
-        will also use the debugging python dll and debugging
-        versions of c-extension modules
+    For bug reports it is most useful to include information about the python and windows version
+    you use and the output of the py2exe-command.
+
 
   Future plans
 
@@ -132,17 +158,35 @@ py2exe
 
     Look into the pythoncom and pywintypes issue.
 
-  Download and project information
+  Related work
 
-    Binaries (windows installer)
+    Gordon McMillan's "installer":http://www.mcmillan-inc.com/install1.html
+    is similar to **py2exe**, but more mature.
+    Gordon goes in great detail explaining his (and this) approach,
+    and also discusses other solutions.
 
-	For Python 1.5 "py2exe-0.1.win32-py1.5.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.win32-py1.5.exe
+    **py2exe** compared to **installer**
 
-	For Python 2.0 "py2exe-0.1.win32-py2.0.exe":http://download.sourceforge.net/py2exe/py2exe-0.1.win32-py2.0.exe
+    Advantages:
 
-    Source code
+      - Complete control over python's optimization (-O and -OO flags)
+        and buffering of stdout and stderr (-u flag) in the resulting
+        executable.
 
-        "py2exe-0.1.zip":http://download.sourceforge.net/py2exe/py2exe-0.1.zip
+      - You can build debug versions of your program, which
+        will also use the debugging python dll and debugging
+        versions of c-extension modules.
 
-    The project is hosted at "http://sourceforge.net/projects/py2exe/":http://sourceforge.net/projects/py2exe/
+      - **py2exe** is provided with complete source-code so that you can easily
+      rebuild the binaries (C-compiler required).
 
+    Disadvantages:
+
+      - **py2exe** only creates what Gordon calls 'standalone'
+          programs.
+
+      - Since I do not use Tkinter, I did not care about that.
+
+
+  .. [1] Currently the python interpreter dlls are not always found automatically.
+    In this case you have to copy them manually into the destination directory.
