@@ -668,6 +668,8 @@ class py2exe(Command):
         for path in files:
             mf.run_script(path)
 
+        mf.run_script(self.get_boot_script("common"))
+
         if self.distribution.com_server:
             mf.run_script(self.get_boot_script("com_servers"))
 
