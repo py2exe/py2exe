@@ -32,6 +32,25 @@ typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 typedef HRESULT (__stdcall *__PROC__DllGetClassObject) (REFCLSID, REFIID, LPVOID *);
 typedef void (__cdecl *__PROC__PyCom_CoUninitialize) (void);
 
+/*
+  Mark Hammond writes:
+
+  Py_Initialize() must leave Python with the current thread's thread-state
+  acquired.  The PyGILState_* code is optimized, so that if the thread already
+  holds the lock, it simply increments a count - no lock is actually acquired.
+
+  Thus, with py2exe, Python is initialized, (via say DllGetClassObject), but
+  once the class object is returned, the main thread still owns the lock.  As
+  further calls come in on this thread, the count is incremented and
+  decremented - but never actually unlocked.  If this main thread ever calls
+  out somewhere, the lock *is* released, so further calls will work (and
+  indeed in that case the deadlock would break).
+
+  This change has the negative effect of meaning every call on this main
+  thread now does a lock transition - but alas, it needs to!
+*/
+CRITICAL_SECTION csInit; // protecting our init code
+
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
 __PROC__DllGetClassObject Pyc_DllGetClassObject = NULL;
 __PROC__PyCom_CoUninitialize PyCom_CoUninitialize = NULL;
@@ -119,20 +138,27 @@ int load_pythoncom(void)
 int check_init()
 {
 	if (!have_init) {
-		PyObject *frozen;
-		// a little DLL magic.  Set sys.frozen='dll'
-		init_with_instance(gInstance, "dll");
-		frozen = PyInt_FromLong((LONG)gInstance);
-		if (frozen) {
-			PySys_SetObject("frozendllhandle", frozen);
-			Py_DECREF(frozen);
+		EnterCriticalSection(&csInit);
+		// Check the flag again - another thread may have beat us to it!
+		if (!have_init) {
+			PyObject *frozen;
+			// a little DLL magic.  Set sys.frozen='dll'
+			init_with_instance(gInstance, "dll");
+			frozen = PyInt_FromLong((LONG)gInstance);
+			if (frozen) {
+				PySys_SetObject("frozendllhandle", frozen);
+				Py_DECREF(frozen);
+			}
+			// Now run the generic script - this always returns in a DLL.
+			run_script();
+			have_init = TRUE;
+			if (gPythoncom == NULL)
+				load_pythoncom();
+			// Reset the thread-state, so any thread can call in
+			PyGILState_Release(PyGILState_UNLOCKED);
 		}
-		// Now run the generic script - this always returns in a DLL.
-		run_script();
-		have_init = TRUE;
+		LeaveCriticalSection(&csInit);
 	}
-	if (gPythoncom == NULL)
-		load_pythoncom();
 	return gPythoncom != NULL;
 }
 
@@ -145,9 +171,11 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
 	if ( dwReason == DLL_PROCESS_ATTACH) {
 		gInstance = hInstance;
+		InitializeCriticalSection(&csInit);
 	}
 	else if ( dwReason == DLL_PROCESS_DETACH ) {
 		gInstance = 0;
+		DeleteCriticalSection(&csInit);
 		// not much else safe to do here
 	}
 	return TRUE; 
