@@ -26,7 +26,7 @@ import sys
 import build_exe
 import distutils.command
 
-__version__ = "0.3.4"
+__version__ = "0.4.0"
 
 distutils.command.__all__.append('py2exe')
 
