@@ -456,7 +456,7 @@ static PyObject *depends(PyObject *self, PyObject *args)
 		     StatusRoutine)) {
 	FreeLibrary(hLib);
 	Py_DECREF(py_result);
-	PyErr_SetString(BindError, imagename);
+	PyErr_SetExcFromWindowsErrWithFilename(BindError, GetLastError(), imagename);
 	return NULL;
     }
     FreeLibrary(hLib);
