@@ -27,6 +27,10 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  2003/09/16 08:29:47  mhammond
+ * Print friendly messages if the service is already installed or has
+ * already been uninstalled.
+ *
  * Revision 1.1  2003/08/29 12:42:41  mhammond
  * Renable services in the new world order.
  *
@@ -45,7 +49,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include "Python.h"
-
+#include "tchar.h"
 /* Copied from PythonService.cpp: resource ID in the EXE of the service class */
 
 #define RESOURCE_SERVICE_NAME 1016 /* this is the class implementing the service */
@@ -174,15 +178,33 @@ BOOL RemoveService(void)
 		return FALSE;
     }
 
-    result = DeleteService(hservice);
-    if (result) {
-	CloseServiceHandle(hservice);
-	fprintf(stderr, "Service '%s' removed\n", svc_name);
-    } else {
-	fprintf(stderr, "Service '%s' could not be removed, error code %d\n", GetLastError());
-    }
-    CloseServiceHandle(hmgr);
-    return result;
+	result = DeleteService(hservice);
+	if (result) {
+		TCHAR keyName[MAX_PATH];
+		/* Also remove ourself from the event log.
+		   Find the event source name (the base name of the .exe)*/
+		TCHAR *moduleName;
+		TCHAR tempFileNameBuf[MAX_PATH];
+		GetModuleFileName(0, tempFileNameBuf, sizeof(tempFileNameBuf)/sizeof(TCHAR));
+		moduleName= _tcsrchr(tempFileNameBuf, _T('\\'));
+		if (moduleName) {
+			TCHAR *posDot;
+			++moduleName;
+			posDot = _tcsrchr(moduleName, _T('.'));
+			if (posDot)
+				*posDot = _T('\0');
+			_tcscpy(keyName, _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\"));
+			_tcscat(keyName, moduleName );
+			RegDeleteKey(HKEY_LOCAL_MACHINE, keyName);
+		}
+		CloseServiceHandle(hservice);
+		fprintf(stderr, "Service '%s' removed\n", svc_name);
+	} else {
+		fprintf(stderr, "Service '%s' could not be removed, error code %d\n", GetLastError());
+	}
+	CloseServiceHandle(hmgr);
+
+	return result;
 }
 
 void SystemError(int error, char *msg)
