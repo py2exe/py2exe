@@ -136,6 +136,9 @@ int init_with_instance(HMODULE hmod)
     /* From Barry Scott */
     /* cause python to calculate the path */
     Py_GetPath();
+	/* Set sys.frozen so apps that care can tell. Custom environments may */
+	/* set this later to a 'better' value (eg, COM dlls get 'dll') */
+	PySys_SetObject("frozen", Py_True);
     /* clean up the environment so that os.system
        and os.popen processes can run python the normal way */
     _putenv( "PYTHONPATH=" );	
