@@ -1053,7 +1053,12 @@ def collect_win32com_genpy(path, typelibs):
         win32com.gen_py.__path__ = [path]
         gencache.__init__()
         for info in typelibs:
-            makepy.GenerateFromTypeLibSpec(info, bForDemand = True)
+            # It seems bForDemand=True generates code which is missing
+            # at least sometimes an import of DispatchBaseClass.
+            # Until this is resolved, set it to false.
+            # What's the purpose of bForDemand=True? Thomas
+##            makepy.GenerateFromTypeLibSpec(info, bForDemand = True)
+            makepy.GenerateFromTypeLibSpec(info, bForDemand = False)
             # Now get the module, and build all sub-modules.
             mod = gencache.GetModuleForTypelib(*info)
             for clsid, name in mod.CLSIDToPackageMap.items():
