@@ -1,3 +1,13 @@
+2004-06-02  Thomas Heller  <theller@python.net>
+
+	* source\run_dll.c: From Mark Hammond: patch to correctly manage
+	the thread state.
+
+2004-06-01  Thomas Heller  <theller@python.net>
+
+	* setup.py, source/icon.rc: Change so that py2exe can be built
+	with mingw32.
+
 2004-04-28  Thomas Heller  <theller@python.net>
 
 	* py2exe\build_exe.py: Run the 'build' command before actually
