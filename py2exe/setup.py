@@ -26,7 +26,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 # $Id$
 
@@ -39,7 +39,15 @@ from distutils.dep_util import newer_group
 from distutils.errors import *
 
 class Interpreter(Extension):
-    pass
+    def __init__(self, *args, **kw):
+        # Add a custom 'target_desc' option, which matches CCompiler
+        # (is there a better way?
+        if kw.has_key("target_desc"):
+            self.target_desc = kw['target_desc']
+            del kw['target_desc']
+        else:
+            self.target_desc = "executable"
+        Extension.__init__(self, *args, **kw)
 
 
 class Dist(Distribution):
@@ -90,7 +98,6 @@ class BuildInterpreters(build_ext.build_ext):
                 exe_filename = os.path.join(self.build_lib,
                                             self.get_exe_filename(fullname))
 
-
             if not (self.force or \
                     newer_group(sources, exe_filename + '.exe', 'newer')):
                 self.announce("skipping '%s' interpreter (up-to-date)" %
@@ -118,7 +125,15 @@ class BuildInterpreters(build_ext.build_ext):
                 objects.extend(inter.extra_objects)
             extra_args = inter.extra_link_args or []
 
-            self.compiler.link_executable(
+            print "Calling link with", inter.target_desc
+            # XXX - is msvccompiler.link broken?  From what I can see, the
+            # following should work, instead of us checking the param:
+#            self.compiler.link(inter.target_desc,
+            if inter.target_desc == 'executable':
+                linker = self.compiler.link_executable
+            else:
+                linker = self.compiler.link_shared_lib
+            linker(
                 objects, exe_filename, 
                 libraries=self.get_libraries(inter),
                 library_dirs=inter.library_dirs,
@@ -291,16 +306,40 @@ msg = """PYWIN32DIR invalid.
       then you will not be able to build Windows NT services
       with py2exe.
 """
+def _check_build_dir(map, key, source_root_name, child):
+    check = os.path.join(source_root_name, child)
+    if os.path.isdir(check):
+        map[key] = check
+        return True
+    return False
+        
+def _get_build_dirs(source_root_name):
+    ret = {}
+    if _check_build_dir(ret, "win32", source_root_name, "build/temp.win32-%s" % sys.winver):
+        pass
+    elif _check_build_dir(ret, "win32", source_root_name, "win32/build"):
+        pass
+    # todo: add com etc maybe?
+    return ret
 
-PYWIN32DIR = r"c:\pywin32"
+PYWIN32DIR = os.environ.get("PYWIN32DIR", os.path.abspath(r"\pywin32"))
+build_dirs = _get_build_dirs(PYWIN32DIR)
+if not build_dirs.has_key("win32"):
+    # Check dev studio build running in place
+    # win32api.__file__: 'prefix\\pywin32\\win32\\Build\\win32api.pyd'
+    # PYWIN32DIR -> 'prefix\\pywin32'
+    try:
+        import win32api
+    except ImportError:
+        raise RuntimeError, msg
 
-if not os.path.isdir(PYWIN32DIR):
+    PYWIN32DIR = os.path.dirname(os.path.dirname(os.path.dirname(win32api.__file__)))
+    build_dirs = _get_build_dirs(PYWIN32DIR)
+
+if not build_dirs.has_key("win32"):
     raise RuntimeError, msg
 
-PyWin32_BuildDir = PYWIN32DIR + "/build/temp.win32-%s/Release" % sys.winver
-
-pywintypes_lib = PyWin32_BuildDir + "/pywintypes.lib"
-
+pywintypes_lib = os.path.join(build_dirs["win32"], "pywintypes.lib")
 if not os.path.isfile(pywintypes_lib):
     raise RuntimeError, msg
 
@@ -314,7 +353,7 @@ run_svc = Interpreter("py2exe.run_svc",
                       libraries=["zlibstat", "user32", "advapi32",
                                  "oleaut32", "ole32", "shell32"],
                       library_dirs=["source/zlib/static32",
-                                    PyWin32_BuildDir],
+                                    build_dirs["win32"]],
                       extra_link_args=["/NOD:LIBC"],
                       define_macros=[("ZLIB_DLL", None),
                                      ("_WINDOWS", None),
@@ -328,6 +367,17 @@ run_svc = Interpreter("py2exe.run_svc",
                                      ("STRICT", None)
                                      ]
                       )
+
+run_dll = Interpreter("py2exe.run_dll",
+                    ["source/run_dll.c", "source/start.c", "source/icon.rc"],
+                    include_dirs=["source/zlib"],
+                    libraries=["zlibstat", "user32"],
+                    library_dirs=["source/zlib/static32"],
+                    extra_link_args=["/NOD:LIBC", "/def:source/run_dll.def"],
+                    define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
+                    target_desc = "shared_library",
+                    )
+
 
 setup(name="py2exe",
       version=__version__,
@@ -348,7 +398,7 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
-      interpreters = [run, run_w, run_svc],
+      interpreters = [run, run_w, run_svc, run_dll],
       packages=['py2exe', 'py2exe.tools', 'py2exe.resources'],
       )
 

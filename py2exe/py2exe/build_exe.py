@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.15  2003/06/03 20:04:08  theller
+# Add magic to find pywintypesXX.dll and pythoncomXX.dll.
+#
 # Revision 1.14  2003/05/20 18:38:28  theller
 # Some magic for ctypes from CVS.
 #
@@ -123,7 +126,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 
 import sys, os, string
 from distutils.core import Command
@@ -202,6 +205,10 @@ class py2exe (Command):
          "Create a Console application"),
         ('service=', 's',
          "class in your script which implements a Windows NT service"),
+        ('com-exe', None,
+         "Create an executable hosting the scripts as COM objects"),
+        ('com-dll', None,
+         "Create a dll hosting the scripts as COM objects"),
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
@@ -234,6 +241,9 @@ class py2exe (Command):
         self.windows = None
         self.console = None
         self.service = None
+        self.com_dll = None
+        self.com_exe = None
+        self.com_any = None
         
         self.excludes = None
         self.includes = None
@@ -277,6 +287,11 @@ class py2exe (Command):
         if self.service is not None and not self.service:
             raise DistutilsOptionError, \
                   "service must be a class name"
+
+        self.com_any = self.com_dll or self.com_exe
+        if self.com_any and (self.console or self.windows or self.service):
+            raise DistutilsOptionError, \
+                  "cannot select console, windows or service with a COM option"
 
         if self.console and self.windows:
             raise DistutilsOptionError, \
@@ -348,6 +363,22 @@ class py2exe (Command):
         # or "resources.VersionInfo" early to catch ImportErrors fast
         # (before failing the build in the last step)
 
+        thisfile = sys.modules['py2exe.build_exe'].__file__
+        # Change things around a little if building COM objects.
+        # For COM, each "script" is a module name hosting a COM object - the
+        # result is a single executable hosting all COM objects from all scripts
+        # (whereas the default is an executable per script)
+        # We wreak havoc by setting scripts to be our generic COM bootstrap
+        # script (xxxx.py), and append the specified scripts to the list
+        # of modules we import.
+        output_base = None
+        if self.com_any:
+            self.includes.extend(self.distribution.scripts)
+            com_module_names = self.distribution.scripts
+            self.distribution.scripts = [os.path.join(os.path.dirname(thisfile),
+                                                     "boot_com_servers.py")]
+            output_base = com_module_names[0].split(".")[-1] # xxx - want a better way!
+
         # Distribute some of our options to other commands.
         # Is this the right way to do it?
         build_ext = self.reinitialize_command('build_ext')
@@ -415,7 +446,7 @@ class py2exe (Command):
 
             "win32api": ["pywintypes"],
             "win32ui": ["cStringIO", "traceback"],
-            "pythoncom": ["win32com.server.policy", "pywintypes"],
+            "pythoncom": ["win32com.server.policy", "win32com.server.util", "pywintypes"],
 ##            "anydbm": ['dbhash', 'gdbm', 'dbm', 'dumbdbm'],
 ##            "DateTime": ['ISO', 'ARPA', 'ODMG', 'Locale', 'Feasts', 'Parser', 'NIST'],
 ##            "encodings" = XXX a lot of stuff
@@ -457,8 +488,12 @@ class py2exe (Command):
 
             self.script = script
 
-            script_base = os.path.splitext(os.path.basename(script))[0]
-            final_dir = os.path.join(self.dist_dir, script_base)
+            if output_base:
+                script_base = os.path.basename(output_base)
+                final_dir = os.path.join(self.dist_dir, os.path.dirname(output_base))
+            else:
+                script_base = os.path.splitext(os.path.basename(script))[0]
+                final_dir = os.path.join(self.dist_dir, script_base)
             self.mkpath(final_dir)
 
             if self.distribution.has_data_files():
@@ -472,10 +507,15 @@ class py2exe (Command):
             self.mkpath(self.collect_dir)
             self.mkpath(os.path.join(self.collect_dir, "Scripts.py2exe"))
 
-            if self.debug:
-                exe_name = os.path.join(final_dir, script_base+'_d.exe')
+            if self.com_dll:
+                ext = '.dll'
             else:
-                exe_name = os.path.join(final_dir, script_base+'.exe')
+                ext = '.exe'
+                
+            if self.debug:
+                exe_name = os.path.join(final_dir, script_base+'_d' + ext)
+            else:
+                exe_name = os.path.join(final_dir, script_base+ext)
 
             ext = os.path.splitext(script)[1]
             use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
@@ -651,7 +691,6 @@ class py2exe (Command):
 
             # copy support files and the script itself
             #
-            thisfile = sys.modules['py2exe.build_exe'].__file__
             src = os.path.join(os.path.dirname(thisfile), "support.py")
             # Scripts.py2exe\\support.py must be forced to be rewritten!
             dst = os.path.join(self.collect_dir, "Scripts.py2exe\\support.py")
@@ -670,6 +709,9 @@ class py2exe (Command):
                     for item in force_imports:
                         file.write("    import %s; del %s\n" % (item, item))
                     file.write("_force_imports(); del _force_imports\n")
+                # And for COM, write the names of the modules we serve
+                if self.com_any:
+                    file.write("com_module_names=%s\n" % com_module_names)
                 file.close()
 
 
@@ -993,15 +1035,26 @@ class py2exe (Command):
     def get_exe_stub(self, use_runw):
         thismod = sys.modules['distutils.command.py2exe']
         directory = os.path.dirname(thismod.__file__)
+        ext = ".exe"
         if use_runw:
             basename = "run_w"
         else:
             basename = "run"
+        if self.com_dll:
+            basename = "run_dll"
+            ext = ".dll"
+        elif self.com_exe:
+            # be sneaky/special for COM exes
+            # debug mode gets a console.
+            if self.debug:
+                basename = "run"
+            else:
+                basename = "run_w"
         if self.service:
             basename = "run_svc"
         if self.debug:
             basename = basename + '_d'
-        return os.path.join(directory, basename+'.exe')
+        return os.path.join(directory, basename+ext)
     # get_exe_stub()
     
     def get_exe_bytes(self, use_runw):
