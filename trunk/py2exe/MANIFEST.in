@@ -1,6 +1,0 @@
-recursive-include source *.rc *.ico *.c *.h *.lib *.cpp
-recursive-include py2exe *.py
-recursive-include docs *.html *.css *.jpg
-include MANIFEST MANIFEST.in README.txt LICENSE.txt
-recursive-include mybuild *.exe *.pyd
-recursive-include samples *.py *.txt *.vbs *.cfg
