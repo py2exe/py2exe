@@ -27,6 +27,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.2  2002/01/29 09:29:39  theller
+ * version 0.3.0
+ *
  * Revision 1.1  2002/01/16 14:41:59  theller
  * Works, but still needs lots of improvements.
  *
@@ -38,19 +41,23 @@
 #include "Python.h"
 
 /* Copied from PythonService.cpp: resource ID in the EXE of the service class */
+
 #define RESOURCE_SERVICE_NAME 1016 /* this is the class implementing the service */
-/* the next 2 string resources contain the service name
- * and the display name
+
+/* This one and the next two strings resources contain the service name, the
+ * display name, and the service dependencies separated by '|' characters.
  */
 
 extern void PyWinFreeze_ExeInit();
 extern int PyInitFrozenExtensions();
 
-static BOOL GetServiceNames(char **exe_name, char **svc_name, char **svc_displayname)
+static BOOL GetServiceNames(char **exe_name, char **svc_name,
+			    char **svc_displayname, char **svc_deps)
 {
     static char svc_name_buf[256];
     static char svc_displayname_buf[256];
     static char exename_buf[MAX_PATH];
+    static char svc_deps_buf[512];
     
     GetModuleFileName(NULL, exename_buf, sizeof(exename_buf));
     if (0 == LoadString(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME+1,
@@ -62,21 +69,37 @@ static BOOL GetServiceNames(char **exe_name, char **svc_name, char **svc_display
 			svc_displayname_buf, sizeof(svc_displayname_buf))) {
 	strcpy(svc_displayname_buf, svc_name_buf);
     }
+    /* The svc_deps code was contributed by Matthew King. */
+    if (0 == LoadString(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME+3,
+			svc_deps_buf, sizeof(svc_deps_buf)-1)) {
+	strcpy(svc_deps_buf, "");
+    } else {
+	/* turn into a double null-terminated array of null-separated names
+	 * rely on staric buf bening initialized wuth nulls to give double
+	 * null on the end */
+	char *p;
+	for (p=svc_deps_buf; *p; p++) {
+	    if (*p == '|')
+		*p = '\0';
+	}
+    }
     if (svc_name)
 	*svc_name = svc_name_buf;
     if (svc_displayname)
 	*svc_displayname = svc_displayname_buf;
     if (exe_name)
 	*exe_name = exename_buf;
+    if (svc_deps)
+	*svc_deps = svc_deps_buf;
     return TRUE;
 }
 
 BOOL InstallService(void)
 {
-    char *exe_name, *svc_name, *svc_displayname;
+    char *exe_name, *svc_name, *svc_displayname, *svc_deps;
     SC_HANDLE hmgr, hservice;
 
-    if (!GetServiceNames(&exe_name, &svc_name, &svc_displayname)) {
+    if (!GetServiceNames(&exe_name, &svc_name, &svc_displayname, &svc_deps)) {
 	fprintf(stderr, "Service Name not found\n");
 	return FALSE;
     }
@@ -97,14 +120,15 @@ BOOL InstallService(void)
 			     exe_name,		        // service's binary 
 			     NULL,                      // no load ordering group 
 			     NULL,                      // no tag identifier 
-			     NULL,                      // no dependencies 
+			     svc_deps,                  // no dependencies 
 			     NULL,                      // LocalSystem account 
 			     NULL);                     // no password 
 
     if (hservice)
 	fprintf(stderr, "Service '%s' (%s) installed\n", svc_name, svc_displayname);
     else {
-	fprintf(stderr, "Service '%s' could not be installed, error code %d\n", svc_name, GetLastError());
+	fprintf(stderr, "Service '%s' could not be installed, error code %d\n",
+		svc_name, GetLastError());
 	CloseServiceHandle(hservice);
     }
     CloseServiceHandle(hmgr);
@@ -117,7 +141,7 @@ BOOL RemoveService(void)
     SC_HANDLE hmgr, hservice;
     BOOL result;
 
-    if (!GetServiceNames(NULL, &svc_name, &svc_displayname)) {
+    if (!GetServiceNames(NULL, &svc_name, &svc_displayname, NULL)) {
 	fprintf(stderr, "Service Name not found\n");
 	return FALSE;
     }
