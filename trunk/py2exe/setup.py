@@ -3,7 +3,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 
 # $Id$
 
@@ -29,7 +29,7 @@ class Dist(Distribution):
 
 
 class BuildInterpreters(build_ext.build_ext):
-    description = "build special python interpreter"
+    description = "build special python interpreter stubs"
 
     def finalize_options(self):
         build_ext.build_ext.finalize_options(self)
@@ -106,7 +106,8 @@ class BuildInterpreters(build_ext.build_ext):
                 try:
                     self.spawn(["upx", "-9", "-q", exe_filename + '.exe'])
                 except DistutilsExecError, details:
-                    self.announce("warning: upx.exe could be used to compress the executable")
+                    self.announce(
+                        "warning: upx.exe could be used to compress the executable")
                     self.announce("warning: %s" % str(details))
 
 
@@ -234,22 +235,25 @@ class deinstall(Command):
 ############################################################################
 
 run = Interpreter("py2exe.run",
-                  ["source/run.c", "source/start.c"],
+                  ["source/run.c"],
                   include_dirs=["source/zlib"],
-                  libraries=["zlibstat"],
+                  libraries=["zlibstat", "mylib"],
                   library_dirs=["source/zlib/static32"],
                   extra_link_args=["/NOD:LIBC"],
                   define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                   )
 
 run_w = Interpreter("py2exe.run_w",
-                    ["source/run_w.c", "source/start.c"],
+                    ["source/run_w.c"],
                     include_dirs=["source/zlib"],
-                    libraries=["zlibstat", "user32"],
+                    libraries=["zlibstat", "user32", "mylib"],
                     library_dirs=["source/zlib/static32"],
                     extra_link_args=["/NOD:LIBC"],
                     define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                     )
+
+from distutils import sysconfig
+pythoninc = sysconfig.get_python_inc()
 
 setup(name="py2exe",
       version=__version__,
@@ -267,12 +271,20 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
-      
+
+      libraries = [
+                   ("mylib",
+                    {"sources": ["source/start.c"],
+                     "include_dirs": [pythoninc, "source/zlib"],
+                     "macros": [("ZLIB_DLL", None), ("_WINDOWS", None)],
+                     },
+                    ),
+                   ],
       interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],
       package_dir={'py2exe.tools': "tools" + sys.version[:3]},
       )
 
 # Local Variables:
-# compile-command: "py20 setup.py build_ext"
+# compile-command: "py20 setup.py install"
 # End:
