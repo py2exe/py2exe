@@ -111,15 +111,21 @@ class py2exe(Command):
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
-        ("ignores=", 'e',
+        ("ignores=", None,
          "comma-separated list of modules to ignore if they are not found"),
         ("includes=", 'i',
          "comma-separated list of modules to include"),
         ("packages=", 'p',
          "comma-separated list of packages to include"),
+
+        ("compressed", 'c',
+         "create a compressed zipfile")
         ]
 
+    boolean_options = ["compressed"]
+
     def initialize_options (self):
+        self.compressed = 0
         self.unbuffered = 0
         self.optimize = 0
         self.includes = None
@@ -646,6 +652,8 @@ class py2exe(Command):
     def plat_prepare(self):
         self.includes.append("warnings") # needed by Python itself
 ##        self.packages.append("encodings")
+        if self.compressed:
+            self.includes.append("zlib")
 
         # update the self.ignores list to ignore platform specific
         # modules.
@@ -754,7 +762,7 @@ class py2exe(Command):
         return mf
 
     def make_lib_archive(self, zip_filename, base_dir, verbose=0,
-                         dry_run=0, compression=zipfile.ZIP_STORED):
+                         dry_run=0):
         # Like distutils "make_archive", except we can specify the
         # compression to use - default is ZIP_STORED to keep the
         # runtime performance up.
@@ -767,6 +775,10 @@ class py2exe(Command):
                 if os.path.isfile(path):
                     z.write(path, path)
 
+        if self.compressed:
+            compression = zipfile.ZIP_DEFLATED
+        else:
+            compression = zipfile.ZIP_STORED
         if not dry_run:
             z = zipfile.ZipFile(zip_filename, "w",
                                 compression=compression)
