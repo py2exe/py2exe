@@ -5,6 +5,214 @@
 static char module_doc[] =
 "Utility functions for the py2exe package";
 
+static PyObject *SystemError(int code, char *msg)
+{
+    PyErr_SetString(PyExc_RuntimeError, msg);
+    return NULL;
+}
+
+/*
+ * Ref for the icon code, from MSDN:
+ *   Icons in Win32
+ *   John Hornick 
+ *   Microsoft Corporation
+ *     Created: September 29, 1995
+ */
+
+#pragma pack(2)
+
+/* Structure of .ico files */
+
+typedef struct {
+    BYTE bWidth;
+    BYTE bHeight;
+    BYTE bColorCount;
+    BYTE bReserved;
+    WORD wPlanes;
+    WORD wBitCount;
+    DWORD dwBytesInRes;
+    DWORD dwImageOffset;
+} ICONDIRENTRY;
+
+typedef struct {
+    WORD idReserved; /* Must be 0 */
+    WORD idType; /* Should check that this is 1 for icons */
+    WORD idCount; /* Number os ICONDIRENTRYs to follow */
+    ICONDIRENTRY idEntries[0];
+} ICONDIRHEADER;
+
+/* Format of RT_GROUP_ICON resources */
+
+typedef struct {
+    BYTE bWidth;
+    BYTE bHeight;
+    BYTE bColorCount;
+    BYTE bReserved;
+    WORD wPlanes;
+    WORD wBitCount;
+    DWORD dwBytesInRes;
+    WORD nID;
+} GRPICONDIRENTRY;
+
+typedef struct {
+    WORD idReserved;
+    WORD idType;
+    WORD idCount;
+    GRPICONDIRENTRY idEntries[0];
+} GRPICONDIRHEADER;
+
+#pragma pack()
+
+/*
+ * Map a file into memory for reading.
+ *
+ * Pointer returned must be freed with UnmapViewOfFile().
+ */
+static char *MapExistingFile (char *pathname, DWORD *psize)
+{
+    HANDLE hFile, hFileMapping;
+    DWORD nSizeLow, nSizeHigh;
+    char *data;
+
+    hFile = CreateFile (pathname,
+	GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+	FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+	return NULL;
+    nSizeLow = GetFileSize (hFile, &nSizeHigh);
+    hFileMapping = CreateFileMapping (hFile,
+	NULL, PAGE_READONLY, 0, 0, NULL);
+    CloseHandle (hFile);
+
+    if (hFileMapping == INVALID_HANDLE_VALUE)
+	return NULL;
+    
+    data = MapViewOfFile (hFileMapping,
+	FILE_MAP_READ, 0, 0, 0);
+
+    CloseHandle (hFileMapping);
+    *psize = nSizeLow;
+    return data;
+}
+
+/*
+ * Create a GRPICONDIRHEADER from an ICONDIRHEADER.
+ *
+ * Returns malloc()'d memory.
+ */
+static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh)
+{
+    GRPICONDIRHEADER *pgidh;
+    size_t size;
+    int i;
+
+    size = sizeof(GRPICONDIRHEADER) + sizeof(GRPICONDIRENTRY) * pidh->idCount;
+    pgidh = (GRPICONDIRHEADER *)malloc(size);
+    pgidh->idReserved = pidh->idReserved;
+    pgidh->idType = pidh->idType;
+    pgidh->idCount = pidh->idCount;
+
+    for (i = 0; i < pidh->idCount; ++i) {
+	pgidh->idEntries[i].bWidth = pidh->idEntries[i].bWidth;
+	pgidh->idEntries[i].bHeight = pidh->idEntries[i].bHeight;
+	pgidh->idEntries[i].bColorCount = pidh->idEntries[i].bColorCount;
+	pgidh->idEntries[i].bReserved = pidh->idEntries[i].bReserved;
+	pgidh->idEntries[i].wPlanes = pidh->idEntries[i].wPlanes;
+	pgidh->idEntries[i].wBitCount = pidh->idEntries[i].wBitCount;
+	pgidh->idEntries[i].dwBytesInRes = pidh->idEntries[i].dwBytesInRes;
+	pgidh->idEntries[i].nID = i + 1;
+    }
+    return pgidh;
+}
+
+static PyObject *update_icon(PyObject *self, PyObject *args)
+{
+    char *exename;
+    char *iconame;
+    HANDLE hUpdate = NULL;
+    int i;
+    BOOL bDelete = 0;
+
+    char *icodata;
+    DWORD icosize;
+
+    /* from the .ico file */
+    ICONDIRHEADER *pidh;
+    WORD idh_size;
+
+    /* for the resources */
+    GRPICONDIRHEADER *pgidh = NULL;
+    WORD gidh_size;
+
+    if (!PyArg_ParseTuple(args, "ss|i", &exename, &iconame, &bDelete))
+	return NULL;
+
+    icodata = MapExistingFile(iconame, &icosize);
+    if (!icodata) {
+	return SystemError(GetLastError(), "MapExistingFile");
+    }
+    
+    pidh = (ICONDIRHEADER *)icodata;
+    idh_size = sizeof(ICONDIRHEADER) + sizeof(ICONDIRENTRY) * pidh->idCount;
+
+    pgidh = CreateGrpIconDirHeader(pidh);
+    gidh_size = sizeof(GRPICONDIRHEADER) + sizeof(GRPICONDIRENTRY) * pgidh->idCount;
+
+    hUpdate = BeginUpdateResource(exename, bDelete);
+    if (!hUpdate) {
+	SystemError(GetLastError(), "BeginUpdateResource");
+	goto failed;
+    }
+
+    if (!UpdateResource(hUpdate,
+			MAKEINTRESOURCE(RT_GROUP_ICON),
+			MAKEINTRESOURCE(1),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+			pgidh,
+			gidh_size)) {
+	SystemError(GetLastError(), "UpdateResource");
+	goto failed;
+    }
+
+    for (i = 0; i < pidh->idCount; ++i) {
+	char *cp = &icodata[pidh->idEntries[i].dwImageOffset];
+	int cBytes = pidh->idEntries[i].dwBytesInRes;
+
+	if (!UpdateResource(hUpdate,
+			    MAKEINTRESOURCE(RT_ICON),
+			    MAKEINTRESOURCE(i+1),
+			    MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+			    cp,
+			    cBytes)) {
+	    SystemError(GetLastError(), "UpdateResource");
+	    goto failed;
+	}
+    }
+
+    free(pgidh);
+    UnmapViewOfFile(icodata);
+
+    if (!EndUpdateResource(hUpdate, FALSE))
+	return SystemError(GetLastError(), "EndUpdateResource");
+    Py_INCREF(Py_None);
+    return Py_None;
+
+  failed:
+    if (pgidh)
+	free(pgidh);
+    if (hUpdate)
+	EndUpdateResource(hUpdate, TRUE);
+    if (icodata)
+	UnmapViewOfFile(icodata);
+    return NULL;
+}
+
+/***********************************************************************************
+ *
+ * Dependency tracker
+ *
+ */
+
 static char* searchpath;
 
 static PyObject *py_result;
@@ -134,6 +342,9 @@ static PyObject *get_sysdir(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
+    { "update_icon", update_icon, METH_VARARGS,
+      "update_icon(exe, ico[, delete=0]) - add icon to an exe file\n"
+      "If the delete flag is 1, delete all existing resources", },
     { "get_sysdir", get_sysdir, METH_VARARGS,
       "get_sysdir() - Return the windows system directory"},
     { "get_windir", get_windir, METH_VARARGS,
