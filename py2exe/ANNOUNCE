@@ -1,44 +1,63 @@
-
-**py2exe 0.5.0** (finally) released
+**py2exe 0.5.1** released
 ===================================
 
 py2exe is a Python distutils extension which converts python scripts
 into executable windows programs, able to run without requiring a
-python installation.
+python installation.  Console and Windows (GUI) applications, windows
+NT services, exe and dll COM servers are supported.
 
-News
+This is a bugfix release.
+    
+    * Print a message explaining what's going on whan a service
+      exe is started from the command line.
 
-    Python 2.3 is required, because the new zipimport feature is used.
-    The zipimport mechanism is able to handle the early imports of the
-    warnings and also the encodings module which is done by Python.
+    * py2exe did build invalid version resources, they didn't show up
+      correctly on Win98 at least.  Patch by Roger Upole.
 
-    Creates a single directory, which must be deployed completely.
+    * Fix a buffer overflow in the C code.  Patch by Ralf Sieger, closes
+      bug item #893310
 
-    py2exe can create any number of console and gui executables in
-    this directory, plus optionally windows service exes, plus
-    optionally exe and dll com servers.  The com servers can expose
-    one or more com object classes.
+    * py2exe now (again) has a builtin list of dlls which should never be
+      distributed
 
-    All pure Python files are contained in a single zip archive, which
-    is shared by all the executables.  The zip archive may also be
-    used by programs embedding Python.  Since extension modules cannot
-    be imported from zipfiles, simple pure Python loaders are included
-    in the zipfile which load the extensions from the file system
-    (without requiring that the directory is in sys.path).
+    * Patch sys.winver in the distributed pythonXY.dll, so that there is
+      no possibility of conflicts with existing distributions and the
+      registry keys found there.  Patch by Mark Hammond.
 
-    It is now simple to build py2exe from the sources, provided you
-    have MSVC6 installed - there are no dependencies on win32all
-    sources.
+    * Fix several problems when an exception in a 'windows' exe occurs.
 
-    The created executables are standard PE executable files now, no
-    longer is something appended to the exe portion.
+    * Include a workaround for unbounded recursion in modulefinder when
+      Jason Jorendorff's path module is installed
+      See also http://python.org/sf/876278
+
+    * Fix problems when package_dir is set in the setup script,
+      see http://tinyurl.com/yuc5l
+
+    * py2exe can now be built from the sources with mingw32
+
+    * Manage the thread state correctly in multithreaded COM servers
+      (patch by Mark Hammond)
+
+    * py2exe does now handle precompile .pyo and .pyc files (patch by
+      Shane Holloway)
+
+    * Fix a problem when the exe's directory contains single quotes
+
+    * Register service dependencies when installing a service
+
+    * Return an exit code of 255 from the exe when there's an uncatched
+      exception running the main script.
+
+    * Print a warning instead of failing to build with weird version numbers.
+      Suggested by Cory Dodt.
+
+Homepage:
+
+    <http://starship.python.net/crew/theller/py2exe>
 
 Download from the usual location:
 
-<http://starship.python.net/crew/theller/py2exe>
 
-Many thanks to Mark Hammond who worked hard to improve the COM
-support, and suggested and implemented a lot of the new features.
 
 Enjoy,
 
