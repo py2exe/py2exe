@@ -1,3 +1,4 @@
+#!/usr/bin/python
 ##
 ##	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
 ##
@@ -326,6 +327,7 @@ setup(name="py2exe",
       interpreters = interpreters,
       packages=['py2exe', 'py2exe.resources',
                 'py2exe.samples.simple', # not really a package!
+                'py2exe.samples.extending', # not really a package!
                 'py2exe.samples.advanced'], # not really a package!
       options = options,
       )
