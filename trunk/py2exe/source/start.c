@@ -324,14 +324,14 @@ void fix_string(char *src)
 
 int start(int argc, char **argv)
 {
-    int result = 0; /* default return code */
+    int result = 255;
     char modulename[_MAX_PATH];
     char dirname[_MAX_PATH];
     
     /* Open the executable file and map it to memory */
     if(!GetModuleFileName(NULL, modulename, sizeof(modulename))) {
 	SystemError(GetLastError(), "Retrieving module name");
-	return 255;
+	return result;
     }
     {
 	char *cp;
@@ -343,13 +343,12 @@ int start(int argc, char **argv)
     arc_data = MapExistingFile(modulename, &arc_size);
     if(!arc_data) {
 	SystemError(GetLastError(), "Opening archive");
-	return 255;
+	return result;
     }
 
     if (!GetScriptInfo(arc_data, arc_size)) {
 	/* XXX Raise Error */
 	SystemError (0, "Could not get Script info\n");
-	result = 255;
 	goto finish;
     }
 
@@ -359,8 +358,16 @@ int start(int argc, char **argv)
  * to pick up entries from the registry into sys.path.
  * There seems to be no way to avoid this on Python 1.5.
  */
+#if 0
 	sprintf(buffer, "PYTHONHOME=%s", dirname);
 	_putenv (buffer);
+#else
+	/* From Barry Scott */
+	/* Must not set the PYTHONHOME env var as this prevents
+	   python being used in os.system or os.popen */
+	Py_SetPythonHome( dirname );
+#endif
+
 /*
  * PYTHONPATH entries will be inserted in front of the
  * standard python path.
@@ -388,6 +395,15 @@ int start(int argc, char **argv)
  * be imported from the file system.
  */
     Py_Initialize();
+
+#if 1
+    /* From Barry Scott */
+    /* cause python to calculate the path */
+    Py_GetPath();
+    /* clean up the environment so that os.system
+       and os.popen processes can run python */
+    _putenv( "PYTHONPATH=" );	
+#endif
 
     PySys_SetArgv(argc, argv);
 
@@ -438,8 +454,8 @@ int start(int argc, char **argv)
 		script[size+1] = '\0';
 		fix_string(script);
 		PyRun_SimpleString(script);
-		/* If the script calls sys.exit(), we will never return. True? */
-		/* How can we retrieve a return code? */
+
+		result = 0;
 	    } else {
 		SystemError(0, "Not enough memory");
 	    }
