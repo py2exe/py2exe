@@ -117,8 +117,6 @@ class py2exe(Command):
          "comma-separated list of packages to include"),
         ]
 
-    boolean_options = ['unbuffered', 'optimize']
-
     def initialize_options (self):
         self.unbuffered = 0
         self.optimize = 0
@@ -130,6 +128,7 @@ class py2exe(Command):
         self.typelibs = None
 
     def finalize_options (self):
+        self.optimize = int(self.optimize)
         self.excludes = fancy_split(self.excludes)
         self.includes = fancy_split(self.includes)
         # includes is stronger than excludes
