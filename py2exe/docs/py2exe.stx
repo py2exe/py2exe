@@ -2,7 +2,7 @@ py2exe
 
   Build standalone window programs from python scripts
 
-    Copyright (C) 2000, "Thomas Heller", mailto:theller@python.net
+    Copyright (C) 2001, "Thomas Heller", mailto:theller@python.net
 
   Abstract
   
@@ -11,14 +11,19 @@ py2exe
 
   News
 
-    **2000/01/31** -- *<font color="red">Release 0.2.0 finds needed dlls automatically, has
-    new command-line options, can build programs containing modules
-    imported via the registry (pythoncom, pywintypes).</font>*
+    **2001/02/02** -- *<font color="red">Release 0.2.1: the* '--includes' *option
+    now understands hierachical (dotted) module names and fixes the*
+    'AttributeError: __ispkg__' *bug, which prevented running the built executables
+    in rare cases.</font>*
 
-    **2000/01/24** -- *Release 0.1.1 fixes the bugs of the first beta-release
+    **2001/01/31** -- *Release 0.2.0 finds needed dlls automatically, has
+    new command-line options, can build programs containing modules
+    imported via the registry (pythoncom, pywintypes).*
+
+    **2001/01/24** -- *Release 0.1.1 fixes the bugs of the first beta-release
     and should work as advertised.*
 
-    **2000/01/19** -- *First public beta-version released and announced on comp.lang.python.*
+    **2001/01/19** -- *First public beta-version released and announced on comp.lang.python.*
 
   Using **py2exe**
 
@@ -78,14 +83,18 @@ py2exe
     from the zip-archive, so they are needed as separate files (and
     are copied into the 'dist\myscript' directory).
 
-    Attention: **py2exe** tries to track down _all_ binary dependencies
+    *Attention:* **py2exe** tries to track down _all_ binary dependencies
     for all pyd's and dll's copied to the dist directory recursively,
     and copies all these dependend files into the dist directory.
-    **py2exe** has a builtin list of some system dlls which are
+    **py2exe** has a build in list of some system dlls which are
     not copied, but this list can never be complete.
     Before distributing these files please make sure that you
     have the rights to do so.
-    
+
+    Also make sure that you observe the requirements for installing/replacing
+    system dlls on the target system: usually these dlls must only be updated with
+    proper version checking and into the correct location, so that your
+    application as well as other ones work and continue to work correctly.
 
   Reference
     
@@ -126,6 +135,12 @@ py2exe
 
     **--unicode** or **-U** -- treat string literals as unicode
 
+    *Note that you can supply these options to* **py2exe** *on the command line,
+    or put them into a setup configuration file* 'setup.cfg' *.*
+
+    Details about configuration files are available in the
+    "distutils documentation":http://www.python.org/doc/current/dist/setup-config.html.
+	
   Requirements for using **py2exe**
 
     Python 1.5
@@ -146,15 +161,21 @@ py2exe
 
     Binaries (windows installer)
 
-      For Python 1.5: "py2exe-0.2.0.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py1.5.exe.
+      For Python 1.5: "py2exe-0.2.1.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.1.win32-py1.5.exe.
 
-      For Python 2.0: "py2exe-0.2.0.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py2.0.exe.
+      For Python 2.0: "py2exe-0.2.1.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.1.win32-py2.0.exe.
 
     Source code
 
       Download "py2exe-0.2.0.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.zip.
 
     Older versions still available
+
+      "py2exe-0.2.0.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py1.5.exe
+
+      "py2exe-0.2.0.win32-py2.0.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.win32-py2.0.exe
+
+      "py2exe-0.2.0.zip":http://starship.python.net/crew/theller/py2exe/py2exe-0.2.0.zip.
 
       "py2exe-0.1.1.win32-py1.5.exe":http://starship.python.net/crew/theller/py2exe/py2exe-0.1.1.win32-py1.5.exe
 
