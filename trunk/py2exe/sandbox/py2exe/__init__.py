@@ -16,7 +16,7 @@ class Distribution(distutils.dist.Distribution):
             if val is not None:
                 del attrs[name]
 
-        self.zipfile = attrs.get("zipfile", "library.zip")
+        self.zipfile = attrs.get("zipfile", "library")
         try:
             del attrs["zipfile"]
         except KeyError:
