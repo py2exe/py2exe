@@ -249,7 +249,7 @@ run_w = Interpreter("py2exe.run_w",
                     )
 
 setup(name="py2exe",
-      version="0.1",
+      version="0.1.1a",
       description="Build standalone executables for windows",
       long_description=__doc__,
       author="Thomas Heller",
