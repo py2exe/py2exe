@@ -24,13 +24,31 @@
 <h2>Abstract</h2>
 
 <p><b>py2exe</b> is a distutils extension to convert python scripts into executable
-windows programs.
+windows programs, which are able to run without requiring a python installation.
+
+<!--...............................................................................-->
+
+<h2>Status</h2>
+
+<p><b>py2exe</b> is reaching a stable state.
+<br>It has been used to create wxPython, Tkinter, Pmw, PyGTK, pygame, win32com client and
+other standalone programs.
+<p>I would like to thank everyone who tried out this little utility and gave me feedback.
 
 <!--...............................................................................-->
 
 <h2>News</h2>
 
 <dl>
+<dt><b>2001/03/23</b></dt>
+<dd><i>Release 0.2.4: <br>
+Full Tkinter support, <b>py2exe</b> automatically copies your
+tcl/tk installation into the dist directory.
+<br>Does no longer copy system dlls, which should prevent several errors when the final
+executable is run on other systems.</i>
+<br><font color="red">This is probably the final 0.2 release. For future development please look below.</font>
+</dd>
+
 <dt><b>2001/02/13</b></dt>
 <dd><i>Release 0.2.3: <b>py2exe</b> now can change the icon in the resulting
 executable, see the</i> <tt>--icon</tt> <i>command line flag.</i>
@@ -238,8 +256,9 @@ Create runtime with debugging information. Default is to create a
 running the script.</dd>
 
 <dt><b>--icon</b></dt> <i>ico-file</i>
-<dd>An icon to put into the resulting executable. Note that the icon-changing
-code only works under NT because of windows limitations.
+<dd>This options allows to change the icon in the exe-file.
+You can only use this flag if you run the build process
+under Windows NT or Windows 2000.
 </dd>
 
 </dl>
@@ -281,12 +300,12 @@ Python 1.6 and later</h3>
 
 <h3>Binaries (windows installer)</h3>
 
-<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.win32-py2.0.exe">py2exe-0.2.3.win32-py2.0.exe</a>.
+<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.win32-py2.0.exe">py2exe-0.2.4.win32-py2.0.exe</a>.
 
-<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.win32-py1.5.exe">py2exe-0.2.3.win32-py1.5.exe</a>.
+<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.win32-py1.5.exe">py2exe-0.2.4.win32-py1.5.exe</a>.
 
 <h3>Source code</h3>
-<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.zip">py2exe-0.2.3.zip</a>.
+<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.4.zip">py2exe-0.2.4.zip</a>.
 <h3>
 Project hosting</h3>
 <p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
@@ -320,57 +339,26 @@ your scripts starts, and so PyImport_ImportModule can find them.
 
 <!--...............................................................................-->
 
-<h2>Feedback</h2>
-<p>This is still an early release. <font color="#FF0000">I need feedback!</font>
-<p>If <b>py2exe</b> works for you, or doesn't work at all, please drop
-<a href="mailto:theller@python.net">me</a>a note.
-
-<p>For bug reports it is most useful to include information about the python
-and windows version you use and the output of the "python setup.py py2exe"
-command. If possible, include the script you are trying to convert.
-
-<!--...............................................................................-->
-
 <h2>Future plans</h2>
 
 <p>Provide a way to require even less files: provide more custom prebuilt
 interpreters, so that eventually everything can be packed into a <i>single</i>
 file (which can be run without unpacking anything).
 
-<p>Pack Tkinter programs? Could probably be done without too much work.
-Please contact me if you need this.
-
 <p>Pack COM servers written in python? (Should already be possible for local servers,
 but I have to fix up the registration)
-
-<p>Provide a way to change the icon in the resulting executable.
 
 <!--...............................................................................-->
 
 <h2>Related work</h2>
 
+<p>Fredrik Lundh's <a href=http://www.pythonware.com/products/python/squeeze/index.htm>squeeze</a>
+is <i>a simple utility which compiles your Python program into a bytecode package,
+allowing you do distribute Python programs as one or two files</i>.
+<p>Christian Tismer's <a href=http://starship.python.net/crew/pirx/>sqfreeze</a>
+is based on an early version of squeeze.
 <p>Gordon McMillan's <a href="http://www.mcmillan-inc.com/install1.html">installer</a>
-is similar to <b>py2exe</b>, but more mature. Gordon goes in great detail
-explaining his (and this) approach, and also discusses other solutions.
-
-<p><b>py2exe</b> compared to <b>installer</b>
-
-<p>Advantages:
-<ul>
-<li>Builds also debug versions of your programs.</li>
-<li>Complete control
- over python's optimization (-O and -OO flags) and buffering
-	  of stdout and stderr (-u flag) in the resulting executable.
-</li>
-<li>
-	The sourcecode is distributed with a distutils setup script,
-	so you can easily rebuild it yourself (C-compiler
-	required).</li></ul>
-
-<p>Disadvantages:
-<ul>
-<li><b>py2exe</b> only creates what Gordon calls <tt>standalone</tt> programs.</li>
-<li>Since I do not use Tkinter, I did not care about that yet.</li>
+is similar to <b>py2exe</b>.
 </ul>
 
 <hr>
