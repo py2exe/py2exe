@@ -255,14 +255,19 @@ setup(name="py2exe",
       description="Build standalone executables for windows",
       long_description=__doc__,
       author="Thomas Heller",
-      author_email="theller@users.sourceforge.net",
+      author_email="theller@python.net",
       url="http://py2exe.sourceforge.net/",
       
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
                   'deinstall': deinstall},
 
+##      ext_modules = [Extension("xx", ["source/xxmodule.c"])],
       interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],
       package_dir={'py2exe.tools': "tools" + sys.winver},
       )
+
+# Local Variables:
+# compile-command: "setup.py install"
+# End:
