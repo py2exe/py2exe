@@ -1,1 +1,2 @@
-scp index.html py2exe.css theller@starship.python.net:~/public_html/py2exe
+scp py2exe.jpg index.html py2exe.css theller@starship.python.net:~/public_html/py2exe
+scp py2exe.jpg index.html py2exe.css theller@shell.sourceforge.net:/home/groups/py2exe/htdocs
