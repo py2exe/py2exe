@@ -1,7 +1,7 @@
 from StructuredText import html_with_references
 
 
-file = open("htdocs\\py2exe.html", "w")
+file = open("htdocs\\index.html", "w")
 
 print >>file, "<html><head>"
 print >>file, '<LINK REL="STYLESHEET" HREF="py2exe.css">'
@@ -20,7 +20,7 @@ footer = """
 <!-- Copyright (c)2000 Site Meter -->
 <!--WEBBOT bot="HTMLMarkup" Endspan -->
 <A href="http://sourceforge.net"> 
-<IMG src="http://sourceforge.net/sflogo.php?group_id=11628&amp;type=1" width="88" height="31" border="0" alt="SourceForge Logo"> </A>
+<IMG src="http://sourceforge.net/sflogo.php?group_id=15583&amp;type=1" width="88" height="31" border="0" alt="SourceForge Logo"> </A>
 """
 print >>file, footer
 
