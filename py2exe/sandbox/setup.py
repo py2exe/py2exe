@@ -26,7 +26,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.5"
+from py2exe import __version__
 
 # $Id$
 
