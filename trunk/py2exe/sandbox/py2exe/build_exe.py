@@ -748,6 +748,9 @@ class py2exe(Command):
         if self.compressed:
             self.includes.append("zlib")
 
+        # os.path will never be found ;-)
+        self.ignores.append('os.path')
+
         # update the self.ignores list to ignore platform specific
         # modules.
         if sys.platform == "win32":
