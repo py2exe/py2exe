@@ -201,3 +201,37 @@ STDAPI DllUnregisterServer()
 		PyErr_Print();
 	return rc==0 ? 0 : SELFREG_E_CLASS;
 }
+
+STDAPI DllInstall(BOOL install, LPCWSTR cmdline)
+{
+	PyObject *m = NULL, *func = NULL, *args = NULL, *result = NULL;
+	int rc=SELFREG_E_CLASS;
+	check_init();
+	m = PyImport_AddModule("__main__");
+	if (!m) goto done;
+	func = PyObject_GetAttrString(m, "DllInstall");
+	if (!func) goto done;
+	args = Py_BuildValue("(Ou)", install ? Py_True : Py_False, cmdline);
+	if (!args) goto done;
+	result = PyObject_Call(func, args, NULL);
+	if (result==NULL) goto done;
+	rc = 0;
+	/* but let them return a custom rc (even though we don't above!) */
+	if (PyInt_Check(result))
+		rc = PyInt_AsLong(result);
+	else if (result == Py_None)
+		; /* do nothing */
+	else
+		PySys_WriteStderr("Unexpected return type '%s' for DllInstall\n",
+						  result->ob_type->tp_name);
+done:
+	if (PyErr_Occurred()) {
+		PyErr_Print();
+		PyErr_Clear();
+	}
+	// no ref added to m
+	Py_XDECREF(func);
+	Py_XDECREF(args);
+	Py_XDECREF(result);
+	return rc;
+}

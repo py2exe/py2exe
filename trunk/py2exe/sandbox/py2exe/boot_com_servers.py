@@ -76,6 +76,14 @@ def DllUnregisterServer():
         # and unregister each class
         win32com.server.register.UnregisterClasses(*get_classes(mod))
 
+def DllInstall(bInstall, cmdline):
+    # Enumerate each module implementing an object
+    for mod in com_modules:
+        # see if the module has the function.
+        extra_fun = getattr(mod, "DllInstall", None)
+        if extra_fun is not None:
+            extra_fun(bInstall, cmdline)
+
 # Mainline code - executed always
 # If we are running as a .EXE, check and process command-line args
 if sys.frozen != "dll":
