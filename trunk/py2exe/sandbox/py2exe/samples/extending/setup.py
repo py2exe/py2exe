@@ -124,12 +124,15 @@ class InnoScript:
                                                 None,
                                                 0)
         else:
-            print "Ah, you have ctypes installed. Good!"
-            ctypes.windll.shell32.ShellExecuteA(0, "compile",
-                                                self.pathname,
-                                                None,
-                                                None,
-                                                0)
+            print "Cool, you have ctypes installed."
+            res = ctypes.windll.shell32.ShellExecuteA(0, "compile",
+                                                      self.pathname,
+                                                      None,
+                                                      None,
+                                                      0)
+            if res < 32:
+                raise RuntimeError, "ShellExecute failed, error %d" % res
+
 
 ################################################################
 
