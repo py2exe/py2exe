@@ -191,10 +191,10 @@ class py2exe(Command):
 
         print "*** parsing results ***"
         py_files, extensions = self.parse_mf_results(mf)
-        self.plat_finalize(mf.modules, py_files, extensions)
 
         print "*** finding dlls needed ***"
         dlls = self.find_dlls(extensions)
+        self.plat_finalize(mf.modules, py_files, extensions, dlls)
 
         print "*** create binaries ***"
         self.create_binaries(py_files, extensions, dlls)
@@ -252,6 +252,9 @@ class py2exe(Command):
         # copy the extensions to the target directory
         for item in extensions:
             src = item.__file__
+            # XXX It seems the following comment is no longer true...
+            # have to check
+            #
             # It would be nice if we could change the extensions
             # filename to include the full package.module name, for
             # example 'wxPython.wxc.pyd'
@@ -271,9 +274,9 @@ class py2exe(Command):
         print "*** copy dlls ***"
         for dll in dlls:
             base = os.path.basename(dll)
-            if base.lower() == python_dll:
-                # The python dll itself cannot be in the lib
-                # directory, it must go into the exe directory.
+            if base.lower() in self.dlls_in_exedir:
+                # These special dlls cannot be in the lib directory,
+                # they must go into the exe directory.
                 dst = os.path.join(self.exe_dir, base)
             else:
                 dst = os.path.join(self.lib_dir, base)
@@ -545,7 +548,7 @@ class py2exe(Command):
 
         return py_files, extensions
 
-    def plat_finalize(self, modules, py_files, extensions):
+    def plat_finalize(self, modules, py_files, extensions, dlls):
         # platform specific code for final adjustments to the
         # file lists
         if sys.platform == "win32":
@@ -559,22 +562,14 @@ class py2exe(Command):
             # the loaded dlls with sysinternals ProcessExplorer shows
             # that PyWinTypes is loaded from the dll server's
             # directory, but pythoncom is loaded from the system
-            # directory. At least when there is a python installation
-            # with win32all!
-            # 
-            # XXX Currently, at least PyWinTypesXX.dll is also found
-            # as binary dependency, so it is copied twice. Does no harm,
-            # but not so nice.
+            # directory. At least when there is a python and win32all
+            # installation.
             if "pythoncom" in modules.keys():
                 import pythoncom
-                src = pythoncom.__file__
-                dst = os.path.join(self.exe_dir, os.path.basename(src))
-                self.copy_file(src, dst)
+                dlls.add(pythoncom.__file__)
             if "pywintypes" in modules.keys():
                 import pywintypes
-                src = pywintypes.__file__
-                dst = os.path.join(self.exe_dir, os.path.basename(src))
-                self.copy_file(src, dst)
+                dlls.add(pywintypes.__file__)
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
@@ -614,6 +609,13 @@ class py2exe(Command):
                               "riscosenviron", "riscospath", "ce",
                               "os.path"
                               ]
+            # special dlls which must be copied to the exe_dir, not the lib_dir
+            names = "python pywintypes pythoncom".split()
+            names = ["%s%d%d" % (name, sys.version_info[0], sys.version_info[1])
+                     for name in names]
+            if is_debug_build:
+                names = ["%s_d" % name for name in names]
+            self.dlls_in_exedir = ["%s.dll" for name in names]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
