@@ -342,7 +342,7 @@ class py2exe(Command):
         dlls = [item.__file__ for item in extensions]
 ##        extra_path = ["."] # XXX
         extra_path = []
-        dlls, unfriendly_dlls = self.find_dependend_dlls(0, dlls,
+        dlls, unfriendly_dlls = self.find_dependend_dlls(dlls,
                                                          extra_path + sys.path,
                                                          self.dll_excludes)
         # dlls contains the path names of all dlls we need.
@@ -713,7 +713,7 @@ class py2exe(Command):
         # restore the time.
         os.utime(dll_name, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
 
-    def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
+    def find_dependend_dlls(self, dlls, pypath, dll_excludes):
         import py2exe_util
         sysdir = py2exe_util.get_sysdir()
         windir = py2exe_util.get_windir()
@@ -728,15 +728,16 @@ class py2exe(Command):
         # so the loadpath must be extended by our python path.
         loadpath = loadpath + ';' + ';'.join(pypath)
 
-##XXX        images = [self.get_exe_stub(use_runw)] + dlls
-        images = dlls # XXX
+        # We use Python.exe to track the dependencies of our run stubs ...
+        images = dlls + [sys.executable]
 
         self.announce("Resolving binary dependencies:")
         
         alldlls, warnings = bin_depends(loadpath, images, dll_excludes)
         for dll in alldlls:
             self.announce("  %s" % dll)
-##XXX        alldlls.remove(self.get_exe_stub(use_runw))
+        # ... but we don't need python.exe
+        alldlls.remove(sys.executable)
 
         return alldlls, warnings
     # find_dependend_dlls()
@@ -861,6 +862,7 @@ class py2exe(Command):
                              'SOCKS',
                              'SUNAUDIODEV',
                              '_dummy_threading',
+                             '_emx_link',
                              '_xmlplus',
                              '_xmlrpclib',
                              'al',
