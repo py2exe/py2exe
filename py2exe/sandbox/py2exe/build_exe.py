@@ -110,16 +110,15 @@ def FixupTargets(targets, default_attribute):
     if not targets:
         return targets
     ret = []
-    for target in targets:
-        if type(target) in types.StringTypes :
+    for target_def in targets:
+        if type(target_def) in types.StringTypes :
             # Create a default target object, with the string as the attribute
             target = Target(**{default_attribute: target})
         else:
-            d = getattr(target, "__dict__", target)
-            if not d.has_key(default_attribute):
+            if not target_def.has_key(default_attribute):
                 raise DistutilsOptionError, \
-                      "This target class requires an attribute '%s'" % default_attribute
-            target = Target(**d)
+                      "This target requires a '%s' definition" % default_attribute
+            target = Target(**target_def)
         target.validate()
         ret.append(target)
     return ret
@@ -146,25 +145,16 @@ class py2exe(Command):
     boolean_options = ['unbuffered']
 
     def initialize_options (self):
-        # hack in extra options - if the main setup script defines an object
-        # py2exe_options, default some extra options from that.
-        try:
-            extra_options = __import__('__main__').py2exe_options
-            # if class/instance etc, get the dics.
-            extra_options = getattr(extra_options, "__dict__", extra_options)
-        except (ImportError, AttributeError):
-            extra_options = {}
-        
-        self.unbuffered = extra_options.get("unbuffered", 0)
-        self.optimize = extra_options.get("optimize", 0)
-        self.includes = extra_options.get("includes")
-        self.excludes = extra_options.get("excludes")
-        self.packages = extra_options.get("packages")
-        self.dist_dir = extra_options.get("dist_dir")
-        self.lib_dir = extra_options.get("lib_dir")
-        self.dll_excludes = extra_options.get("dll_excludes", [])
-        self.ext_mapping = extra_options.get("ext_mapping", {})
-        self.typelibs = extra_options.get("typelibs", [])
+        self.unbuffered = 0
+        self.optimize = 0
+        self.includes = None
+        self.excludes = None
+        self.packages = None
+        self.dist_dir = None
+        self.lib_dir = None
+        self.dll_excludes = None
+        self.typelibs = None
+        self.ext_mapping = {}
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -177,7 +167,7 @@ class py2exe(Command):
         self.packages = fancy_split(self.packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
-
+        self.dll_excludes = fancy_split(self.dll_excludes)
 
     def run(self):
         # refactor, refactor, refactor!
