@@ -7,29 +7,6 @@
 # How to include win32com.server.policy, and exclude win32com.server.dispatcher
 # for com servers ?
 
-################################################################
-# Non-Bugs - What works?
-#
-# Can build simple console programs
-# A trivial wxPython program
-# gui programs without console
-
-################################################################
-# Bugs:
-#
-# win32com.client.Dispatch programs fail with:
-
-##Traceback (most recent call last):
-##  File "<string>", line 16, in ?
-##  File "win32com\client\__init__.pyc", line 12, in ?
-##  File "win32com\client\gencache.pyc", line 528, in ?
-##  File "win32com\client\gencache.pyc", line 44, in __init__
-##  File "win32com\client\gencache.pyc", line 515, in Rebuild
-##  File "win32com\client\gencache.pyc", line 49, in _SaveDicts
-##  File "win32com\client\gencache.pyc", line 96, in GetGeneratePath
-##IOError: [Errno 2] No such file or directory:
-#      '...\\test\\dist\\application.zip\\win32com\\gen_py\\__init__.py'
-
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
@@ -292,7 +269,7 @@ class py2exe(Command):
                                    verbose=self.verbose, dry_run=self.dry_run)
 
         print "*** copy dlls ***"
-        for dll in dlls.items():
+        for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() == python_dll:
                 # The python dll itself cannot be in the lib
@@ -745,9 +722,6 @@ class FileSet:
 
     def __len__(self):
         return len(self._dict)
-
-    def items(self):
-        return self._dict.values()
 
 # class FileSet()
 
