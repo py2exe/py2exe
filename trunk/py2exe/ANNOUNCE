@@ -1,4 +1,4 @@
-**py2exe 0.5.2** released
+**py2exe 0.5.3** released
 ===================================
 
 py2exe is a Python distutils extension which converts python scripts
@@ -6,7 +6,19 @@ into executable windows programs, able to run without requiring a
 python installation.  Console and Windows (GUI) applications, windows
 NT services, exe and dll COM servers are supported.
 
-This is a bugfix release.
+This release fixes a few bugs in the 0.5.2 version:
+
+    * Applied a patch from Mark Hammond to correctly manage the thread
+      state in dll COM servers.
+
+    * Add a line feed to the script's code, to avoid problems
+      byte-compiling it when it contains trailing white space.
+
+    * Fix a problem with Python 2.4 when no extension modules are
+      needed - py2exe didn't track down that python24.dll is needed.
+
+
+py2exe 0.5.2 is a bugfix release.
     
     * Print a message explaining what's going on whan a service
       exe is started from the command line.

@@ -1,3 +1,7 @@
+2004-07-23  Thomas Heller  <theller@python.net>
+
+	*  (Message): py2exe 0.5.3 released.
+
 2004-07-13  Thomas Heller  <theller@python.net>
 
 	* source\run_dll.c: From Mark Hammond: patch to correctly manage
