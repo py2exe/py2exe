@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.38  2001/09/21 16:22:25  theller
+# Preliminary support for aggressive option.
+#
 # Revision 1.37  2001/09/17 20:10:41  theller
 # Strip whitespace off the results of string.split(..., ',') for
 # command line options (or from setup.cfg) containing lists of items.
@@ -81,8 +84,6 @@ class py2exe (Command):
 
     # XXX need more options: unbuffered, ???
     user_options = [
-        ('aggressive', 'a',
-         "use aggressive mode when searching for dependencies"),
         ('debug', 'g',
          "create runtime with debugging information"),
         ('dist-dir=', 'd',
@@ -95,8 +96,8 @@ class py2exe (Command):
          "optimization level: -O1 for \"python -O\", "
          "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
         ('windows', 'w',
-         "Create a Window application"),
-        ('console', 'c',
+         "Create a Windows application"),
+        ('console', None,
          "Create a Console application"),
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
@@ -110,7 +111,7 @@ class py2exe (Command):
          "path to an icon file for the executable(s)"),
         ]
     
-    boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console', 'aggressive']
+    boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
 
     def initialize_options (self):
         self.bdist_dir = None
@@ -126,7 +127,6 @@ class py2exe (Command):
         self.packages = None
         self.force_imports = None
         self.icon = None
-        self.aggressive = None
 
     # initialize_options()
 
@@ -220,6 +220,7 @@ class py2exe (Command):
         # If the python module is imported with PyImport_Import(),
         # the only problem is to find the dependency.
         #
+        # (This problem has been fixed in Python 2.1 and later:)
         # If the module is imported with PyImport_ImportModule(),
         # it is worse, because PyImport_ImportModule()
         # does NOT call the __import__() and thus will not trigger
@@ -227,13 +228,6 @@ class py2exe (Command):
         # The only solution (so far) is to make sure that these modules
         # ARE ALREADY PRESENT in sys.modules at the time the extension
         # is imported.
-        #
-        # Examples: (from python 2.0)
-        #   _sre imports copy_reg
-        #   cPickle imports string, copy_reg
-        #   cStringIO imports string
-        #   parser imports copy_reg
-        #   codecs imports encodings
         #
         # Our solution:
         # Add them to the py_files we need, and additionally
@@ -243,7 +237,7 @@ class py2exe (Command):
         #
         # These are the known dependencies:
         #
-        import_hack = {
+        invisible_imports = {
             "cPickle": ["copy_reg", "types", "string"],
             "cStringIO": ["copy_reg"],
             "parser": ["copy_reg"],
@@ -253,9 +247,34 @@ class py2exe (Command):
             "win32api": ["pywintypes"],
             "win32ui": ["cStringIO", "traceback"],
             "pythoncom": ["win32com.server.policy", "pywintypes"],
+##            "anydbm": ['dbhash', 'gdbm', 'dbm', 'dumbdbm'],
+##            "DateTime": ['ISO', 'ARPA', 'ODMG', 'Locale', 'Feasts', 'Parser', 'NIST'],
+##            "encodings" = XXX a lot of stuff
+##            "pyexpat": ["xmlparse", "xmltok"],
+##            "xml.dom.domreg": ['xml.dom.minidom','xml.dom.DOMImplementation'],
+##            "xml": ["xml.sax.xmlreader"],
+            ## more stuff for xml
 ##            "odbc": ["dbi"],
+
+            "multiarray": ["_numpy"],
+
             }
-        from tools.modulefinder import ModuleFinder
+
+        mod_attrs = {
+            "wxPython": ["miscc", "windowsc", "streamsc", "gdic", "sizersc", "controls2c",
+                         "printfwc", "framesc", "stattoolc", "misc2c", "controlsc",
+                         "windows2c", "eventsc", "windows3c", "clip_dndc", "mdic",
+                         "imagec", "cmndlgsc", "filesysc"],
+            }
+
+        from tools.modulefinder import ModuleFinder, AddPackagePath
+
+        try:
+            res = imp.find_module("win32com")
+        except ImportError:
+            pass
+        else:
+            AddPackagePath("win32com", res[1] + 'ext')
 
         for script in self.distribution.scripts:
             self.announce("+----------------------------------------------------")
@@ -300,7 +319,7 @@ class py2exe (Command):
             mf = ModuleFinder(path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes,
-                              aggressive=self.aggressive)
+                              mod_attrs=mod_attrs)
 
             for f in self.support_modules():
                 mf.load_file(f)
@@ -322,7 +341,12 @@ class py2exe (Command):
                         arg.append(dirname)
                 # Very weird...
                 # Find path of package
-                path = imp.find_module(f)[1]
+                try:
+                    path = imp.find_module(f)[1]
+                except ImportError:
+                    self.warn("No package named %s" % f)
+                    continue
+                    
                 packages = []
                 # walk the path to find subdirs containing __init__.py files
                 os.path.walk(path, visit, packages)
@@ -338,15 +362,17 @@ class py2exe (Command):
 
             mf.run_script(script)
 
-            # first pass over modulefinder results, insert modules from import_hack
+            # first pass over modulefinder results, insert modules from invisible_imports
             for item in self.force_imports:
                 mf.import_hook(item)
                 
             force_imports = apply(Set, self.force_imports)
+
             for item in mf.modules.values():
-                if item.__name__ in import_hack.keys():
-                    mods = import_hack[item.__name__]
-                    force_imports.extend(mods)
+                if item.__name__ in invisible_imports.keys():
+                    mods = invisible_imports[item.__name__]
+                    if sys.hexversion < 0x2010000:
+                        force_imports.extend(mods)
                     for f in mods:
                         mf.import_hook(f)
 
@@ -485,7 +511,7 @@ class py2exe (Command):
                         break
                 else:
                     modname = os.path.splitext(basename)[0]
-                if modname in import_hack.keys():
+                if modname in invisible_imports.keys():
                     unfriendly_dlls.remove(dll)
 
             if unfriendly_dlls:
@@ -513,6 +539,9 @@ class py2exe (Command):
         if not self.keep_temp:
             force_remove_tree(self.bdist_dir, self.verbose, self.dry_run)
     # run()
+
+    def find_module_path(self, modname):
+        result = imp.find_module(modname)
 
     def find_suffix(self, filename):
         # given a filename (usually of type C_EXTENSION),
