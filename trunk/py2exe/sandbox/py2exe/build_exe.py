@@ -123,8 +123,7 @@ class py2exe(Command):
             dist = self.distribution
 
             # all of these contain module names
-            required_modules = dist.com_server
-##            required_modules += dist.dll
+            required_modules = dist.com_server[:]
             required_modules += dist.service
 
             # and these contains file names
@@ -171,12 +170,14 @@ class py2exe(Command):
         # find and copy binary dependencies
         dlls = [item.__file__ for item in extensions]
         
-        extra_path = [] # XXX
+##        extra_path = ["."] # XXX
+        extra_path = []
         dlls, unfriendly_dlls = self.find_dependend_dlls(0, dlls,
                                                          extra_path + sys.path)
 
         for item in extensions:
-            dlls.remove(item.__file__)
+            if item.__file__ in dlls:
+                dlls.remove(item.__file__)
 
         print "*** copy dlls ***"
         for dll in dlls.items() + unfriendly_dlls.items():
@@ -385,7 +386,9 @@ class py2exe(Command):
 
     def find_needed_modules(self, files, modules):
         # feed Modulefinder with everything, and return it.
-        from modulefinder import ModuleFinder
+        from modulefinder import ModuleFinder, ReplacePackage
+
+        ReplacePackage("_xmlplus", "xml")
         mf = ModuleFinder(excludes=self.excludes)
 
         for mod in modules:
