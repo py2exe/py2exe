@@ -29,6 +29,11 @@ windows programs.
 <h2>News</h2>
 
 <dl>
+<dt><b>2001/02/13</b></dt>
+<dd><i>Release 0.2.3: <b>py2exe</b> now can change the icon in the resulting
+executable, see the</i> <tt>--icon</tt> <i>command line flag.</i>
+</dd>
+
 <dt><b>2001/02/08</b></dt>
 <dd><i>Release 0.2.2: New command line flags to fine-tune the building process, several bugfixes. <b>py2exe</b> can now copy additional files into the dist directory. <b>py2exe</b> has been used to create a standalone COM server exe-file, although this is currently in a very early stage.</i>
 </dd>
@@ -230,6 +235,11 @@ Create runtime with debugging information. Default is to create a
 <dd>comma separated list of modules to inject into sys.modules before
 running the script.</dd>
 
+<dt><b>--icon</b></dt> <i>ico-file</i>
+<dd>An icon to put into the resulting executable. Note that the icon-changing
+code only works under NT because of windows limitations.
+</dd>
+
 </dl>
 
 <p>The following flags are planned but not yet implemented:
@@ -265,15 +275,16 @@ Python 1.6 and later</h3>
 <!--...............................................................................-->
 
 <h2>Download and project information</h2>
+<p>Older versions are available, but you have to guess the URL's.
 
 <h3>Binaries (windows installer)</h3>
 
-<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.win32-py2.0.exe">py2exe-0.2.2.win32-py2.0.exe</a>.
+<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.win32-py2.0.exe">py2exe-0.2.3.win32-py2.0.exe</a>.
 
-<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.win32-py1.5.exe">py2exe-0.2.2.win32-py1.5.exe</a>.
+<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.win32-py1.5.exe">py2exe-0.2.3.win32-py1.5.exe</a>.
 
 <h3>Source code</h3>
-<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.2.zip">py2exe-0.2.2.zip</a>.
+<p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.3.zip">py2exe-0.2.3.zip</a>.
 <h3>
 Project hosting</h3>
 <p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
@@ -360,10 +371,15 @@ explaining his (and this) approach, and also discusses other solutions.
 <li>Since I do not use Tkinter, I did not care about that yet.</li>
 </ul>
 
-<hr><!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" --><script type="text/javascript" language="JavaScript">var site="sm5py2exe"</script>
+<hr>
+<!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" -->
+<script type="text/javascript" language="JavaScript">var site="sm5py2exe"</script>
 <script type="text/javascript" language="JavaScript1.2" src="http://sm5.sitemeter.com/js/counter.js?site=sm5py2exe">
 </script>
-<noscript><a href="http://sm5.sitemeter.com/stats.asp?site=sm5py2exe" target="_top"><img SRC="meter.asp" ALT="Site Meter" BORDER=0 ></a></noscript>
+<noscript>
+<a href="http://sm5.sitemeter.com/stats.asp?site=sm5py2exe" target="_top">
+<img src="http://sm5.sitemeter.com/meter.asp?site=sm5py2exe" alt="Site Meter" border=0></a>
+</noscript>
 <!-- Copyright (c)2000 Site Meter -->
 <!--WEBBOT bot="HTMLMarkup" Endspan -->
 <A href="http://sourceforge.net"> 
