@@ -148,7 +148,7 @@ class py2exe(Command):
         self.packages = fancy_split(self.packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
-        self.dll_excludes = fancy_split(self.dll_excludes)
+        self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
 
     def run(self):
         self.create_directories()
