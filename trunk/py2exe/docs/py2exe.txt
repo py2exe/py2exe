@@ -1,23 +1,23 @@
 .. image:: py2exe.jpg
    :align: center
 
-.. _license: LICENSE.TXT
+.. _license: LICENSE.txt
 
 .. _distutils:  http://www.python.org/doc/current/dist/
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.5.3.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.3.win32-py2.3.exe?download
+.. _py2exe-0.5.4.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.4.win32-py2.3.exe?download
 
-.. _py2exe-0.5.3.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.3.win32-py2.4.exe?download
+.. _py2exe-0.5.4.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.4.win32-py2.4.exe?download
 
 .. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
-.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_5_3
+.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_5_4
 
-.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_5_3
+.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_5_4
 
 .. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
 
@@ -26,6 +26,8 @@
 .. _http: http://news.gmane.org/gmane.comp.python.py2exe/
 
 .. _nntp: nntp://news.gmane.org/gmane.comp.python.py2exe
+
+.. _sample_xref: http://starship.python.net/crew/theller/py2exe/sample_xref.html
 
 py2exe - convert python scripts into standalone windows programs
 ================================================================
@@ -50,9 +52,32 @@ News
 Please don't mail me directly about py2exe, please use the `py2exe
 mailing list`_, which is also available on gmane_, via http_ and nntp_.
 
-**py2exe 0.5.3** released
+**py2exe 0.5.4 released (2004/10/22)**
+--------------------------------------
 
-A bugfix release: the announcement_, and the ChangeLog_.
+The new ``--xref`` or ``-x`` command line switch instructs py2exe to
+create a python module cross reference and display it in the
+webbrowser.  This allows to answer question why a certain module has
+been included, or if you can exlude a certain module and it's
+dependencies.  This has *not* been extensively tested, but it's a
+start.  Also, the html page includes links which will even allow to
+view the source code of a module in the browser, for easy inspection.
+
+A sample cross reference can be found here, note that the links to
+open the .py files will of course not work over the internet:
+sample_xref_
+
+
+Mark Hammond fixed some thread state issues with dll com servers, and
+added support for standalone ISAPI dlls.
+
+py2exe now can handle modules with '.pyw' extension.
+
+It is now allowed to specify 'zipfile=None' in the setup script, in
+this case the zip archive containing the python modules will be
+appended to the exe file.
+
+The announcement_, and the ChangeLog_.
 
 What's new in py2exe 0.5
 ------------------------
@@ -230,9 +255,9 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.5.3.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.5.3.win32-py2.4.exe_ (for Python 2.4,
-currently in alpha).
+Download and run the installer py2exe-0.5.4.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.5.4.win32-py2.4.exe_ (for Python 2.4,
+currently in beta).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
