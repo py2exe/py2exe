@@ -322,7 +322,7 @@ setup(name="py2exe",
 ##                     },
 ##                   ),
 ##                   ],
-      interpreters = [run, run_w]#, run_dll],
+      interpreters = [run, run_w], #run_dll],
       packages=['py2exe', 'py2exe.tools'],
       package_dir={'py2exe.tools': "tools" + sys.version[:3]},
       )
