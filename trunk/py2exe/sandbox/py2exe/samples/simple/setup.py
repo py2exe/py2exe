@@ -22,6 +22,6 @@ from distutils.core import setup
 import py2exe
 
 setup(
-##    windows = ["test_wx.py"],
+    windows = ["test_wx.py"],
     console = ["hello.py"],
     )
