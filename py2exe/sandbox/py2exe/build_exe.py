@@ -151,7 +151,6 @@ class py2exe(Command):
         self.excludes = None
         self.packages = None
         self.dist_dir = None
-        self.lib_dir = None
         self.dll_excludes = None
         self.typelibs = None
         self.ext_mapping = {}
@@ -179,9 +178,11 @@ class py2exe(Command):
         self.mkpath(self.collect_dir)
         self.temp_dir = abspath(os.path.join(self.bdist_dir, "temp"))
         self.dist_dir = abspath(self.dist_dir)
-        self.lib_dir = os.path.join(self.dist_dir, self.lib_dir or '')
         self.mkpath(self.temp_dir)
         self.mkpath(self.dist_dir)
+
+        self.lib_dir = os.path.join(self.dist_dir,
+                                    os.path.dirname(self.distribution.zipfile))
         self.mkpath(self.lib_dir)
 
         self.plat_prepare()
@@ -259,7 +260,8 @@ class py2exe(Command):
             dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
 
-        archive_name = os.path.join(self.lib_dir, dist.zipfile)
+        archive_name = os.path.join(self.lib_dir,
+                                    os.path.basename(dist.zipfile))
         arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
                                    verbose=self.verbose, dry_run=self.dry_run)
 
