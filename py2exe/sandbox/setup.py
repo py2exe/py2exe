@@ -325,7 +325,8 @@ setup(name="py2exe",
       scripts = ["py2exe_postinstall.py"],
       interpreters = interpreters,
       packages=['py2exe', 'py2exe.resources',
-                'py2exe.samples'], # not really a package!
+                'py2exe.samples.simple', # not really a package!
+                'py2exe.samples.advanced'], # not really a package!
       options = options,
       )
 
