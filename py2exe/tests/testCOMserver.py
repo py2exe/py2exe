@@ -8,9 +8,9 @@ if hasattr(sys, 'importers'):
 
 
 class HelloWorld:
-##    _reg_clsctx_ = pythoncom.CLSCTX_LOCAL_SERVER
-    if hasattr(sys, 'importers'):
-        _reg_class_spec_ = "__main__.HelloWorld"
+    _reg_clsctx_ = pythoncom.CLSCTX_LOCAL_SERVER
+##    if hasattr(sys, 'importers'):
+##        _reg_class_spec_ = "__main__.HelloWorld"
     _reg_clsid_ = "{B83DD222-7750-413D-A9AD-01B37021B24B}"
     _reg_desc_ = "Python Test COM Server"
     _reg_progid_ = "Python.TestServer"
@@ -26,8 +26,6 @@ class HelloWorld:
         self.noCalls = self.noCalls + 1
         # insert "softspace" number of spaces
         return "Hello" + " " * self.softspace + str(who)
-
-sys.myatt = "Test"
 
 if __name__ == '__main__':
     if hasattr(sys, 'importers'):

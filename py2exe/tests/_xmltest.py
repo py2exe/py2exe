@@ -3,5 +3,4 @@ from xml.sax import saxexts
 #from xml.sax import saxutils
 
 parser = saxexts.make_parser("xml.sax.drivers.drv_pyexpat")
-import sys
-sys.exit(1)
+print parser
