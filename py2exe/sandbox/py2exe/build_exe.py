@@ -111,6 +111,8 @@ class py2exe(Command):
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
+        ("ignores=", 'e',
+         "comma-separated list of modules to ignore if they are not found"),
         ("includes=", 'i',
          "comma-separated list of modules to include"),
         ("packages=", 'p',
@@ -122,6 +124,7 @@ class py2exe(Command):
         self.optimize = 0
         self.includes = None
         self.excludes = None
+        self.ignores = None
         self.packages = None
         self.dist_dir = None
         self.dll_excludes = None
@@ -131,6 +134,7 @@ class py2exe(Command):
         self.optimize = int(self.optimize)
         self.excludes = fancy_split(self.excludes)
         self.includes = fancy_split(self.includes)
+        self.ignores = fancy_split(self.ignores)
         # includes is stronger than excludes
         for m in self.includes:
             if m in self.excludes:
@@ -226,6 +230,9 @@ class py2exe(Command):
         # mentioned above, it looks like this:
         # mf.badmodules["miscc"] = { "wxPython.miscc": 1 }
         for name in mf.any_missing():
+            if name in self.ignores:
+                del bad[name]
+                continue
             mod = builtins.get(name, None)
             if mod is not None:
                 if mod in bad[name] and bad[name] == {mod: 1}:
@@ -640,20 +647,53 @@ class py2exe(Command):
         self.includes.append("warnings") # needed by Python itself
 ##        self.packages.append("encodings")
 
-        # update the self.excludes list to exclude platform specific
-        # modules
-        # XXX IMO it would be better to not add these to the excludes list,
-        # but instead filter them out *after* modulefinder has run.
+        # update the self.ignores list to ignore platform specific
+        # modules.
         if sys.platform == "win32":
-            self.excludes += ["os2", "posix", "dos", "mac", "macfs", "macfsn",
-                              "macpath", "grp",
-                              "MACFS", "pwd", "MacOS", "macostools",
-                              "EasyDialogs", "termios", "TERMIOS",
-                              "java.lang", "org.python.core", "riscos",
-                              "riscosenviron", "riscospath", "ce",
-                              "os.path",
-                              "Carbon.Folder", "Carbon.Folders",
-                              ]
+            self.ignores += ['AL',
+                             'Audio_mac',
+                             'Carbon.File',
+                             'Carbon.Folder',
+                             'Carbon.Folders',
+                             'EasyDialogs',
+                             'MacOS',
+                             'Mailman',
+                             'SOCKS',
+                             'SUNAUDIODEV',
+                             '_dummy_threading',
+                             '_xmlplus',
+                             '_xmlrpclib',
+                             'al',
+                             'bundlebuilder',
+                             'ce',
+                             'cl',
+                             'dbm',
+                             'dos',
+                             'fcntl',
+                             'gestalt',
+                             'grp',
+                             'ic',
+                             'java.lang',
+                             'mac',
+                             'macfs',
+                             'macostools',
+                             'mkcwproject',
+                             'org.python.core',
+                             'os.path',
+                             'os2',
+                             'poll',
+                             'posix',
+                             'pwd',
+                             'readline',
+                             'riscos',
+                             'riscosenviron',
+                             'riscospath',
+                             'rourl2path',
+                             'sgi',
+                             'sgmlop',
+                             'sunaudiodev',
+                             'termios',
+                             'vms_lib']
             # special dlls which must be copied to the exe_dir, not the lib_dir
             self.dlls_in_exedir = [python_dll]
         else:
