@@ -7,7 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # ToDo:
 #
@@ -68,9 +68,10 @@ class py2exe (Command):
          "comma-separated list of modules to exclude"),
         ("includes=", 'i',
          "comma-separated list of modules to include"),
-## Not yet!
-##        ("packages=", 'p',
-##         "comma-separated list of packages to include"),
+        ("packages=", 'p',
+         "comma-separated list of packages to include"),
+        ("force-imports=", None,
+         "comma-separated list of modules to inject into sys.modules"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -86,8 +87,8 @@ class py2exe (Command):
         self.console = None
         self.excludes = None
         self.includes = None
-## Not yet!
-##        self.packages = None
+        self.packages = None
+        self.force_imports = None
 
     # initialize_options()
 
@@ -127,11 +128,15 @@ class py2exe (Command):
         else:
             self.includes = []
 
-## Not yet!
-##        if self.packages:
-##            self.packages = string.split(self.packages, ',')
-##        else:
-##            self.packages = []
+        if self.packages:
+            self.packages = string.split(self.packages, ',')
+        else:
+            self.packages = []
+
+        if self.force_imports:
+            self.force_imports = string.split(self.force_imports, ',')
+        else:
+            self.force_imports = []
 
     # finalize_options()
 
@@ -214,21 +219,11 @@ class py2exe (Command):
 
             script_base = os.path.splitext(os.path.basename(script))[0]
             final_dir = os.path.join(self.dist_dir, script_base)
+            self.mkpath(final_dir)
 
             collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
             self.mkpath(collect_dir)
-
-            excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
-                        "MACFS", "pwd", "MacOS", "macostools",
-                        "EasyDialogs", "termios", "TERMIOS",
-                        "java.lang",
-                        ] + self.excludes
-
-            # Use the modulefinder to find dependend modules.
-            #
-            self.announce("Searching modules needed to run '%s' on path:" % \
-                          script)
-            self.announce(repr(extra_path + sys.path))
+            self.mkpath(os.path.join(collect_dir, "Scripts"))
 
             if self.debug:
                 exe_name = os.path.join(final_dir, script_base+'_d.exe')
@@ -239,8 +234,16 @@ class py2exe (Command):
             use_runw = ((string.lower(ext) == '.pyw') or self.windows) \
                        and not self.console
 
-            # Create and feed modulefinder.
+            # Use the modulefinder to find dependend modules.
             #
+            self.announce("Searching modules needed to run '%s' on path:" % \
+                          script)
+            self.announce(repr(extra_path + sys.path))
+            excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
+                        "MACFS", "pwd", "MacOS", "macostools",
+                        "EasyDialogs", "termios", "TERMIOS",
+                        "java.lang", "org.python.core",
+                        ] + self.excludes
             mf = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
@@ -253,26 +256,36 @@ class py2exe (Command):
 
 ## No, I cannot yet figure out how to feed modulefinder
 ## with complete packages. mf.load_file() failes for extension modules,
-## and mf.load_package() only loads the package itself, but not the modules
-## Has this to do with __all__?
-##            for f in self.packages:
-##                file = imp.find_module(f)[1]
-####                mf.load_package(f, file)
-##                def visit(arg, dirname, names):
-##                    for name in names:
-##                        ext = os.path.splitext(name)[1]
-##                        if ext in (".py", ".pyd", ".dll"):
-##                            arg.append(os.path.join(dirname, name))
-##                files = []
-##                os.path.walk(file, visit, files)
+## and mf.load_package() only loads the package itself
+## (also it needs a pathname), but not the modules,
+## and mf.import_hook(name, None, ["*"]) does not work recursive...
+            for f in self.packages:
+                def visit(arg, dirname, names):
+                    if '__init__.py' in names:
+                        arg.append(dirname)
+                # Very weird...
+                # Find path of package
+                path = imp.find_module(f)[1]
+                packages = []
+                # walk the path to find subdirs containing __init__.py files
+                os.path.walk(path, visit, packages)
 
-##                map(mf.load_file, files)
-
+                # scan the results (directory of __init__.py files)
+                # first trim the path (of the head package),
+                # then convert directory name in package name,
+                # finally push into modulefinder.
+                for p in packages:
+                    if p.startswith(path):
+                        package = f + '.' + string.replace(p[len(path)+1:], '\\', '.')
+                        mf.import_hook(package, None, ["*"])
 
             mf.run_script(script)
 
             # first pass over modulefinder results, insert modules from import_hack
-            force_imports = Set()
+            for item in self.force_imports:
+                mf.import_hook(item)
+                
+            force_imports = apply(Set, self.force_imports)
             for item in mf.modules.values():
                 if item.__name__ in import_hack.keys():
                     mods = import_hack[item.__name__]
@@ -297,13 +310,6 @@ class py2exe (Command):
                         raise RuntimeError \
                               ("Don't know how to handle '%s'" % repr(src))
 
-            # byte compile the python modules into the target directory
-            byte_compile(py_files,
-                         target_dir=collect_dir,
-                         optimize=self.optimize, force=self.force,
-                         verbose=self.verbose,
-                         dry_run=self.dry_run)
-
             missing = filter(lambda n, e=excludes: n not in e, \
                              mf.badmodules.keys())
             
@@ -311,16 +317,6 @@ class py2exe (Command):
             # instead of the release versions.
             missing, extensions = self.fix_extmodules(missing, extensions,
                                                       sys.path + extra_path)
-
-            if missing:
-                self.warn("*" * 48)
-                self.warn("* The following modules were not found:")
-                for name in missing:
-                    mod = mf.badmodules.get(name, None)
-                    self.warn("*   %15s: %s" % (name, mod))
-                self.warn("*" * 48)
-
-            self.mkpath(final_dir)
 
             # Collect all the dlls, so that binary dependencies can be
             # resolved.
@@ -342,14 +338,18 @@ class py2exe (Command):
                 suffix = self.find_suffix(pathname)
                 ext_mapping[ext_module.__name__] = (os.path.basename(pathname), suffix)
                 dlls.append(pathname)
+            self.announce("force_imports = %s" % string.join(force_imports, ', '))
+            self.announce("ext_mapping = {")
+            for key, value in ext_mapping.items():
+                self.announce(" %s: %s" % (`key`, `value`))
+            self.announce("}")
+
+            dlls, unfriendly_dlls = self.find_dependend_dlls(use_runw, dlls)
 
             # copy support files and the script itself
             #
             thisfile = sys.modules['py2exe.py2exe'].__file__
-            src = os.path.join(os.path.dirname(thisfile),
-                                   "support.py")
-
-            self.mkpath(os.path.join(collect_dir, "Scripts"))
+            src = os.path.join(os.path.dirname(thisfile), "support.py")
             # Scripts\\support.py must be forced to be rewritten!
             dst = os.path.join(collect_dir, "Scripts\\support.py")
             file_util.copy_file(src, dst, update=0,
@@ -366,11 +366,12 @@ class py2exe (Command):
                     file.write("_force_imports(); del _force_imports\n")
                 file.close()
 
-            self.announce("force_imports = %s" % string.join(force_imports, ', '))
-            self.announce("ext_mapping = {")
-            for key, value in ext_mapping.items():
-                self.announce(" %s: %s" % (`key`, `value`))
-            self.announce("}")
+            # byte compile the python modules into the target directory
+            byte_compile(py_files,
+                         target_dir=collect_dir,
+                         optimize=self.optimize, force=self.force,
+                         verbose=self.verbose,
+                         dry_run=self.dry_run)
 
             self.copy_file(script,
                            os.path.join(collect_dir,
@@ -379,17 +380,47 @@ class py2exe (Command):
             # The archive must not be in collect-dir, otherwise
             # it may include a (partial) copy of itself
             archive_basename = os.path.join(self.bdist_dir, script_base)
-
             arcname = self.make_archive(archive_basename, "zip",
                                         root_dir=collect_dir)
 
-            script_path = os.path.join("Scripts", os.path.basename(script))
-
             self.create_exe(exe_name, arcname, use_runw)
-
             self.copy_additional_files(final_dir)
+            self.copy_dlls(final_dir, dlls)
 
-            self.copy_dependend_dlls(final_dir, use_runw, dlls)
+
+            # Print warnings
+
+            # remove those unfriendly dlls which are known to us
+            for dll in unfriendly_dlls.items():
+                basename = os.path.basename(dll)
+                for key, value in ext_mapping.items():
+                    if basename == value[0]:
+                        modname = key
+                        break
+                else:
+                    modname = os.path.splitext(basename)[0]
+                if modname in import_hack.keys():
+                    unfriendly_dlls.remove(dll)
+
+            if unfriendly_dlls:
+                self.warn("*" * 73)
+                self.warn("* The following module(s) call PyImport_ImportModule:")
+                for item in unfriendly_dlls.items():
+                    self.warn("*   %s" % item)
+                self.warn("*")
+                self.warn("* If the program fails to run with the message")
+                self.warn("*      Fatal Python Error: couldn't import <module>")
+                self.warn("* you should rerun py2exe with the --force-imports <module> flag.")
+                self.warn("* See the documentation for further information.")
+
+            if missing:
+                self.warn("*" * 73)
+                self.warn("* The following modules were not found:")
+                for name in missing:
+                    self.warn("*   %s" % name)
+
+            if unfriendly_dlls or missing:
+                self.warn("*" * 73)
 
         if not self.keep_temp:
             remove_tree(self.bdist_dir, self.verbose, self.dry_run)
@@ -408,30 +439,30 @@ class py2exe (Command):
         raise "Error"
     # find_suffix()
     
-    def copy_dependend_dlls(self, final_dir, use_runw, dlls):
+    def find_dependend_dlls(self, use_runw, dlls):
         import py2exe_util
         sysdir = py2exe_util.get_sysdir()
         windir = py2exe_util.get_windir()
         # This is the tail of the path windows uses when looking for dlls
         # XXX On Windows NT, the SYSTEM directory is also searched
-        # (sysdir is SYSTEM32)
         exedir = os.path.dirname(sys.executable)
         syspath = os.environ['PATH']
         loadpath = string.join([exedir, sysdir, windir, syspath], ';')
 
         images = [self.get_exe_stub(use_runw)] + dlls
 
-        self.announce("Resolving binary dependencies")
+        self.announce("Resolving binary dependencies:")
         
         alldlls, warnings = bin_depends(loadpath, images)
+        for dll in alldlls:
+            self.announce("  %s" % dll)
         alldlls.remove(self.get_exe_stub(use_runw))
 
-        if warnings:
-            self.warn("The following modules call PyImport_ImportModule:")
-            for item in warnings.items():
-                self.warn("  %s" % item)
+        return alldlls, warnings
+    # find_dependend_dlls()
 
-        for src in alldlls:
+    def copy_dlls(self, final_dir, dlls):
+        for src in dlls:
             basename = os.path.basename(src)
             if string.lower(basename) in self.EXCLUDE:
                 continue
@@ -441,7 +472,7 @@ class py2exe (Command):
             except Exception, detail:
                 import traceback
                 traceback.print_exc()
-
+    # copy_dlls()
          
     # DLLs to be excluded
     # XXX This list is NOT complete (it cannot be)
@@ -495,6 +526,7 @@ class py2exe (Command):
                     missing.remove(name)
                     fixed_modules.append(Module(name=name, file=file))
         return missing, fixed_modules
+    # fix_ext_modules()
 
     def copy_additional_files(self, final_dir):
         # Some python versions (1.5) import the 'exceptions'
@@ -509,6 +541,7 @@ class py2exe (Command):
                          optimize=self.optimize, force=self.force,
                          verbose=self.verbose,
                          dry_run=self.dry_run)
+    # copy_additional_files()
 
     def support_modules(self):
         try:
@@ -516,6 +549,7 @@ class py2exe (Command):
         except ImportError:
             import tools
             return [imp.find_module("imputil", tools.__path__)[1]]
+    # support_modules()
 
     def create_exe (self, exe_name, arcname, use_runw):
         import struct
@@ -532,7 +566,6 @@ class py2exe (Command):
         file.write(header)
         file.write(open(arcname, "rb").read())
         file.close()
-
     # create_exe()
 
     def get_exe_stub(self, use_runw):
@@ -545,12 +578,11 @@ class py2exe (Command):
         if self.debug:
             basename = basename + '_d'
         return os.path.join(directory, basename+'.exe')
-
+    # get_exe_stub()
+    
     def get_exe_bytes(self, use_runw):
         fname = self.get_exe_stub(use_runw)
-        self.announce("Using stub '%s'" % fname)
         return open(fname, "rb").read()
-
     # get_exe_bytes()
 
 # class py2exe
@@ -593,6 +625,9 @@ class FileSet:
         for arg in args:
             self.add(arg)
 
+    def __repr__(self):
+        return "<FileSet %s at %x>" % (self._dict, id(self))
+
     def add(self, file):
         self._dict[string.upper(file)] = file
 
@@ -623,7 +658,6 @@ def bin_depends(path, images):
         for image in images:
             images.remove(image)
             if not dependents.contains(image):
-                print "   ", image
                 dependents.add(image)
                 abs_image = os.path.abspath(image)
                 loadpath = os.path.dirname(abs_image) + ';' + path
