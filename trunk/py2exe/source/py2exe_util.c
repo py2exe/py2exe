@@ -33,20 +33,6 @@ BOOL (__stdcall* pfn_EndUpdateResource)(HANDLE, BOOL);
 BOOL (__stdcall* pfn_UpdateResource)(HANDLE, LPCWSTR, LPCWSTR, WORD, LPVOID, DWORD);
 HANDLE (__stdcall* pfn_CreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
 
-static char *FormatError(DWORD code)
-{
-    LPVOID lpMsgBuf;
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER
-		  | FORMAT_MESSAGE_FROM_SYSTEM,
-		  NULL,
-		  code,
-		  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		  (LPSTR) &lpMsgBuf,
-		  0,
-		  NULL);
-    return (char *)lpMsgBuf;
-}
-
 static PyObject *SystemError(int code, char *msg)
 {
     LPVOID lpMsgBuf;
