@@ -1,5 +1,8 @@
 2004-03-02  Thomas Heller  <theller@python.net>
 
+	* py2exe\boot_service.py: Print a message when a service exe is
+	started from the command line.
+
 	* py2exe\build_exe.py: makepy code generation with bForDemand=True is buggy.
 	Use bForDemand=False instead.
 	

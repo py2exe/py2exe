@@ -89,12 +89,14 @@ def w_getopt(args, options):
 options = "help install remove auto disabled interactive user: password:".split()
 
 def usage():
-    print "Usage: %s <options>. Valid options are:" % os.path.basename(sys.executable)
+    print "Services are supposed to be run by the system after they have been installed."
+    print "These command line options are available for (de)installation:"
     for opt in options:
         if opt.endswith(":"):
             print "\t-%s <arg>" % opt
         else:
             print "\t-%s" % opt
+    print
 
 try:
     opts, args = w_getopt(sys.argv[1:], options)
@@ -153,6 +155,8 @@ if opts:
 
     if done:
         sys.exit(0)
-
+else:
+    usage()
+    
 print "Connecting to the Service Control Manager"
 servicemanager.StartServiceCtrlDispatcher()
