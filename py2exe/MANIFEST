@@ -1,5 +1,6 @@
 MANIFEST
 MANIFEST.in
+README.txt
 setup.py
 docs\index.html
 docs\py2exe.css
