@@ -125,6 +125,14 @@ int check_init()
 		// Check the flag again - another thread may have beat us to it!
 		if (!have_init) {
 			PyObject *frozen;
+			/* If Python had previously been initialized, we must use
+			   PyGILState_Ensure normally.  If Python has not been initialized,
+			   we must leave the thread state unlocked, so other threads can
+			   call in.
+			*/
+			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
+			if (Py_IsInitialized())
+				restore_state = PyGILState_Ensure();
 			// a little DLL magic.  Set sys.frozen='dll'
 			init_with_instance(gInstance, "dll");
 			frozen = PyInt_FromLong((LONG)gInstance);
@@ -138,7 +146,7 @@ int check_init()
 			if (gPythoncom == NULL)
 				load_pythoncom();
 			// Reset the thread-state, so any thread can call in
-			PyGILState_Release(PyGILState_UNLOCKED);
+			PyGILState_Release(restore_state);
 		}
 		LeaveCriticalSection(&csInit);
 	}
