@@ -24,15 +24,6 @@ else:
     # com DLLs already have sys.frozen set to 'dll'
     pythoncom.frozen = sys.frozen
 
-# Help out the gencache (later we will fix this!)
-import win32com, win32api, sys, os, new
-win32com.__gen_path__ = os.path.join(
-                        win32api.GetTempPath(), "gen_py",
-                        "%d.%d" % (sys.version_info[0], sys.version_info[1]))
-win32com.gen_py = new.module("win32com.gen_py")
-win32com.gen_py.__path__ = [ win32com.__gen_path__ ]
-sys.modules[win32com.gen_py.__name__]=win32com.gen_py
-
 # Add some extra imports here, just to avoid putting them as "hidden imports"
 # anywhere else - this script has the best idea about what it needs.
 # (and hidden imports are currently disabled :)
@@ -40,6 +31,7 @@ import win32com.server.policy, win32com.server.util
 
 # Patchup sys.argv for our DLL
 if sys.frozen=="dll" and not hasattr(sys, "argv"):
+    import win32api
     sys.argv = [win32api.GetModuleFileName(sys.frozendllhandle)]
 # We assume that py2exe has magically set com_module_names
 # to the module names that expose the COM objects we host.
