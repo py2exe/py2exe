@@ -32,15 +32,15 @@ py2exe options, to be specified in the options keyword to the setup function:
     typelibs - list of gen_py generated typelibs to include (XXX more text needed)
 
 Items in the console, windows, service or com_server list can also be
-a dictionaries to further customize the build process.  The following
-optional keys in the dictionary are recognized:
+dictionaries to further customize the build process.  The following
+keys in the dictionary are recognized, most are optional:
 
+    modules (SERVICE, COM) - list of module names (required)
+    script (EXE) - list of python scripts (required)
     dest_base - directory and basename for the executable
                 if a directory is contained, must be the same for all targets
     create_exe (COM) - boolean, if false, don't build a server exe
     create_dll (COM) - boolean, if false, don't build a server dll
-    modules (SERVICE, COM) - list of module names (required)
-    script (EXE) - list of python scripts (required)
     bitmap_resources - list of 2-tuples (id, pathname)
     icon_resources - list of 2-tuples (id, pathname)
 """
