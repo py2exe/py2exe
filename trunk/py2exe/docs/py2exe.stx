@@ -25,7 +25,7 @@ py2exe
     Assuming you have a python script 'myscript.py' which you
     want to convert into an executable windows program.
     If you don't already have written a *distutils* setup-script,
-    write a simple one, including the statement
+    write one, including the statement
     'import py2exe' before calling the setup function.
 
     Here's a simple one::
@@ -80,11 +80,11 @@ py2exe
 
     Attention: **py2exe** tries to track down _all_ binary dependencies
     for all pyd's and dll's copied to the dist directory recursively,
-    and copy all these dependend files into the dist directory.
-    **py2exe** has a builtin list of some windows system dlls which are
+    and copies all these dependend files into the dist directory.
+    **py2exe** has a builtin list of some system dlls which are
     not copied, but this list can never be complete.
     Before distributing these files please make sure that you
-    have the right to do so.
+    have the rights to do so.
     
 
   Reference
