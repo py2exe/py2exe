@@ -22,6 +22,11 @@
 ##
 
 # $Log$
+# Revision 1.4  2002/03/20 09:54:44  theller
+# Use the standard Python modulefinder, mod_attrs is gone.
+# Include 'traceback' in services.
+# Version 0.3.3.
+#
 # Revision 1.3  2002/02/01 12:43:26  theller
 # Hopefully a better way to import the script with less side-effects.
 # Approaching version 0.3.1.
@@ -833,8 +838,13 @@ class py2exe (Command):
         # "legalcopyright legaltrademarks originalfilename productname"
         # "productversion"
         
-        from resources.VersionInfo import VS_VERSIONINFO, RT_VERSION, \
-             StringFileInfo, VarFileInfo, VersionError
+        try:
+            from resources.VersionInfo import VS_VERSIONINFO, RT_VERSION, \
+                 StringFileInfo, VarFileInfo, VersionError
+        except ImportError, details:
+            self.warn("%s\n  No VersionInfo will be created" % details)
+            return delete
+            
         from py2exe_util import add_resource
 
         md = self.distribution.metadata
