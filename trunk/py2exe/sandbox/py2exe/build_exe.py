@@ -110,7 +110,7 @@ class py2exe(Command):
          "comma-separated list of packages to include"),
         ]
 
-    boolean_options = ['unbuffered']
+    boolean_options = ['unbuffered', 'optimize']
 
     def initialize_options (self):
         self.unbuffered = 0
@@ -121,10 +121,8 @@ class py2exe(Command):
         self.dist_dir = None
         self.dll_excludes = None
         self.typelibs = None
-        self.ext_mapping = {}
 
     def finalize_options (self):
-        self.optimize = int(self.optimize)
         self.excludes = fancy_split(self.excludes)
         self.includes = fancy_split(self.includes)
         # includes is stronger than excludes
@@ -480,17 +478,6 @@ class py2exe(Command):
             self.announce("  %s" % dll)
 ##XXX        alldlls.remove(self.get_exe_stub(use_runw))
 
-        for dll in alldlls:
-            if dll in dlls:
-                continue
-            fname, ext = os.path.splitext(os.path.basename(dll))
-            try:
-                result = imp.find_module(fname, pypath)
-            except ImportError:
-                pass
-            else:
-                self.ext_mapping[fname] = (os.path.basename(dll), result[2])
-                    
         return alldlls, warnings
     # find_dependend_dlls()
 
