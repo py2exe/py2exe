@@ -31,6 +31,7 @@ static char module_doc[] =
 HANDLE (__stdcall *pfn_BeginUpdateResource)(LPCWSTR, BOOL);
 BOOL (__stdcall* pfn_EndUpdateResource)(HANDLE, BOOL);
 BOOL (__stdcall* pfn_UpdateResource)(HANDLE, LPCWSTR, LPCWSTR, WORD, LPVOID, DWORD);
+HANDLE (__stdcall* pfn_CreateFileW)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES, DWORD, DWORD, HANDLE);
 
 static char *FormatError(DWORD code)
 {
@@ -139,9 +140,13 @@ static char *MapExistingFile (Py_UNICODE *pathname, DWORD *psize)
     DWORD nSizeLow, nSizeHigh;
     char *data;
 
-    hFile = CreateFileW(pathname,
-			GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
-			FILE_ATTRIBUTE_NORMAL, NULL);
+    if (pfn_CreateFileW == NULL) {
+	SetLastError(1); /* Incorrect function */
+	return NULL;
+    }
+    hFile = pfn_CreateFileW(pathname,
+			    GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+			    FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
 	return NULL;
     nSizeLow = GetFileSize(hFile, &nSizeHigh);
@@ -527,6 +532,10 @@ initpy2exe_util(void)
 	GetProcAddress(hmod, "EndUpdateResourceW");
     pfn_UpdateResource = (BOOL (__stdcall*)(HANDLE, LPCWSTR, LPCWSTR, WORD, LPVOID, DWORD))
 	GetProcAddress(hmod, "UpdateResourceW");
+    pfn_CreateFileW = (HANDLE (__stdcall*)(LPCWSTR, DWORD, DWORD, LPSECURITY_ATTRIBUTES,
+					   DWORD, DWORD, HANDLE))
+	GetProcAddress(hmod, "CreateFileW");
+	
     
     m = Py_InitModule3("py2exe_util", methods, module_doc);
     if (m) {
