@@ -1,6 +1,18 @@
+2004-07-30  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py: zipfile can now be specified as None, in
+	this case the Python modules library archive is appended to the
+	exe-files created.  Doesn't make too much sense in the normal case
+	probably, but prepares the way to single file executables.
+
+2004-07-29  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py: When using static built
+	templates, python.dll may not be needed anymore.
+
 2004-07-23  Thomas Heller  <theller@python.net>
 
-	*  (Message): py2exe 0.5.3 released.
+	* (Message): py2exe 0.5.3 released.
 
 2004-07-13  Thomas Heller  <theller@python.net>
 
