@@ -319,6 +319,17 @@ run_dll = Interpreter("py2exe.run_dll",
                       target_desc = "shared_library",
                       )
 
+run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
+                             ["source/run_ctypes_dll.c", "source/start.c", "source/icon.rc"],
+                             libraries=["user32"],
+                             export_symbols=["DllCanUnloadNow,PRIVATE",
+                                             "DllGetClassObject,PRIVATE",
+                                             "DllRegisterServer,PRIVATE",
+                                             "DllUnregisterServer,PRIVATE",
+                                             ],
+                             target_desc = "shared_library",
+                             )
+
 run_isapi = Interpreter("py2exe.run_isapi",
                       ["source/run_isapi.c", "source/start.c",
                        "source/icon.rc"],
@@ -331,7 +342,7 @@ run_isapi = Interpreter("py2exe.run_isapi",
                       target_desc = "shared_library",
                       )
 
-interpreters = [run, run_w, run_dll, run_isapi]
+interpreters = [run, run_w, run_dll, run_ctypes_dll, run_isapi]
 
 options = {"bdist_wininst": {"install_script": "py2exe_postinstall.py"}}
 
