@@ -1,3 +1,8 @@
+# Changes:
+#
+#    can now specify 'zipfile = None', in this case the Python module
+#    library archive is appended to the exe.
+
 # Todo:
 #
 # Make 'unbuffered' a per-target option
@@ -8,6 +13,8 @@ from distutils.errors import *
 import sys, os, imp, types, stat
 import marshal
 import zipfile
+import sets
+import tempfile
 
 import imp
 is_debug_build = False
@@ -366,8 +373,11 @@ class py2exe(Command):
         self.dist_dir = os.path.abspath(self.dist_dir)
         self.mkpath(self.dist_dir)
 
-        self.lib_dir = os.path.join(self.dist_dir,
-                                    os.path.dirname(self.distribution.zipfile))
+        if self.distribution.zipfile is None:
+            self.lib_dir = self.dist_dir
+        else:
+            self.lib_dir = os.path.join(self.dist_dir,
+                                        os.path.dirname(self.distribution.zipfile))
         self.mkpath(self.lib_dir)
 
     def create_binaries(self, py_files, extensions, dlls):
@@ -407,11 +417,17 @@ class py2exe(Command):
             self.lib_files.append(dst)
 
         # create the shared zipfile containing all Python modules
-        archive_name = os.path.join(self.lib_dir,
-                                    os.path.basename(dist.zipfile))
+        if dist.zipfile is None:
+            fd, archive_name = tempfile.mkstemp()
+            os.close(fd)
+        else:
+            archive_name = os.path.join(self.lib_dir,
+                                        os.path.basename(dist.zipfile))
+
         arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
                                    verbose=self.verbose, dry_run=self.dry_run)
-        self.lib_files.append(arcname)
+        if dist.zipfile is not None:
+            self.lib_files.append(arcname)
 
         print "*** copy dlls ***"
         for dll in dlls:
@@ -472,6 +488,9 @@ class py2exe(Command):
                                            arcname)
                 self.comserver_files.append(dst)
 
+        if dist.zipfile is None:
+            os.unlink(arcname)
+
     # for user convenience, let subclasses override the templates to use
     def get_console_template(self):
         return is_debug_build and "run_d.exe" or "run.exe"
@@ -499,7 +518,6 @@ class py2exe(Command):
 
         # make sure all targets use the same directory, this is
         # also the directory where the pythonXX.dll must reside
-        import sets
         paths = sets.Set()
         for target in dist.com_server + dist.service \
                 + dist.windows + dist.console:
@@ -615,6 +633,9 @@ class py2exe(Command):
         code_objects.append(code_object)
         code_bytes = marshal.dumps(code_objects)
 
+        if self.distribution.zipfile is None:
+            relative_arcname = os.path.basename(exe_path)
+
         import struct
         si = struct.pack("iiii",
                          0x78563412, # a magic value,
@@ -651,6 +672,24 @@ class py2exe(Command):
             add_resource(unicode(exe_path), data, u"TYPELIB", 1, False)
 
         self.add_versioninfo(target, exe_path)
+
+        # Hm, this doesn't make sense with normal executables, which are
+        # already small (around 20 kB).
+        #
+        # But it would make sense with static build pythons, but not
+        # if the zipfile is appended to the exe - it will be too slow
+        # then (although it is a wonder it works at all in this case).
+        #
+        # Maybe it would be faster to use the frozen modules machanism
+        # instead of the zip-import?
+##        if self.compressed:
+##            import gc
+##            gc.collect() # to close all open files!
+##            os.system("upx -9 %s" % exe_path)
+
+        if self.distribution.zipfile is None:
+            zip_data = open(arcname, "rb").read()
+            open(exe_path, "a+b").write(zip_data)
 
         return exe_path
 
@@ -735,8 +774,7 @@ class py2exe(Command):
         # so the loadpath must be extended by our python path.
         loadpath = loadpath + ';' + ';'.join(pypath)
 
-        from sets import Set
-        templates = Set()
+        templates = sets.Set()
         if self.distribution.console:
             templates.add(self.get_console_template())
         if self.distribution.windows:
@@ -803,6 +841,8 @@ class py2exe(Command):
         # Retrieve modules from modulefinder
         py_files = []
         extensions = []
+
+##        needed_builtins = sets.Set()
         
         for item in mf.modules.values():
             # There may be __main__ modules (from mf.run_script), but
@@ -816,6 +856,7 @@ class py2exe(Command):
                 if suffix in _py_suffixes:
                     py_files.append(item)
                 elif suffix in _c_suffixes:
+##                    needed_builtins.add(item.__name__)
                     extensions.append(item)
                     loader = self.create_loader(item)
                     if loader:
@@ -823,6 +864,13 @@ class py2exe(Command):
                 else:
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
+##            else:
+##                needed_builtins.add(item.__name__)
+
+##        for name in needed_builtins:
+##            print "extern void init%s(void);" % name
+##        for name in needed_builtins:
+##            print '    {"%s", init%s}' % (name, name)
 
         # sort on the file names, the output is nicer to read
         py_files.sort(lambda a, b: cmp(a.__file__, b.__file__))
@@ -841,11 +889,14 @@ class py2exe(Command):
             if "pywintypes" in modules.keys():
                 import pywintypes
                 dlls.add(pywintypes.__file__)
-            # Using popen requires (on Win9X) the w9xpopen.exe helper executable.
-            if "os" in modules.keys() or "popen2" in modules.keys():
-                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
+            self.copy_w9xpopen(modules, dlls)
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
+
+    def copy_w9xpopen(self, modules, dlls):
+        # Using popen requires (on Win9X) the w9xpopen.exe helper executable.
+        if "os" in modules.keys() or "popen2" in modules.keys():
+            dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
 
     def create_loader(self, item):
         # Hm, how to avoid needless recreation of this file?
