@@ -22,6 +22,14 @@ from distutils.core import setup
 import py2exe
 
 setup(
+    # The first three parameters are not required, if they are given,
+    # a versioninfo resource is built from them and added to the
+    # executables.
+    version = "0.5.6",
+    description = "py2exe sample script",
+    name="py2exe samples",
+
+    # targets to build
     windows = ["test_wx.py"],
     console = ["hello.py"],
     )
