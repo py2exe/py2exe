@@ -282,7 +282,10 @@ class py2exe (Command):
                 mf.load_file(f)
 
             for f in self.includes:
-                mf.import_hook(f)
+                if f[-2:] == '.*':
+                    mf.import_hook(f[:-2], None, ['*'])
+                else:
+                    mf.import_hook(f)
 
 ## No, I cannot yet figure out how to feed modulefinder
 ## with complete packages. mf.load_file() failes for extension modules,
