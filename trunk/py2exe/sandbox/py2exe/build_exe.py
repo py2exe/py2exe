@@ -1,3 +1,7 @@
+# Todo:
+#
+# Make 'unbuffered' a per-target option
+
 from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
@@ -99,8 +103,8 @@ class py2exe(Command):
         ('optimize=', 'O',
          "optimization level: -O1 for \"python -O\", "
          "-O2 for \"python -OO\", and -O0 to disable [default: -O0]"),
-         ('unbuffered', 'u',
-         "unbuffered binary stdout and stderr"),
+        ('dist-dir=', 'd',
+         "directory to put final built distributions in (default is dist)"),
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
@@ -152,6 +156,7 @@ class py2exe(Command):
         ################
         # refactor, refactor, refactor!
 
+        # XXX zlib is only needed for zipimport from compressed archives (?)
         self.includes.append("zlib") # needed for zipimport
         self.includes.append("warnings") # needed by Python itself
 ##        self.packages.append("encodings")
@@ -237,6 +242,8 @@ class py2exe(Command):
                      verbose=self.verbose,
                      dry_run=self.dry_run)
 
+        all_files = []
+
         print "*** copy extensions ***"
         # copy the extensions to the target directory
         for item in extensions:
@@ -253,12 +260,14 @@ class py2exe(Command):
             # So we do it via a custom loader - see create_loader()
             dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
+            all_files.append(dst)
 
         # create the shared zipfile containing all Python modules
         archive_name = os.path.join(self.lib_dir,
                                     os.path.basename(dist.zipfile))
         arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
                                    verbose=self.verbose, dry_run=self.dry_run)
+        all_files.append(arcname)
 
         print "*** copy dlls ***"
         for dll in dlls:
@@ -270,6 +279,7 @@ class py2exe(Command):
             else:
                 dst = os.path.join(self.lib_dir, base)
             self.copy_file(dll, dst)
+            all_files.append(dst)
 
         if self.distribution.has_data_files():
             print "*** copy data files ***"
@@ -278,22 +288,34 @@ class py2exe(Command):
             install_data.ensure_finalized()
             install_data.run()
 
+            all_files.extend(install_data.get_outputs())
+
         # build the executables
         for target in dist.console:
-            self.build_executable(target, "run.exe", arcname, target.script)
+            dst = self.build_executable(target, "run.exe", arcname, target.script)
+            all_files.append(dst)
         for target in dist.windows:
-            self.build_executable(target, "run_w.exe", arcname, target.script)
+            dst = self.build_executable(target, "run_w.exe", arcname, target.script)
+            all_files.append(dst)
         for target in dist.service:
-            self.build_service(target, "run_svc.exe", arcname)
+            dst = self.build_service(target, "run_svc.exe", arcname)
+            all_files.append(dst)
 
         for target in dist.com_server:
             if getattr(target, "create_exe", True):
                 # XXX Mark: Hm, should there be an option to build a
                 # console version for debugging, or is the regular
                 # debug support in win32com sufficient?
-                self.build_comserver(target, "run_w.exe", arcname)
+                dst = self.build_comserver(target, "run_w.exe", arcname)
+                all_files.append(dst)
             if getattr(target, "create_dll", True):
-                self.build_comserver(target, "run_dll.dll", arcname)
+                dst = self.build_comserver(target, "run_dll.dll", arcname)
+                all_files.append(dst)
+
+        # XXX debug code!
+##        for name in all_files:
+##            assert name.startswith(self.dist_dir)
+##            print "*", name[len(self.dist_dir)+1:]
 
     def fixup_distribution(self):
         dist = self.distribution
@@ -344,7 +366,7 @@ class py2exe(Command):
         vars = {"com_module_names" : target.modules}
         boot = self.get_boot_script("com_servers")
         # and build it
-        self.build_executable(target, template, arcname, boot, vars)
+        return self.build_executable(target, template, arcname, boot, vars)
 
     def get_service_names(self, module_name):
         # import the script with every side effect :)
@@ -390,6 +412,8 @@ class py2exe(Command):
         st.add_string(RESOURCE_SERVICE_NAME+3, "|".join(svc_deps))
         for id, data in st.binary():
             add_resource(exe_path, data, RT_STRING, id, 0)
+
+        return exe_path
 
     def build_executable(self, target, template, arcname, script, vars={}):
         # Build an executable for the target
@@ -441,16 +465,25 @@ class py2exe(Command):
 
         script_bytes = si + code_bytes + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
-        add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
+        if not self.dry_run:
+            add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
             bmp_data = open(bmp_filename, "rb").read()
             # skip the 14 byte bitmap header.
-            add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
+            if not self.dry_run:
+                add_resource(exe_path, bmp_data[14:], RT_BITMAP, bmp_id, False)
         icon_resources = getattr(target, "icon_resources", [])
         for ico_id, ico_filename in icon_resources:
-            add_icon(exe_path, ico_filename, ico_id)
+            if not self.dry_run:
+                add_icon(exe_path, ico_filename, ico_id)
+
+        typelib = getattr(target, "typelib", None)
+        if typelib is not None:
+            data = open(typelib, "rb").read()
+            add_resource(exe_path, data, "TYPELIB", 1, False)
+
         return exe_path
 
     def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
@@ -572,6 +605,8 @@ class py2exe(Command):
         source = LOADER % fname
         if not self.dry_run:
             open(pathname, "w").write(source)
+        else:
+            return
         from modulefinder import Module
         return Module(item.__name__, pathname)
 
