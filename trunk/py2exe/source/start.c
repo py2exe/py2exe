@@ -324,7 +324,7 @@ int start(int argc, char **argv)
 	SystemError(GetLastError(), "Opening archive");
 	return result;
     }
-    
+
     if (!GetScriptInfo(arc_data, arc_size)) {
 	/* XXX Raise Error */
 	SystemError (0, "Could not get Script info\n");
@@ -367,7 +367,9 @@ int start(int argc, char **argv)
  */
     Py_Initialize();
 
+#ifdef _DEBUG
     PyRun_SimpleString("import sys; print sys.path");
+#endif
 
     PySys_SetArgv(argc, argv);
 
