@@ -12,7 +12,7 @@ __version__ = "0.2.4"
 import sys, os, string
 from distutils.core import Command
 from distutils.util import get_platform
-from distutils.dir_util import create_tree, remove_tree
+from distutils.dir_util import create_tree, remove_tree, copy_tree
 from distutils import file_util
 from distutils.errors import *
 from distutils.dep_util import newer
@@ -213,9 +213,9 @@ class py2exe (Command):
         from tools.modulefinder import ModuleFinder
 
         for script in self.distribution.scripts:
-            self.announce("+------------------------------")
-            self.announce("| Processing script %s" % script)
-            self.announce("+------------------------------")
+            self.announce("+----------------------------------------------------")
+            self.announce("| Processing script %s with py2exe-%s" % (script, __version__))
+            self.announce("+----------------------------------------------------")
 
             script_base = os.path.splitext(os.path.basename(script))[0]
             final_dir = os.path.join(self.dist_dir, script_base)
@@ -325,6 +325,34 @@ class py2exe (Command):
             missing, extensions = self.fix_extmodules(missing, extensions,
                                                       sys.path + extra_path)
 
+##             warn_tcl = tcl_src_dir = tcl_dst_dir = None
+##             if "Tkinter" in mf.modules.keys():
+##                 import FixTk
+##                 try:
+##                     # The python2.0 way:
+##                     tcl_dir = os.environ["TCL_LIBRARY"]
+##                 except KeyError:
+##                     # The python1.5 way:
+##                     tcl_dir = FixTk.tcldir
+##                     if tcl_dir is not None:
+##                         tcl_src_dir = os.path.split(tcl_dir)[0]
+##                         tcl_src_dir = os.path.join(tcl_src_dir, "lib")
+##                         tcl_dst_dir = os.path.join(final_dir, "lib")
+##                 else:
+##                     # ... python2.0 way continued
+##                     tcl_src_dir = os.path.split(tcl_dir)[0]
+##                     tcl_dst_dir = os.path.join(final_dir, "tcl")
+##                 del FixTk
+
+##                 if tcl_src_dir:
+##                     self.announce("Copying TCL files...")
+##                     copy_tree(tcl_src_dir,
+##                               tcl_dst_dir,
+##                               verbose=self.verbose,
+##                               dry_run=self.dry_run)
+##                 else:
+##                     warn_tcl = 1 
+
             # Collect all the dlls, so that binary dependencies can be
             # resolved.
 
@@ -409,6 +437,11 @@ class py2exe (Command):
                 if modname in import_hack.keys():
                     unfriendly_dlls.remove(dll)
 
+##            if warn_tcl:
+##                self.warn("*" * 73)
+##                self.warn("* The script %s seems to use Tkinter," % script)
+##                self.warn("* but no TCL installation was found.")
+                
             if unfriendly_dlls:
                 self.warn("*" * 73)
                 self.warn("* The following module(s) call PyImport_ImportModule:")
