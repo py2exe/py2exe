@@ -1,3 +1,13 @@
+2004-04-26  Thomas Heller  <theller@python.net>
+
+	* (Message): Add flush() methods to the Blackhole and Stderr
+	objects for windows programs.
+
+2004-04-07  Thomas Heller  <theller@python.net>
+
+	* (EXCLUDED_DLLS): Readded the builtin list of system dlls to
+	exclude.
+
 2004-03-23  Thomas Heller  <theller@python.net>
 
 	* source\py2exe_util.c: The code was calling CreateFileW directly
