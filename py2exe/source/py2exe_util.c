@@ -263,12 +263,39 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
     BOOL bDelete = 0;
     char *res_data;
     int res_size;
-    int res_type, res_id;
-    
+    PyObject *py_res_type, *py_res_id;
+    char *res_type;
+    char *res_id;
 
-    if (!PyArg_ParseTuple(args, "ss#ii|i", &exename, &res_data, &res_size,
-			  &res_type, &res_id, &bDelete))
+    if (!PyArg_ParseTuple(args, "ss#OO|i",
+			  &exename, &res_data, &res_size,
+			  &py_res_type, &py_res_id, &bDelete))
 	return NULL;
+
+    if (PyInt_Check(py_res_type))
+	    res_type = MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
+    else if (PyString_Check(py_res_type)) {
+	    res_type = PyString_AS_STRING(py_res_type);
+	    printf("TYPE %s\n", res_type);
+    }
+    else {
+	    PyErr_SetString(PyExc_ValueError,
+			    "3rd argument must be int or string");
+	    return NULL;
+    }
+
+    if (PyInt_Check(py_res_id))
+	    res_id = MAKEINTRESOURCE(PyInt_AsLong(py_res_id));
+    else if (PyString_Check(py_res_id)) {
+	    res_id = PyString_AS_STRING(py_res_id);
+	    printf("ID %s\n", res_id);
+    }
+    else {
+	    PyErr_SetString(PyExc_ValueError,
+			    "4th argument must be int or string");
+	    return NULL;
+    }
+
 
     hUpdate = BeginUpdateResource(exename, bDelete);
     if (!hUpdate) {
@@ -277,8 +304,8 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
     }
 
     if (!UpdateResource(hUpdate,
-			MAKEINTRESOURCE(res_type),
-			MAKEINTRESOURCE(res_id),
+			res_type,
+			res_id,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
 			res_data,
 			res_size)) {
