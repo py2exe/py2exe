@@ -55,7 +55,7 @@ optional keys in the dictionary are recognized:
 # special one contained in this module.
 #
 
-__version__ = "0.5.0a1"
+__version__ = "0.5.0a2"
 
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
