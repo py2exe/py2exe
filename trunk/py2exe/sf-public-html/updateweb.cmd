@@ -1,1 +1,1 @@
-scp htdocs/index.html theller@shell.sourceforge.net:/home/groups/py2exe/htdocs
+scp htdocs/index.html htdocs/py2exe.css theller@shell.sourceforge.net:/home/groups/py2exe/htdocs
