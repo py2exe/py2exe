@@ -3,6 +3,8 @@ standalone windows executable programs from
 python scripts.
 """
 
+# $Id$
+
 import sys, os, string
 from distutils.core import setup, Extension, Command
 from distutils.dist import Distribution
@@ -171,10 +173,6 @@ def InstallSubCommands():
     buildCmds = [('build_interpreters', has_interpreters)]
     build.build.sub_commands.extend(buildCmds)
 
-##    installCmds = [('install_idl', has_idl),
-##    install.install.sub_commands.extend(installCmds)
-
-
 InstallSubCommands()
 
 ############################################################################
@@ -262,10 +260,9 @@ setup(name="py2exe",
       cmdclass = {'build_interpreters': BuildInterpreters,
                   'deinstall': deinstall},
 
-##      ext_modules = [Extension("xx", ["source/xxmodule.c"])],
       interpreters = [run, run_w],
       packages=['py2exe', 'py2exe.tools'],
-      package_dir={'py2exe.tools': "tools" + sys.winver},
+      package_dir={'py2exe.tools': "tools" + sys.version[:3]},
       )
 
 # Local Variables:
