@@ -221,6 +221,13 @@ class py2exe (Command):
             final_dir = os.path.join(self.dist_dir, script_base)
             self.mkpath(final_dir)
 
+            if self.distribution.has_data_files():
+                self.announce("Copying data files")
+                install_data = self.reinitialize_command('install_data')
+                install_data.install_dir = final_dir
+                install_data.ensure_finalized()
+                install_data.run()
+
             collect_dir = os.path.join(self.bdist_dir, "collect", script_base)
             self.mkpath(collect_dir)
             self.mkpath(os.path.join(collect_dir, "Scripts"))
@@ -421,10 +428,11 @@ class py2exe (Command):
 
             if unfriendly_dlls or missing:
                 self.warn("*" * 73)
-
+            if not self.keep_temp:
+                remove_tree(collect_dir, self.verbose, self.dry_run)
+                
         if not self.keep_temp:
             remove_tree(self.bdist_dir, self.verbose, self.dry_run)
-
     # run()
 
     def find_suffix(self, filename):
@@ -482,6 +490,7 @@ class py2exe (Command):
         "comctl32.dll",
         "comdlg32.dll",
         "gdi32.dll",
+        "imm32.dll",
         "kernel32.dll",
         "msvcrtd.dll",  # not redistributable ??
         "ntdll.dll",
@@ -561,11 +570,12 @@ class py2exe (Command):
                              0, # verbose
                              0x0bad3bad,
                              )
-        file = open(exe_name, "wb")
-        file.write(self.get_exe_bytes(use_runw))
-        file.write(header)
-        file.write(open(arcname, "rb").read())
-        file.close()
+        if not self.dry_run:
+            file = open(exe_name, "wb")
+            file.write(self.get_exe_bytes(use_runw))
+            file.write(header)
+            file.write(open(arcname, "rb").read())
+            file.close()
     # create_exe()
 
     def get_exe_stub(self, use_runw):
@@ -588,7 +598,7 @@ class py2exe (Command):
 # class py2exe
 
 class Set:
-    # A generic set class
+    # A generic set class (container without duplicates)
     def __init__(self, *args):
         self._dict = {}
         for arg in args:
@@ -626,7 +636,7 @@ class FileSet:
             self.add(arg)
 
     def __repr__(self):
-        return "<FileSet %s at %x>" % (self._dict, id(self))
+        return "<FileSet %s at %x>" % (self._dict.values(), id(self))
 
     def add(self, file):
         self._dict[string.upper(file)] = file
