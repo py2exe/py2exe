@@ -92,7 +92,7 @@ def FixupTargets(targets, default_attribute):
         else:
             if not target_def.has_key(default_attribute):
                 raise DistutilsOptionError, \
-                      "This target requires a '%s' definition" % default_attribute
+                      "Target %s requires a '%s' definition" % (target_def, default_attribute)
             target = Target(**target_def)
         target.validate()
         ret.append(target)
