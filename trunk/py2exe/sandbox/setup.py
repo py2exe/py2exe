@@ -315,7 +315,7 @@ def _check_build_dir(map, key, source_root_name, child):
         
 def _get_build_dirs(source_root_name):
     ret = {}
-    if _check_build_dir(ret, "win32", source_root_name, "build/temp.win32-%s" % sys.winver):
+    if _check_build_dir(ret, "win32", source_root_name, "build/temp.win32-%s/Release" % sys.winver):
         pass
     elif _check_build_dir(ret, "win32", source_root_name, "win32/build"):
         pass
