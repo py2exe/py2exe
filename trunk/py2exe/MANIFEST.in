@@ -3,4 +3,4 @@ recursive-include py2exe *.py
 recursive-include tools2.0 *.py
 recursive-include tools1.5 *.py
 recursive-include doc *.html *.css
-include MANIFEST MANIFEST.in README
+include MANIFEST MANIFEST.in README.txt
