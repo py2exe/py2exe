@@ -562,8 +562,7 @@ class py2exe(Command):
         pathname = os.path.join(self.temp_dir, "%s.py" % item.__name__)
         # and what about dry_run?
         if self.verbose:
-            print "creating loader stub for extension '%s' as '%s'" % \
-                  (item.__name__, pathname)
+            print "creating python loader for extension '%s'" % item.__name__
 
         fname = os.path.basename(item.__file__)
         source = LOADER % fname
