@@ -34,6 +34,7 @@ from distutils.core import Command
 from distutils.spawn import spawn
 from distutils.errors import *
 import sys, os, imp, types
+import marshal
 
 import _sre # any module known to be a .pyd
 is_debug_build = _sre.__file__.find("_d")>=0
@@ -153,7 +154,7 @@ class py2exe(Command):
         
         self.unbuffered = extra_options.get("unbuffered", 0)
         self.optimize = extra_options.get("optimize", 0)
-        self.includes = extra_options.get("include")
+        self.includes = extra_options.get("includes")
         self.excludes = extra_options.get("excludes")
         self.packages = extra_options.get("packages")
         self.dist_dir = extra_options.get("dist_dir")
@@ -268,9 +269,9 @@ class py2exe(Command):
 
         # build the executables
         for target in dist.console:
-            self.build_executable(target, "run.exe", arcname)
+            self.build_executable(target, "run.exe", arcname, target.script)
         for target in dist.windows:
-            self.build_executable(target, "run_w.exe", arcname)
+            self.build_executable(target, "run_w.exe", arcname, target.script)
         for target in dist.service:
             self.build_service(target, "run_svc.exe", arcname)
 
@@ -295,21 +296,12 @@ class py2exe(Command):
         # objects listed in module_names.
         # The basename of the dll/exe is the last part of the first module.
         # Do we need a way to specify the name of the files to be built?
-        module_names = target.modules
-        dest_base = target.get_dest_base()
-        dest_script = os.path.join(self.temp_dir, "%s.py" % dest_base)
 
-        # We take the boot_com_servers.py script, write the required
-        # module names into it, and use it as the script to be run.
+        # Setup the variables our boot script needs.
+        vars = {"com_module_names" : target.modules}
         boot = self.get_boot_script("com_servers")
-        ofi = open(dest_script, "w")
-        ofi.write("com_module_names = %s\n" % module_names)
-        ofi.write(open(boot, "r").read())
-        ofi.close()
-        # update the target
-        target.script = dest_script
         # and build it
-        self.build_executable(target, template, arcname)
+        self.build_executable(target, template, arcname, boot, vars)
 
     def get_service_names(self, module_name):
         # import the script with every side effect :)
@@ -331,22 +323,12 @@ class py2exe(Command):
         # isn't really there yet.
         from py2exe_util import add_resource
         module_names = target.modules
-        assert len(module_names)==1, "We only support one service module"
-        module_name = module_names[0]
+        assert len(target.modules)==1, "We only support one service module"
+        module_name = target.modules[0]
 
-        dest_base = target.get_dest_base()
-        dest_script = os.path.join(self.temp_dir, "%s.py" % dest_base)
-
-        # We take the boot_service.py script, write the required
-        # module names into it, and use it as the script to be run.
+        vars = {"service_module_names" : target.modules}
         boot = self.get_boot_script("service")
-        ofi = open(dest_script, "w")
-        ofi.write("service_module_names = ['%s']\n" % module_name)
-        ofi.write(open(boot, "r").read())
-        ofi.close()
-
-        target.script = dest_script
-        exe_path = self.build_executable(target, template, arcname)
+        exe_path = self.build_executable(target, template, arcname, boot, vars)
 
         # and the service specific resources.
         from resources.StringTables import StringTable, RT_STRING
@@ -366,7 +348,7 @@ class py2exe(Command):
         for id, data in st.binary():
             add_resource(exe_path, data, RT_STRING, id, 0)
 
-    def build_executable(self, target, template, arcname):
+    def build_executable(self, target, template, arcname, script, vars={}):
         # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
         # containing the python modules.
@@ -382,15 +364,25 @@ class py2exe(Command):
 
         src = os.path.join(os.path.dirname(__file__), template)
         self.copy_file(src, exe_path)
-        
+
+        boot_bits = ["import marshal\n"]
+        for var_name, var_val in vars.items():
+            boot_bits.append("%s=%r\n" % (var_name, var_val))
+        code_object = compile(open(script, "U").read(),
+                              os.path.basename(script), "exec")
+        boot_bits.append("exec marshal.loads(")
+        boot_bits.append(repr(marshal.dumps(code_object)))
+        boot_bits.append(")\n")
+        boot_code = "".join(boot_bits)
+
         import struct
         si = struct.pack("iii",
                          0x78563412, # a magic value,
                          self.optimize,
                          self.unbuffered,
                          ) + os.path.basename(arcname) + "\000"
-        
-        script_bytes = si + "import sys\nif not hasattr(sys, 'frozen'): sys.frozen=1\n" + open(target.script, "r").read() + '\000\000'
+
+        script_bytes = si + boot_code + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
         add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
         # Handle all resources specified by the target
