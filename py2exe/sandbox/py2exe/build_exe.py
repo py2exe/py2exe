@@ -38,6 +38,8 @@ import sys, os, imp
 _c_suffixes = [triple[0] for triple in imp.get_suffixes()
                if triple[2] == imp.C_EXTENSION]
 
+EXCLUDED_DLLS = ["dapi.dll", "MAPI32.dll"] # sigh
+
 def imp_find_module(name):
     # same as imp.find_module, but handles dotted names
     names = name.split('.')
@@ -92,6 +94,7 @@ class py2exe(Command):
         self.excludes = None
         self.packages = None
         self.dist_dir = None
+        self.ext_mapping = {}
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -107,12 +110,15 @@ class py2exe(Command):
 
     def run(self):
         # refactor, refactor, refactor!
+        abspath=os.path.abspath
+        force_console = True # useful for debugging - refactor this too :)
         bdist_base = self.get_finalized_command('bdist').bdist_base
         self.bdist_dir = os.path.join(bdist_base, 'winexe')
 
-        self.collect_dir = os.path.join(self.bdist_dir, "collect")
+        self.collect_dir = abspath(os.path.join(self.bdist_dir, "collect"))
         self.mkpath(self.collect_dir)
-        self.temp_dir = os.path.join(self.bdist_dir, "temp")
+        self.temp_dir = abspath(os.path.join(self.bdist_dir, "temp"))
+        self.dist_dir = abspath(self.dist_dir)
         self.mkpath(self.temp_dir)
         self.mkpath(self.dist_dir)
 
@@ -187,20 +193,23 @@ class py2exe(Command):
         # build the executables
         self.build_executables(dist.console, "run.exe", arcname)
         self.build_executables(dist.windows, "run_w.exe", arcname)
+        self.build_services(dist.service, "run_svc.exe", arcname)
 
         if dist.com_server:
-            self.build_comservers(dist.com_server, "run_w.exe", arcname)
+            if force_console: com_exe_template = "run.exe"
+            else: com_exe_template = "run_w.exe"
+            self.build_comservers(dist.com_server, com_exe_template, arcname)
             self.build_comservers(dist.com_server, "run_dll.dll", arcname)
 
         if mf.any_missing():
+            print "The following modules appear to be missing"
             print mf.any_missing()
 
-
-    def get_bootcomserver_script(self):
+    def get_boot_script(self, boot_type):
         # return the filename of the script to use for com servers.
         thisfile = sys.modules['py2exe.build_exe'].__file__
         return os.path.join(os.path.dirname(thisfile),
-                            "boot_com_servers.py")
+                            "boot_" + boot_type + ".py")
 
     def build_comservers(self, module_names, template, arcname):
         # Build a dll and an exe executable hosting all the com
@@ -208,7 +217,7 @@ class py2exe(Command):
         # The basename of the dll/exe is the last part of the first module.
         # Do we need a way to specify the name of the files to be built?
         fname = module_names[0].split(".")[-1]
-        boot = self.get_bootcomserver_script()
+        boot = self.get_boot_script("com_servers")
         dst = os.path.join(self.temp_dir, "%s.py" % fname)
 
         # We take the boot_com_servers.py script, write the required
@@ -219,6 +228,72 @@ class py2exe(Command):
         ofi.close()
 
         self.build_executables([dst], template, arcname)
+
+    def get_service_names(self, module_name):
+        # import the script with every side effect :)
+        __import__(module_name)
+        mod = sys.modules[module_name]
+        for name, klass in mod.__dict__.items():
+            if hasattr(klass, "_svc_name_"):
+                break
+        else:
+            raise RuntimeError, "No services in module"
+        deps = ()
+        if hasattr(klass, "_svc_deps_"):
+            deps = klass._svc_deps_
+        return klass.__name__, klass._svc_name_, klass._svc_display_name_, deps
+
+    def build_services(self, module_names, template, arcname):
+        # services still need a little thought.  It should be possible
+        # to host many modules in a single service - but pythonservice.exe
+        # isn't really there yet.
+        from py2exe_util import add_resource
+        assert len(module_names)==1, "We only support one service module"
+        module_name = module_names[0]
+        fname = module_name.split(".")[-1]
+        boot = self.get_boot_script("service")
+        dst = os.path.join(self.temp_dir, "%s.py" % fname)
+
+        # We take the boot_service.py script, write the required
+        # module names into it, and use it as the script to be run.
+        ofi = open(dst, "w")
+        ofi.write("service_module_names = ['%s']\n" % module_name)
+        ofi.write(open(boot, "r").read())
+        ofi.close()
+
+        exe_path = os.path.join(self.dist_dir, fname + ".exe")
+
+        src = os.path.join(os.path.dirname(__file__), template)
+        self.copy_file(src, exe_path)
+
+        # the standard resources
+        import struct
+        si = struct.pack("iii",
+                            0x78563412, # a magic value,
+                            self.optimize,
+                            self.unbuffered,
+                            ) + os.path.basename(arcname) + "\000"
+
+        script_bytes = si + open(dst, "r").read() + '\000\000'
+        self.announce("add script resource, %d bytes" % len(script_bytes))
+        add_resource(exe_path, script_bytes, "PYTHONSCRIPT", 1, 0)
+        # and the service specific resources.
+        from resources.StringTables import StringTable, RT_STRING
+        # resource id in the EXE of the serviceclass,
+        # see source/PythonService.cpp
+        RESOURCE_SERVICE_NAME = 1016
+
+        st = StringTable()
+        klass_name, svc_name, svc_display_name, svc_deps = \
+                                            self.get_service_names(module_name)
+        st.add_string(RESOURCE_SERVICE_NAME,
+                        "%s.%s" % (module_name, klass_name))
+        st.add_string(RESOURCE_SERVICE_NAME+1, svc_name)
+        st.add_string(RESOURCE_SERVICE_NAME+2, svc_display_name)
+        # XXX service probably won't have a | in them?
+        st.add_string(RESOURCE_SERVICE_NAME+3, "|".join(svc_deps))
+        for id, data in st.binary():
+            add_resource(exe_path, data, RT_STRING, id, 0)
 
     def build_executables(self, scripts, template, arcname):
         # For each file in scripts, build an executable.
@@ -398,7 +473,10 @@ class py2exe(Command):
             mf.run_script(path)
 
         if self.distribution.com_server:
-            mf.run_script(self.get_bootcomserver_script())
+            mf.run_script(self.get_boot_script("com_servers"))
+
+        if self.distribution.service:
+            mf.run_script(self.get_boot_script("service"))
 
         for mod in self.includes:
             if mod[-2:] == '.*':
@@ -489,9 +567,8 @@ def bin_depends(path, images):
     return dependents, warnings
     
 def isSystemDLL(pathname):
-## Not sure: do we still need a list of dlls to exclude?
-##    if (string.lower(os.path.basename(pathname))) in EXCLUDED_DLLS:
-##        return 1
+    if os.path.basename(pathname).lower() in EXCLUDED_DLLS:
+        return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
     # Is it sufficient to use the Image Load Address?
     import struct
