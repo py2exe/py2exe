@@ -22,8 +22,12 @@
 ##
 
 # $Log$
+# Revision 1.9  2002/09/05 19:23:11  theller
+# Final (?) changes for early bound COM support.
+# Fix a bug: The 'PY' icon wasn't deleted before inserting a new icon.
+#
 # Revision 1.8  2002/06/20 18:50:22  theller
-# New command-line flag for early binding CM support: --progids.
+# New command-line flag for early binding COM support: --progids.
 #
 # Now it is possible to specify sub-packages to the --packages command
 # line flag (like --packages win32com.gen_py).
