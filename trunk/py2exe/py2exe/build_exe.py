@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.14  2003/05/20 18:38:28  theller
+# Some magic for ctypes from CVS.
+#
 # Revision 1.13  2003/05/09 20:28:03  theller
 # New --typelib command line flag, specifies a type library to embed
 # into the exe-file.
@@ -619,6 +622,18 @@ class py2exe (Command):
             #
             self.ext_mapping = {}
             dlls = []
+
+            # do the magic markh does to load pythoncom and pywintypes
+            needs_pythoncom = mf.modules.get("pythoncom", None)
+            if needs_pythoncom:
+                import pythoncom
+                dlls.append(pythoncom.__file__)
+
+            needs_pywintypes = mf.modules.get("pywintypes", None)
+            if needs_pywintypes:
+                import pywintypes
+                dlls.append(pywintypes.__file__)
+
             for ext_module in extensions:
                 pathname = ext_module.__file__
                 suffix = self.find_suffix(pathname)
