@@ -19,9 +19,14 @@ class ExplorerEvents:
 	def OnVisible(self, visible):
 		global bVisibleEventFired
 		bVisibleEventFired = 1
+		print "Explorer is Visible", visible
 
 def TestExplorerEvents():
 	iexplore = win32com.client.DispatchWithEvents("InternetExplorer.Application", ExplorerEvents)
+	iexplore.Visible = 1
+	iexplore.Visible = 0
+	iexplore.Visible = 1
+	iexplore.Visible = 0
 	iexplore.Visible = 1
 	if not bVisibleEventFired:
 		raise RuntimeError, "The IE event did not appear to fire!"
