@@ -43,6 +43,9 @@ if sys.frozen == "windows_exe":
             if self._file is not None:
                 self._file.write(text)
                 self._file.flush()
+        def flush(self):
+            if self._file is not None:
+                self._file.flush()
     sys.stderr = Stderr()
     del sys._MessageBox
     del Stderr
@@ -50,6 +53,8 @@ if sys.frozen == "windows_exe":
     class Blackhole(object):
         softspace = 0
         def write(self, text):
+            pass
+        def flush(self):
             pass
     sys.stdout = Blackhole()
     del Blackhole
