@@ -22,6 +22,10 @@
 ##
 
 # $Log$
+# Revision 1.2  2002/02/01 10:50:32  theller
+# Did still try to import py2exe instead of build_exe.
+# Found by Peter Goode. Thanks!
+#
 # Revision 1.1  2002/01/30 08:56:20  theller
 # Renamed from previous py2exe.py
 #
@@ -66,7 +70,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.3.0"
+__version__ = "0.3.1"
 
 import sys, os, string
 from distutils.core import Command
@@ -354,6 +358,8 @@ class py2exe (Command):
             self.announce("+----------------------------------------------------")
             self.announce("| Processing script %s with py2exe-%s" % (script, __version__))
             self.announce("+----------------------------------------------------")
+
+            self.script = script
 
             script_base = os.path.splitext(os.path.basename(script))[0]
             final_dir = os.path.join(self.dist_dir, script_base)
@@ -840,8 +846,11 @@ class py2exe (Command):
 
 
     def get_service_names(self):
-        file, pathname, desc = imp.find_module("__service__", [self.collect_dir])
-        mod = imp.load_module("__service__", file, pathname, desc)
+        # import the script without too many sideeffects
+        import new
+        mod = new.module("__service__")
+        exec compile(open(self.script).read(), self.script, "exec") in mod.__dict__
+
         klass = getattr(mod, self.service)
         return klass._svc_name_, klass._svc_display_name_
 
