@@ -112,18 +112,17 @@ class py2exe (Command):
         # Is this the right way to do it?
         build_ext = self.reinitialize_command('build_ext')
         build_ext.force = self.force
+        build_ext.debug = self.debug
         
         build = self.reinitialize_command('build')
-
         build.force = self.force
 
-        build.run()
-
         install = self.reinitialize_command('install')
-
         install.force = self.force
         install.root = os.path.join(self.bdist_dir, "lib")
         install.optimize = install.compile = 0
+
+        # build everything and do a fake install
         install.run()
 
         collect_dir = os.path.join(self.bdist_dir, "collect")
@@ -145,13 +144,15 @@ class py2exe (Command):
 
         for script in self.distribution.scripts:
 
-            excludes = ["os2", "posix", "dos", "mac"]
+            excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
+                        "MACFS", "pwd"]
 
             # Use the modulefinder to find dependend modules.
             #
             self.announce("Searching modules needed to run '%s'" % script)
-            self.announce("Search path (debug %s):" % self.debug)
+            self.announce("Search path is:")
             self.announce(repr(extra_path + sys.path))
+
             m = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
@@ -176,18 +177,7 @@ class py2exe (Command):
                         raise RuntimeError \
                               ("Don't know how to handle '%s'" % src)
 
-            missing = filter(lambda m, e=excludes: m not in e, m.badmodules.keys())
-
-            if missing:
-                self.warn("*" * 48)
-                self.warn("* The following modules were not found:")
-                for n in missing:
-                    self.warn("*    " + n)
-                self.warn("*" * 48)
-
-
             # byte compile the python modules into the target directory
-            #
             byte_compile(py_files,
                          target_dir=collect_dir,
                          optimize=self.optimize, force=self.force,
@@ -198,16 +188,28 @@ class py2exe (Command):
             final_dir = os.path.join(self.dist_dir, script_base)
             self.mkpath(final_dir)
 
+            missing = filter(lambda m, e=excludes: m not in e, m.badmodules.keys())
+
+            # if build debug binary, use debug extension modules
+            # instead of the release versions.
+            missing, extensions = self.fix_extmodules(missing, extensions,
+                                                      sys.path + extra_path)
+
+            if missing:
+                self.warn("*" * 48)
+                self.warn("* The following modules were not found:")
+                for n in missing:
+                    self.warn("*    " + n)
+                self.warn("*" * 48)
+
+
             # copy extension modules, massaging filenames so that they
             # contain the package-name they belong to (if any).
             # They are copied  directly to dist_dir.
             for ext_module in extensions:
-                src, dst = self.find_extmodule_paths(ext_module)
+                src, dst = self.get_extension_filenames(ext_module)
                 self.copy_file(src,
                           os.path.join(final_dir, dst))
-
-            for x in missing:
-                pass
 
             # copy support files and the script itself
             #
@@ -245,15 +247,46 @@ class py2exe (Command):
 
     # run()
 
-    def find_extmodule_paths(self, ext_module):
+    def fix_extmodules(self, missing, extensions, path):
+        if not self.debug:
+            return missing, extensions
+        # if building a debug binary, replace <module>.pyd or <module>.dll
+        # with <module>_d.pyd or <module>_d.pyd (but they have to be
+        # found again by imp.find_module)
+        fixed_modules = []
+        for ext_module in extensions:
+            name = ext_module.__name__
+            try:
+                file = imp.find_module(name + '_d', path)[1]
+            except ImportError:
+                missing.append(name)
+            else:
+                fixed_modules.append(Module(name=name, file=file))
+
+        # extension modules may be in missing because they may be present
+        # in debug but not in release mode: search again
+        for name in missing[:]: # copy it, because we want to modify it
+            try:
+                _, file, desc = imp.find_module(name + '_d', path)
+            except ImportError:
+                pass
+            else:
+                if desc[2] == imp.C_EXTENSION:
+                    missing.remove(name)
+                    fixed_modules.append(Module(name=name, file=file))
+        return missing, fixed_modules
+
+    def get_extension_filenames(self, ext_module):
         # if we are buildiing a debug version, we have to insert an
         # '_d' into the filename just before the extension
+        src = ext_module.__file__ # pathname
         if self.debug:
-            src = imp.find_module(ext_module.__name__ + '_d')[1]
             dst = ext_module.__name__ + '_d' # module name
         else:
-            src = ext_module.__file__ # pathname
             dst = ext_module.__name__ # module name
+        # massage the name for importing extension modules
+        # contained in packages (Yes, this happens)
+        dst = string.replace(dst, '\\', '.')
 
         ext = os.path.splitext(src)[1]
 
@@ -264,6 +297,7 @@ class py2exe (Command):
         # module BEFORE we can install our importer.
         file, pathname, desc = imp.find_module("exceptions")
         if file:
+            # This module is not builtin
             file.close()
             module = Module(name="exceptions", file=pathname)
             byte_compile([module],
@@ -273,12 +307,12 @@ class py2exe (Command):
                          dry_run=self.dry_run)
 
         
-        version = (sys.hexversion >> 24), (sys.hexversion >> 16) & 0xff
+        version = string.split(sys.version[:3], '.')
         if self.debug:
             template = "python%s%s_d.dll"
         else:
             template = "python%s%s.dll"
-        pythondll = (template % version)
+        pythondll = (template % tuple(version))
         for path in string.split(os.environ["PATH"], ';') + sys.path:
             fullpath = os.path.join(path, pythondll)
             if os.path.isfile(fullpath):
@@ -360,6 +394,12 @@ class Module:
         self.__name__ = name
         self.__file__ = file
         self.__path__ = path
+    def __repr__(self):
+        if self.__path__:
+            return "Module(%s, %s)" %\
+                   (`self.__name__`, `self.__file__`, `self.__path__`)
+        else:
+            return "Module(%s, %s)" % (`self.__name__`, `self.__file__`)
 
 def byte_compile(py_files, optimize=0, force=0,
                  target_dir=None, verbose=1, dry_run=0,
