@@ -488,7 +488,15 @@ extern "C" int PythonService_main(int argc, char **argv)
 	}
 
 	// To be friendly, say what we are doing
-	printf("%s - Python Service Manager\n", argv[0]);
+	char svcNameBuf[256], svcDisplayNameBuf[256];
+	char *svcName = "<service_name>";
+	char *svcDisplayName = "<display name>";
+	if (LoadStringA(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME+1, svcNameBuf, sizeof(svcNameBuf))>1)
+		svcName = svcNameBuf;
+	if (LoadStringA(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME+2, svcDisplayNameBuf, sizeof(svcDisplayNameBuf))>1)
+		svcDisplayName = svcDisplayNameBuf;
+	
+	printf("%s - '%s' service\n", argv[0], svcDisplayName);
 	printf("Options:\n");
 #ifndef BUILD_FREEZE
 	printf(" -register - register the EXE - this must be done at least once.\n");
@@ -503,7 +511,9 @@ extern "C" int PythonService_main(int argc, char **argv)
 #else
 	printf(" -debug servicename [parms] - debug the Python service.\n");
 #endif
-	printf("\nStarting service - this may take several seconds - please wait...\n");
+    printf("\nNOTE: You do not start the service using this program - start the\n");
+    printf("service using Control Panel, or 'net start %s'\n", svcName);
+    printf("\nConnecting to the service control manager....\n");
 
 	if (!StartServiceCtrlDispatcher( DispatchTable)) {
 		ReportAPIError(PYS_E_API_CANT_START_SERVICE);
