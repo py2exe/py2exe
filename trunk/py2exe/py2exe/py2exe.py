@@ -3,17 +3,11 @@
 Implements the Distutils 'py2exe' command: create executable
 windows programs from scripts."""
 
-# ToDo:
-#
-# By creating our own build_interpreter command,
-# instead of (ab)using build_ext, we have got some
-# problems:
-# Should override build_dir so that the python version
-# is included in the directory name.
-
 # created 2000/11/14, Thomas Heller
 
 __revision__ = "$Id$"
+
+__version__ = "0.1.1"
 
 import sys, os, string
 from distutils.core import Command
@@ -114,9 +108,20 @@ class py2exe (Command):
             raise "Error", "Nothing to do"
             return
 
-        self.run_command('build')
+        # Distribute some of our options to other commands.
+        # Is this the right way to do it?
+        build_ext = self.reinitialize_command('build_ext').force
+        build_ext.force = force
+        
+        build = self.reinitialize_command('build')
+
+        build.force = self.force
+
+        build.run()
 
         install = self.reinitialize_command('install')
+
+        install.force = self.force
         install.root = os.path.join(self.bdist_dir, "lib")
         install.optimize = install.compile = 0
         install.run()
@@ -145,6 +150,8 @@ class py2exe (Command):
             # Use the modulefinder to find dependend modules.
             #
             self.announce("Searching modules needed to run '%s'" % script)
+            self.announce("Search path (debug %s):" % self.debug)
+            self.announce(repr(extra_path + sys.path))
             m = ModuleFinder (path=extra_path + sys.path,
                               debug=0,
                               excludes=excludes)
@@ -193,13 +200,10 @@ class py2exe (Command):
             # copy extension modules, massaging filenames so that they
             # contain the package-name they belong to (if any).
             # They are copied  directly to dist_dir.
-            print "COPYING EXTENSIONS TO", final_dir
             for ext_module in extensions:
                 src, dst = self.find_extmodule_paths(ext_module)
                 self.copy_file(src,
                           os.path.join(final_dir, dst))
-
-            # XXX Should copy pythonxx.dll!
 
             # copy support files and the script itself
             #
@@ -214,7 +218,9 @@ class py2exe (Command):
                            os.path.join(collect_dir,
                                         "Scripts\\%s.py" % script_base))
                            
-            archive_basename = os.path.join(collect_dir, script_base)
+            # The archive must not be in collect-dir, otherwise
+            # it may include a (partial) copy of itself
+            archive_basename = os.path.join(self.bdist_dir, script_base)
 
             arcname = self.make_archive(archive_basename, "zip",
                                         root_dir=collect_dir)
@@ -254,7 +260,7 @@ class py2exe (Command):
         file, pathname, desc = imp.find_module("exceptions")
         if file:
             file.close()
-            module = Module(name=name, path=pathname)
+            module = Module(name="exceptions", file=pathname)
             byte_compile([module],
                          target_dir=final_dir,
                          optimize=self.optimize, force=self.force,
@@ -275,11 +281,16 @@ class py2exe (Command):
                           os.path.join(final_dir, pythondll))
                 break
         else:
-            raise "NOTFOUND", (pythondll, os.environ["PATH"])
+            self.warn("Could not find %s, must copy manually into %s" %\
+                      (pythondll, final_dir))
 
     def support_modules(self):
         import imp
-        return [imp.find_module("imputil")[1]]
+        try:
+            return [imp.find_module("imputil")[1]]
+        except ImportError:
+            import tools
+            return [imp.find_module("imputil", tools.__path__)[1]]
 
     def create_exe (self, exe_name, arcname, script_name):
         import struct
@@ -338,17 +349,6 @@ class py2exe (Command):
 
 def endswith(str, substr):
     return str[-len(substr):] == substr
-
-def strip_syspath(file, extra_path):
-    for p in extra_path + sys.path:
-        # XXX Must compare case insensitive on Windows!!!
-        if p and string.upper(file[:len(p)]) == string.upper(p):
-            return file[len(p)+1:]
-    if os.path.isfile(file):
-        return file
-    raise RuntimeError, ("%s not found on path??" % file, extra_path + sys.path)
-
-# strip_syspath()
 
 class Module:
     def __init__(self, name, file, path=None):
