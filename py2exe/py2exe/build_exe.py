@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.1  2002/01/30 08:56:20  theller
+# Renamed from previous py2exe.py
+#
 # Revision 1.43  2002/01/29 09:31:46  theller
 # version 0.3.0
 #
@@ -1036,7 +1039,7 @@ def byte_compile(py_files, optimize=0, force=0,
         if not dry_run:
             script = open(script_name, "w")
             script.write("""\
-from py2exe.py2exe import byte_compile, Module
+from py2exe.build_exe import byte_compile, Module
 files = [
 """)
 
