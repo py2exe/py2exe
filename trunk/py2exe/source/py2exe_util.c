@@ -256,6 +256,47 @@ static PyObject *update_icon(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *add_resource(PyObject *self, PyObject *args)
+{
+    char *exename;
+    HANDLE hUpdate = NULL;
+    BOOL bDelete = 0;
+    char *res_data;
+    int res_size;
+    int res_type, res_id;
+    
+
+    if (!PyArg_ParseTuple(args, "ss#ii|i", &exename, &res_data, &res_size,
+			  &res_type, &res_id, &bDelete))
+	return NULL;
+
+    hUpdate = BeginUpdateResource(exename, bDelete);
+    if (!hUpdate) {
+	SystemError(GetLastError(), "BeginUpdateResource");
+	goto failed;
+    }
+
+    if (!UpdateResource(hUpdate,
+			MAKEINTRESOURCE(res_type),
+			MAKEINTRESOURCE(res_id),
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
+			res_data,
+			res_size)) {
+	SystemError(GetLastError(), "UpdateResource");
+	goto failed;
+    }
+
+    if (!EndUpdateResource(hUpdate, FALSE))
+	return SystemError(GetLastError(), "EndUpdateResource");
+    Py_INCREF(Py_None);
+    return Py_None;
+
+  failed:
+    if (hUpdate)
+	EndUpdateResource(hUpdate, TRUE);
+    return NULL;
+}
+
 /***********************************************************************************
  *
  * Dependency tracker
@@ -391,6 +432,8 @@ static PyObject *get_sysdir(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
+    { "add_resource", add_resource, METH_VARARGS,
+      "add_resource(exe, res_data, res_size, res_type, res_id [, delete=0]) - add resource to an exe file\n"},
     { "update_icon", update_icon, METH_VARARGS,
       "update_icon(exe, ico[, delete=0]) - add icon to an exe file\n"
       "If the delete flag is 1, delete all existing resources", },
