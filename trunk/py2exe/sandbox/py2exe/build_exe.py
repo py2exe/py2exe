@@ -196,6 +196,32 @@ class py2exe(Command):
             dist.service = FixupTargets(dist.service, "modules")
             dist.windows = FixupTargets(dist.windows, "script")
             dist.console = FixupTargets(dist.console, "script")
+
+            # make sure all targets use the same directory, this is
+            # also the directory where the pythonXX.dll must reside
+            import sets
+            paths = sets.Set()
+            for target in dist.com_server + dist.service \
+                    + dist.windows + dist.console:
+                paths.add(os.path.dirname(target.get_dest_base()))
+
+            if len(paths) > 1:
+                raise DistutilsOptionError, \
+                      "all targets must use the same directory: %s" % \
+                      [p for p in paths]
+            if paths:
+                exe_dir = paths.pop() # the only element
+                if os.path.isabs(exe_dir):
+                    raise DistutilsOptionError, \
+                          "exe directory must be relative: %s" % exe_dir
+                self.exe_dir = os.path.join(self.dist_dir, exe_dir)
+                self.mkpath(self.exe_dir)
+            else:
+                # Do we allow to specify no targets?
+                # We can at least build a zipfile...
+                self.exe_dir = self.lib_dir
+            # XXX end of separate method
+
             # all of these contain module names
             required_modules = []
             for target in dist.com_server:
@@ -280,14 +306,13 @@ class py2exe(Command):
 
         print "*** copy dlls ***"
         for dll in dlls.items() + unfriendly_dlls.items():
-            if os.path.basename(dll).lower() == python_dll:
-                # The pythonxx.dll itself cannot be in the lib
-                # directory, because it will not be found by the
-                # executables.  Save the path for later, so that
-                # build_executable can copy it.
-                self.python_dll = dll
+            base = os.path.basename(dll)
+            if base.lower() == python_dll:
+                # The python dll itself cannot be in the lib
+                # directory, it must go into the exe directory.
+                dst = os.path.join(self.exe_dir, base)
             else:
-                dst = os.path.join(self.lib_dir, os.path.basename(dll))
+                dst = os.path.join(self.lib_dir, base)
             self.copy_file(dll, dst)
 
         if self.distribution.has_data_files():
@@ -393,13 +418,6 @@ class py2exe(Command):
         exe_path = os.path.join(self.dist_dir, exe_base + ext)
         # The user may specify a sub-directory for the exe - that's fine, we
         # just specify the parent directory for the .zip
-        from distutils.dir_util import mkpath
-        mkpath(os.path.dirname(exe_path))
-        # copy the python dll, it is needed in the same directory
-        self.copy_file(self.python_dll,
-                       os.path.join(os.path.dirname(exe_path),
-                                    os.path.basename(self.python_dll)))
-
         parent_levels = len(os.path.normpath(exe_base).split(os.sep))-1
         lib_leaf = self.lib_dir[len(self.dist_dir)+1:]
         relative_arcname = ((".." + os.sep) * parent_levels)
