@@ -30,7 +30,7 @@ windows programs.
 
 <dl>
 <dt><b>2001/02/08</b></dt>
-<dd><i>Release 0.2.2: New command line flags to fine-tune the building process, several bugfixes. <b>py2exe</b> can now copy additional files into the dist directory.</i>
+<dd><i>Release 0.2.2: New command line flags to fine-tune the building process, several bugfixes. <b>py2exe</b> can now copy additional files into the dist directory. <b>py2exe</b> has been used to create a standalone COM server exe-file, although this is currently in a very early stage.</i>
 </dd>
 
 <dt><b>2001/02/02</b></dt>
@@ -230,7 +230,7 @@ running the script.</dd>
 
 </dl>
 
-<p>The following flags are not yet implemented:
+<p>The following flags are planned but not yet implemented:
 <dl>
 <dt><b>--unbuffered</b> or <b>-u</b></dt>
 
@@ -276,6 +276,33 @@ Project hosting</h3>
 
 <!--...............................................................................-->
 
+<h2>Problems</h2>
+<h3>Import errors</h3>
+
+<p> Python's modulefinder does a pretty good job, but there are some cases
+in which it does not track dependencies correctly and you would have to
+use command-line flags to fine-tune the building process.
+
+<p>Modulefinder scans the byte-code for IMPORT instructions.
+It cannot, however, find calls to the __import__ built-in function, find import
+statements constructed on the fly and executed with 'exec'. In case you get
+ImportErrors when you run the built executable, simply rebuild specifying
+the missing modules with the --includes flag.
+
+<p>A second problem are extension modules using the <tt>PyImport_ImportModule</tt>
+function to import other python modules (instead of <tt>PyImport_Import</tt>).
+This function does not use the import-hook we
+are installing, so the import will fail even if the required module is available.
+The generated executable will usually fail with an error message like
+<tt>Fatal Python Error: couldn't import 'module'</tt>, or sometimes even crash.
+
+<p>
+The solution to this is to rebuild with the --force-imports flag.
+This will ensure that these modules are injected into sys.modules before
+your scripts starts, and so PyImport_ImportModule can find them.
+
+<!--...............................................................................-->
+
 <h2>Feedback</h2>
 <p>This is still an early release. <font color="#FF0000">I need feedback!</font>
 <p>If this works for you, or if it doesn't work at all, please drop <a href="mailto:theller@python.net">me</a>
@@ -292,12 +319,13 @@ command.
 interpreters, so that eventually everything can be packed into a <i>single</i>
 file (which can be run without unpacking anything).
 
-<p>Provide a possibility to copy a set of additional files and/or directories
-to the dist directory.
+<p>Pack Tkinter programs? Could probably be done without too much work.
+Please contact me if you need this.
 
-<p>Pack Tkinter programs?
+<p>Pack COM servers written in python? (Should already be possible for local servers,
+but I have to fix up the registration)
 
-<p>Pack COM servers written in python?
+<p>Provide a way to change the icon in the resulting executable.
 
 <!--...............................................................................-->
 
@@ -324,7 +352,7 @@ explaining his (and this) approach, and also discusses other solutions.
 <p>Disadvantages:
 <ul>
 <li><b>py2exe</b> only creates what Gordon calls <tt>standalone</tt> programs.</li>
-<li>Since I do not use Tkinter, I did not care about that.</li>
+<li>Since I do not use Tkinter, I did not care about that yet.</li>
 </ul>
 
 <hr><!--WEBBOT bot="HTMLMarkup" startspan ALT="Site Meter" --><script type="text/javascript" language="JavaScript">var site="sm5py2exe"</script>
