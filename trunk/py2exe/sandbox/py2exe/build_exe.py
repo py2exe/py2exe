@@ -593,20 +593,29 @@ class py2exe(Command):
         # modules
         if sys.platform == "win32":
             self.excludes += ["os2", "posix", "dos", "mac", "macfs", "macfsn",
-                              "macpath",
+                              "macpath", "grp",
                               "MACFS", "pwd", "MacOS", "macostools",
                               "EasyDialogs", "termios", "TERMIOS",
                               "java.lang", "org.python.core", "riscos",
                               "riscosenviron", "riscospath", "ce",
-                              "os.path"
+                              "os.path",
+                              "Carbon.Folder", "Carbon.Folders",
                               ]
+            # If services are built, do not complain that servicemanager is missing.
+            # It is a builtin module in run_service.exe!
+            #
+            # XXX Is it better to exclude it here, or to remove it
+            # from the missing list afterwards?
+            if self.distribution.service:
+                self.excludes.append("servicemanager")
+            
             # special dlls which must be copied to the exe_dir, not the lib_dir
             names = "python pywintypes pythoncom".split()
             names = ["%s%d%d" % (name, sys.version_info[0], sys.version_info[1])
                      for name in names]
             if is_debug_build:
                 names = ["%s_d" % name for name in names]
-            self.dlls_in_exedir = ["%s.dll" for name in names]
+            self.dlls_in_exedir = ["%s.dll" % name for name in names]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
