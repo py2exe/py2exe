@@ -28,24 +28,31 @@
 #include <Python.h>
 #include <windows.h>
 
+struct scriptinfo {
+    int tag;
+    int optimize;
+    int unbuffered;
+
+    char zippath[0];
+};
+
 extern void SystemError(int error, char *msg);
 run_script(void);
 void fini(void);
 char *pScript;
+char dirname[_MAX_PATH];
+char modulename[_MAX_PATH];
+struct scriptinfo *p_script_info;
 
 /*
  * returns an error code if initialization fails
  */
 int init_with_instance(HMODULE hmod)
 {
-    int result = 255;
-    char modulename[_MAX_PATH];
-    char dirname[_MAX_PATH];
-    
     /* Open the executable file and map it to memory */
     if(!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
 	SystemError(GetLastError(), "Retrieving module name");
-	return result;
+	return 255;
     }
     {
 	char *cp;
@@ -55,71 +62,73 @@ int init_with_instance(HMODULE hmod)
     }
     
     {
-	HRSRC hrsrc = FindResource(NULL, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
+	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
 	HGLOBAL hgbl;
 
 	if (!hrsrc) {
 	    SystemError (GetLastError(), "Could not locate script resource:");
-	    return 1;
+	    return 255;
 	}
-	hgbl = LoadResource(NULL, hrsrc);
+	hgbl = LoadResource(hmod, hrsrc);
 	if (!hgbl) {
 	    SystemError (GetLastError(), "Could not load script resource:");
-	    return 1;
+	    return 255;
 	}
-	pScript = LockResource(hgbl);
+	p_script_info = (struct scriptinfo *)pScript = LockResource(hgbl);
 	if (!pScript)  {
 	    SystemError (GetLastError(), "Could not lock script resource:");
-	    return 1;
+	    return 255;
 	}
     }
+
+    pScript += sizeof(struct scriptinfo);
+    if (p_script_info->tag != 0x78563412) {
+	    SystemError (0, "Bug: Invalid script resource");
+	    return 255;
+    }
+    pScript += strlen(p_script_info->zippath) + 1;
+
     {
 	char buffer[_MAX_PATH + 32];
 	/* From Barry Scott */
 	/* Must not set the PYTHONHOME env var as this prevents
 	   python being used in os.system or os.popen */
-	Py_SetPythonHome( dirname );
+	Py_SetPythonHome(dirname);
 
 /*
  * PYTHONPATH entries will be inserted in front of the
  * standard python path.
  */
-    /* Todo: Read the zipfile name from the structure at the beginning
-       of the script resource or in a separate resource
-    */
-	sprintf(buffer, "PYTHONPATH=%s\\library.zip", dirname);
+/*
+ * We need the module's directory, because zipimport needs zlib.pyd.
+ * And, of course, the zipfile itself.
+ */
+	sprintf(buffer, "PYTHONPATH=%s;%s\\%s", dirname, dirname, p_script_info->zippath);
 	_putenv (buffer);
-//	fprintf(stderr, "SETENV %s\n", buffer);
 	_putenv ("PYTHONSTARTUP=");
 	_putenv ("PYTHONOPTIMIZE=");
-	_putenv ("PYTHONVERBOSE=");
-	_putenv ("PYTHONUNBUFFERED=");
-	_putenv ("PYTHONINSPECT=");
+
+	if (getenv("PY2EXEVERBOSE"))
+	    _putenv ("PYTHONVERBOSE=1");
+	else
+	    _putenv ("PYTHONVERBOSE");
+
+	if (p_script_info->unbuffered)
+	    _putenv ("PYTHONUNBUFFERED=1");
+	else
+	    _putenv ("PYTHONUNBUFFERED=");
+
 	_putenv ("PYTHONDEBUG=");
     }
 
     Py_NoSiteFlag = 1;
-    /* Todo: Read useful flags from a structure which either is at the beginning
-       of the script resource or in a separate resource
-    */
+    Py_OptimizeFlag = p_script_info->optimize;
+    
 //    Py_VerboseFlag = p_script_info->verbose;
-//    Py_OptimizeFlag = p_script_info->optimize;
-/*
-potentially useful:
-(int) Py_VerboseFlag;
-(int) Py_InteractiveFlag;
-(int) Py_OptimizeFlag;
-(int) Py_NoSiteFlag;
-(int) Py_DivisionWarningFlag;
-(int) Py_IgnoreEnvironmentFlag;
-not useful imo:
-(int) Py_TabcheckFlag;
-(int) Py_DebugFlag;
-(int) Py_UseClassExceptionsFlag;
-dont know what these do:
-(int) Py_UnicodeFlag;
-(int) Py_FrozenFlag;
-*/
+
+    /* XXX Is this correct? For the dll server code? */
+    /* And we should probably change all the above code if Python is already
+     * initialized */
     Py_SetProgramName(modulename);
 
     Py_Initialize();
@@ -128,8 +137,9 @@ dont know what these do:
     /* cause python to calculate the path */
     Py_GetPath();
     /* clean up the environment so that os.system
-       and os.popen processes can run python */
+       and os.popen processes can run python the normal way */
     _putenv( "PYTHONPATH=" );	
+    _putenv ("PYTHONUNBUFFERED=");
 
     return 0;
 }
@@ -156,8 +166,17 @@ int start (int argc, char **argv)
 
 int run_script(void)
 {
-    PyRun_SimpleString("import sys; sys.path=sys.path[:2]");
-//    fprintf(stderr, "\nPath is now %s\n\n", PySys_GetPath());
-    PyRun_SimpleString(pScript);
-    return 0;
+    int rc;
+    /* It would be nice to run only with the single zipfile entry on sys.path,
+       but it seems for inproc com servers the module's directory is needed as well.
+    */
+    char buffer[_MAX_PATH * 3];
+    snprintf(buffer, sizeof(buffer),
+	     "import sys; sys.path=[r'%s', r'%s\\%s']",
+	     dirname,
+	     dirname, p_script_info->zippath);
+    rc = PyRun_SimpleString(buffer);
+    if (rc != 0)
+	return rc;
+    return PyRun_SimpleString(pScript);
 }

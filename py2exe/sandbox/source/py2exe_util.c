@@ -276,9 +276,7 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
 	    res_type = MAKEINTRESOURCE(PyInt_AsLong(py_res_type));
     else if (PyString_Check(py_res_type)) {
 	    res_type = PyString_AS_STRING(py_res_type);
-	    printf("TYPE %s\n", res_type);
-    }
-    else {
+    } else {
 	    PyErr_SetString(PyExc_ValueError,
 			    "3rd argument must be int or string");
 	    return NULL;
@@ -288,7 +286,6 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
 	    res_id = MAKEINTRESOURCE(PyInt_AsLong(py_res_id));
     else if (PyString_Check(py_res_id)) {
 	    res_id = PyString_AS_STRING(py_res_id);
-	    printf("ID %s\n", res_id);
     }
     else {
 	    PyErr_SetString(PyExc_ValueError,
