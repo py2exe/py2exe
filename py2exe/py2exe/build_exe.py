@@ -662,7 +662,7 @@ class py2exe(Command):
         if version is None:
             return
 
-        from py2exe.resources.VersionInfo import Version, RT_VERSION
+        from py2exe.resources.VersionInfo import Version, RT_VERSION, VersionError
         version = Version(version,
                           file_description = get("description"),
                           comments = get("comments"),
@@ -672,6 +672,12 @@ class py2exe(Command):
                           original_filename = os.path.basename(exe_path),
                           product_name = get("name"),
                           product_version = version)
+        try:
+            bytes = version.resource_bytes()
+        except VersionError, detail:
+            self.warn("Version Info will not be included:\n  %s" % detail)
+            return
+            
         from py2exe_util import add_resource
         add_resource(unicode(exe_path), version.resource_bytes(), RT_VERSION, 1, False)
 
