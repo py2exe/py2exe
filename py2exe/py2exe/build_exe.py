@@ -23,6 +23,7 @@ else:
 # resource constants
 RT_BITMAP=2
 
+_py_suffixes = ['.py', '.pyo', '.pyc']
 _c_suffixes = [_triple[0] for _triple in imp.get_suffixes()
                if _triple[2] == imp.C_EXTENSION]
 
@@ -779,16 +780,15 @@ class py2exe(Command):
                 continue
             src = item.__file__
             if src:
-                if src.endswith(".py"):
+                suffix = os.path.splitext(src)[1]
+
+                if suffix in _py_suffixes:
                     py_files.append(item)
-                    continue
-                for suffix in _c_suffixes:
-                    if src.endswith(suffix):
-                        extensions.append(item)
-                        loader = self.create_loader(item)
-                        if loader:
-                            py_files.append(loader)
-                        break
+                elif suffix in _c_suffixes:
+                    extensions.append(item)
+                    loader = self.create_loader(item)
+                    if loader:
+                        py_files.append(loader)
                 else:
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
@@ -1137,11 +1137,9 @@ byte_compile(files, optimize=%s, force=%s,
         from py_compile import compile
         from distutils.dir_util import mkpath
         from distutils.dep_util import newer
+        from distutils.file_util import copy_file
 
         for file in py_files:
-            if file.__file__[-3:] != ".py":
-                raise RuntimeError, "cannot compile '%s'" % file.__file__
-
             # Terminology from the py_compile module:
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
@@ -1159,7 +1157,17 @@ byte_compile(files, optimize=%s, force=%s,
                     print "byte-compiling %s to %s" % (file.__file__, dfile)
                 if not dry_run:
                     mkpath(os.path.dirname(cfile))
-                    compile(file.__file__, cfile, dfile)
+                    suffix = os.path.splitext(file.__file__)[1]
+                    if suffix == ".py":
+                        compile(file.__file__, cfile, dfile)
+                    elif suffix in _py_suffixes:
+                        # Minor problem: This will happily copy a file
+                        # <mod>.pyo to <mod>.pyc or <mod>.pyc to
+                        # <mod>.pyo, but it does seem to work.
+                        copy_file(file.__file__, cfile)
+                    else:
+                        raise RuntimeError \
+                              ("Don't know how to handle %r" % file.__file__)
             else:
                 if verbose:
                     print "skipping byte-compilation of %s to %s" % \
