@@ -658,7 +658,7 @@ class py2exe(Command):
                 }
 
     def parse_mf_results(self, mf):
-        for name, imports in self.get_hidden_imports():
+        for name, imports in self.get_hidden_imports().items():
             if name in mf.modules.keys():
                 for mod in imports:
                     mf.import_hook(mod)
