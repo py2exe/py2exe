@@ -6,4 +6,3 @@ for script in glob.glob("test*.py"):
     raw_input ("RUN '%s'" % cmd)
     os.system(cmd)
     
-
