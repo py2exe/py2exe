@@ -86,18 +86,22 @@ def _try_registry(name):
 
 class ModuleFinder:
 
-    def __init__(self, path=None, debug=0, excludes = [], replace_paths = []):
+    def __init__(self, path=None, debug=0, excludes = [], replace_paths = [],
+                 scan_extdeps=0):
         if path is None:
             path = sys.path
         self.path = path
         self.modules = {}
         self.badmodules = {}
-        self.needed = {}
+        # neededby maps module names to a dict whose keys are
+        # the module names that imported this module.
+        self.neededby = {}
         self.debug = debug
         self.indent = 0
         self.excludes = excludes
         self.replace_paths = replace_paths
         self.processed_paths = []   # Used in debugging only
+        self.scan_extdeps = scan_extdeps
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -320,9 +324,9 @@ class ModuleFinder:
                             self.badmodules[name] = {}
                         self.badmodules[name][m.__name__] = None
                     else:
-                        if not self.needed.has_key(name):
-                            self.needed[name] = {}
-                        self.needed[name][m.__name__] = None
+                        if not self.neededby.has_key(name):
+                            self.neededby[name] = {}
+                        self.neededby[name][m.__name__] = None
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
                 assert lastname is not None
@@ -371,15 +375,62 @@ class ModuleFinder:
 
         if path is None:
             if name in sys.builtin_module_names:
+                self.find_extdeps(name)
                 return (None, None, ("", "", imp.C_BUILTIN))
 
             if sys.platform=="win32":
                 result = _try_registry(name)
                 if result:
+                    self.find_extdeps(name)
                     return result
                     
             path = self.path
-        return imp.find_module(name, path)
+        result = imp.find_module(name, path)
+        if result:
+            file, pathname, (suff, mode, type) = result
+            # C_BUILTIN should not be needed here any more,
+            # because it is handled above
+            if type in (imp.C_EXTENSION, imp.C_BUILTIN):
+                self.find_extdeps(name)
+        return result
+
+    def find_extdeps(self, name):
+        if not self.scan_extdeps:
+            return
+        # Finding modules needed be builtins or extensions
+        # Fairly expensive: We start a python interpreter with the -v and -S flags,
+        # let it import the requested module, and scan the error output
+        # for 'import ... #...' lines.
+        #
+        # This fixes the following kind of problems:
+        # - If you 'import multiarry' from NumPy, ModuleFinder now
+        #   finds that _numpy is needed
+        # - If you 'import cPickle' (which is builtin), ModuleFinder now
+        #   finds that types, string, copy_reg, cStringIO are needed.
+        #
+        # This method can be improved in the following way:
+        #
+        # Importing an extension module can also populate sys.modules
+        # with other builtin modules. An example is the wxPython.wxc
+        # extension module, which defines builtin modules like
+        # miscc, printfwc, clip_dndc, and so on.
+        # These builtin modules can easily be detected by scanning
+        # the error output for '# cleanup[1] ....' lines.
+        import re
+        os.environ['PYTHONPATH'] = string.join(self.path, os.pathsep)
+        pattern = re.compile("import ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*) #")
+        _, out, err = os.popen3('%s -S -v -c "import %s"' % \
+                       (sys.executable, name))
+        _ = out.read()
+        for line in err.readlines():
+            result = pattern.match(line)
+            if result:
+                other = result.groups()[0]
+                if other != name:
+                    self.import_hook(other)
+                    if not self.neededby.has_key(other):
+                        self.neededby[other] = {}
+                    self.neededby[other][name] = None
 
     def report(self):
         print
