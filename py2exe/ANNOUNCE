@@ -1,4 +1,4 @@
-**py2exe 0.5.1** released
+**py2exe 0.5.2** released
 ===================================
 
 py2exe is a Python distutils extension which converts python scripts
@@ -34,9 +34,6 @@ This is a bugfix release.
       see http://tinyurl.com/yuc5l
 
     * py2exe can now be built from the sources with mingw32
-
-    * Manage the thread state correctly in multithreaded COM servers
-      (patch by Mark Hammond)
 
     * py2exe does now handle precompile .pyo and .pyc files (patch by
       Shane Holloway)
