@@ -1,0 +1,149 @@
+.. image:: py2exe.jpg
+   :align: center
+
+Convert python scripts into standalone windows programs
+=======================================================
+
+Copyright (c) 2001, 2002, 2003 Thomas Heller, Mark Hammond.
+
+Abstract
+--------
+
+**py2exe** is a Python distutils_ extension which converts python
+scripts into executable windows programs, able to run without
+requiring a python installation.
+
+It has been used to create wxPython, Tkinter, Pmw, PyGTK, pygame,
+win32com client and server modules and other standalone programs.
+
+**py2exe** is distributed under an open-source license_.
+
+.. _license: LICENSE.TXT
+
+.. _distutils:  http://www.python.org/doc/current/dist/
+
+News
+----
+
+XXX
+
+Using py2exe
+------------
+
+.. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
+
+Assuming you have written a python script ``myscript.py`` which you
+want to convert into an executable windows program, able to run on
+systems without a python installation.  If you don't already have
+written a *distutils* setup-script_, write one, and insert the
+statement 'import py2exe' before the call to the setup function::
+
+  # setup.py
+  from distutils.core import setup
+  import py2exe
+	
+  setup(console=["myscript.py"])
+
+Running ::
+
+  python setup.py py2exe --help
+
+will display all available command-line flags to the **py2exe**
+command.
+
+Now you can call the setup script like in this way::
+
+  python setup.py py2exe
+
+and a subdirectory ``dist`` will be created, containing the files
+``myscript.exe``, ``python23.dll``, and ``library.zip``.  If your script
+uses compiled C extension modules, they will be copied here as well,
+also all dlls needed at runtime.
+
+These files include everything that is needed for your program, and
+you should distribute the whole directory contents.
+
+The above setup script creates a console program, if you want a GUI
+program without the console window, simply replace
+``console=["myscript.py"]`` with ``windows=["myscript.py"]``.
+
+**py2exe** can create more than one exe file in one run, this is
+useful if you have a couple of related scripts.  Pass a list of all
+scripts in the ``console`` and/or ``windows`` keyword argument.
+
+Specifying additional files
+---------------------------
+
+Some applications need additional files at runtime, like configuration
+files, fonts, or bitmaps.
+
+**py2exe** can copy these files into subdirectories of ``dist`` if they
+are specified in the setup script with the ``data_files``
+option. ``data_files`` should contain a sequence of ``(target-dir,
+files)`` tuples, where files is a sequence of files to be copied.
+
+Here's an example::
+
+    # setup.py
+    from distutils.core import setup
+    import glob
+    import py2exe
+
+    setup(console=["myscript.py"],
+          data_files=[("bitmaps",
+                       ["bm/large.gif", "bm/small.gif"]),
+                      ("fonts",
+                       glob.glob("fonts\\*.fnt"))],
+    )
+
+
+This would create a subdirectory ``dist\bitmaps``, containing the two
+``.gif`` files, and a subdirectory ``dist\fonts``, containing all the
+``.fnt`` files.
+
+How does it work?
+-----------------
+
+**py2exe** uses python's ``modulefinder`` to examine your script and
+find all python and extension modules needed to run it. Pure python
+modules are compiled into ``.pyc`` or ``.pyo`` files in a temporary
+directory. Compiled extension modules (``.pyd``) are also found and
+parsed for binary dependencies.
+
+A zip-compatible archive is built, containing all python files from
+this directory.  Your main script is inserted as a resource into a
+custom embedded python interpreter supplied with py2exe, and the
+zip-archive is installed as the only item on ``sys.path``.
+
+In simple cases, only ``pythonxx.dll`` is needed in addition to
+``myscript.exe``. If, however, your script needs extension modules,
+unfortunately those cannot be included or imported from the
+zip-archive, so they are needed as separate files (and are copied into
+the ``dist`` directory).
+
+*Attention*: **py2exe** tries to track down all binary dependencies
+for all pyd's and dll's copied to the dist directory recursively, and
+copies all these dependend files into the dist directory. **py2exe**
+has a builtin list of some system dlls which are not copied, but this
+list can never be complete.
+
+Installing py2exe
+-----------------
+
+Download and run the installer
+py2exe-0.5.0a7.win32-py2.3.exe_.
+
+.. _py2exe-0.5.0a7.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.0a7.win32-py2.3.exe?download.
+
+This installs **py2exe** together with some samples, the samples are in
+the ``lib\site-packages\py2exe\samples`` subdirectory.
+
+For Windows 95/98/Me, you additionally need the *Microsoft Layer for
+Unicode on Windows 95/98/ME Systems (MSLU)* dll from here_.  Run the
+self-extracting ``unicows.exe`` file, and copy the unpacked
+``unicows.dll`` file in the directory which contains your
+``python.exe``.  Note that this is only needed on the machine where
+you want to build executables with **py2exe**, it is not required on
+the machine where you want to run the created programs.
+
+.. _here: http://www.microsoft.com/msdownload/platformsdk/sdkupdate/psdkredist.htm
