@@ -544,18 +544,8 @@ class py2exe(Command):
         # platform specific code for final adjustments to the
         # file lists
         if sys.platform == "win32":
-            # For inproc com to work, the PythonCOMXX.dll and
-            # PyWinTypesXX.dll must be in the same directory as the
-            # com server dll. I guess.
-            # Or must they be on the PATH? At least they cannot be in
-            # the lib_dir.
-            #
-            # Starting an inproc com server with oleview, and listing
-            # the loaded dlls with sysinternals ProcessExplorer shows
-            # that PyWinTypes is loaded from the dll server's
-            # directory, but pythoncom is loaded from the system
-            # directory. At least when there is a python and win32all
-            # installation.
+            # pythoncom and pywintypes are imported via LoadLibrary calls,
+            # help py2exe to include the dlls:
             if "pythoncom" in modules.keys():
                 import pythoncom
                 dlls.add(pythoncom.__file__)
@@ -605,12 +595,11 @@ class py2exe(Command):
                               "Carbon.Folder", "Carbon.Folders",
                               ]
             # special dlls which must be copied to the exe_dir, not the lib_dir
-            names = "python pywintypes pythoncom".split()
-            names = ["%s%d%d" % (name, sys.version_info[0], sys.version_info[1])
-                     for name in names]
             if is_debug_build:
-                names = ["%s_d" % name for name in names]
-            self.dlls_in_exedir = ["%s.dll" % name for name in names]
+                name = "python%d%d_d.dll" % (sys.version_info[0], sys.version_info[1])
+            else:
+                name = "python%d%d.dll" % (sys.version_info[0], sys.version_info[1])
+            self.dlls_in_exedir = [name]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
