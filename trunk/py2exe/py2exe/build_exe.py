@@ -30,7 +30,9 @@ else:
 # resource constants
 RT_BITMAP=2
 
-_py_suffixes = ['.py', '.pyo', '.pyc']
+# note: we cannot use the list from imp.get_suffixes() because we want
+# .pyc and .pyo, independent of the optimize flag.
+_py_suffixes = ['.py', '.pyo', '.pyc', '.pyw']
 _c_suffixes = [_triple[0] for _triple in imp.get_suffixes()
                if _triple[2] == imp.C_EXTENSION]
 
