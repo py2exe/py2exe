@@ -45,9 +45,6 @@ RT_BITMAP=2
 _c_suffixes = [triple[0] for triple in imp.get_suffixes()
                if triple[2] == imp.C_EXTENSION]
 
-# consider adding this to our "extended options"??
-EXCLUDED_DLLS = ["dapi.dll", "MAPI32.dll"] # sigh
-
 def imp_find_module(name):
     # same as imp.find_module, but handles dotted names
     names = name.split('.')
@@ -158,6 +155,7 @@ class py2exe(Command):
         self.excludes = extra_options.get("excludes")
         self.packages = extra_options.get("packages")
         self.dist_dir = extra_options.get("dist_dir")
+        self.dll_excludes = extra_options.get("dll_excludes", [])
         self.ext_mapping = extra_options.get("ext_mapping", {})
 
     def finalize_options (self):
@@ -256,7 +254,8 @@ class py2exe(Command):
 ##        extra_path = ["."] # XXX
         extra_path = []
         dlls, unfriendly_dlls = self.find_dependend_dlls(0, dlls,
-                                                         extra_path + sys.path)
+                                                         extra_path + sys.path,
+                                                         self.dll_excludes)
 
         for item in extensions:
             if item.__file__ in dlls:
@@ -396,7 +395,7 @@ class py2exe(Command):
             add_icon(exe_path, ico_filename, ico_id)
         return exe_path
 
-    def find_dependend_dlls(self, use_runw, dlls, pypath):
+    def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
         import py2exe_util
         sysdir = py2exe_util.get_sysdir()
         windir = py2exe_util.get_windir()
@@ -416,7 +415,7 @@ class py2exe(Command):
 
         self.announce("Resolving binary dependencies:")
         
-        alldlls, warnings = bin_depends(loadpath, images)
+        alldlls, warnings = bin_depends(loadpath, images, dll_excludes)
         for dll in alldlls:
             self.announce("  %s" % dll)
 ##XXX        alldlls.remove(self.get_exe_stub(use_runw))
@@ -621,7 +620,7 @@ class FileSet:
 
 # class FileSet()
 
-def bin_depends(path, images):
+def bin_depends(path, images, excluded_dlls):
     import py2exe_util
     warnings = FileSet()
     images = FileSet(*images)
@@ -637,6 +636,7 @@ def bin_depends(path, images):
                     dll, uses_import_module = result
                     if not images.contains(dll) \
                        and not dependents.contains(dll) \
+                       and not os.path.basename(dll).lower() in excluded_dlls \
                        and not isSystemDLL(dll):
                         images.add(dll)
                         if uses_import_module:
@@ -644,8 +644,6 @@ def bin_depends(path, images):
     return dependents, warnings
     
 def isSystemDLL(pathname):
-    if os.path.basename(pathname).lower() in EXCLUDED_DLLS:
-        return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
     # Is it sufficient to use the Image Load Address?
     import struct
