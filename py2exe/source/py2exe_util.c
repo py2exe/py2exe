@@ -8,6 +8,23 @@ static char module_doc[] =
 static char* searchpath;
 static PyListObject *py_result;
 
+static void SystemError(int error)
+{
+    LPVOID lpMsgBuf;
+    FormatMessage( 
+	FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+	FORMAT_MESSAGE_FROM_SYSTEM,
+	NULL,
+	error,
+	MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+	(LPSTR)&lpMsgBuf,
+	0,
+	NULL 
+	);
+    PyErr_SetString(PyExc_RuntimeError, lpMsgBuf);
+    LocalFree(lpMsgBuf);
+}
+
 BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
 			  PSTR ImageName,
 			  PSTR DllName,
@@ -51,21 +68,45 @@ static PyObject *depends(PyObject *self, PyObject *args)
 {
     char *imagename;
     PyListObject *plist;
+    HINSTANCE hLib;
+    BOOL(__stdcall *pBindImageEx)(
+	DWORD Flags,
+	LPSTR ImageName,
+	LPSTR DllPath,
+	LPSTR SymbolPath,
+	PIMAGEHLP_STATUS_ROUTINE StatusRoutine
+    );
 
     searchpath = NULL;
 
     if (!PyArg_ParseTuple(args, "s|s", &imagename, &searchpath))
 	return NULL;
+    hLib = LoadLibrary("imagehlp");
+    if (!hLib) {
+	PyErr_SetString(PyExc_SystemError,
+			"imagehlp.dll not found");
+	return NULL;
+    }
+    pBindImageEx = (FARPROC)GetProcAddress(hLib, "BindImageEx");
+    if (!pBindImageEx) {
+	PyErr_SetString(PyExc_SystemError,
+			"imagehlp.dll does not export BindImageEx function");
+	FreeLibrary(hLib);
+	return NULL;
+    }
+
     py_result = (PyListObject *)PyList_New(0);
-    if (!BindImageEx(BIND_NO_BOUND_IMPORTS | BIND_NO_UPDATE | BIND_ALL_IMAGES,
+    if (!pBindImageEx(BIND_NO_BOUND_IMPORTS | BIND_NO_UPDATE | BIND_ALL_IMAGES,
 		     imagename,
 		     searchpath,
 		     NULL,
 		     StatusRoutine)) {
+	FreeLibrary(hLib);
 	Py_DECREF(py_result);
 	PyErr_SetString(PyExc_RuntimeError, "could not bind");
 	return NULL;
     }
+    FreeLibrary(hLib);
     plist = py_result;
     py_result = NULL;
     return (PyObject *)plist;
