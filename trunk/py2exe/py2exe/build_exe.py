@@ -603,7 +603,7 @@ class py2exe(Command):
             code_objects.append(
                     compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
             )
-        code_object = compile(open(script, "U").read(),
+        code_object = compile(open(script, "U").read() + "\n",
                               os.path.basename(script), "exec")
         code_objects.append(code_object)
         code_bytes = marshal.dumps(code_objects)
