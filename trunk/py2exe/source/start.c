@@ -389,10 +389,13 @@ int start(int argc, char **argv)
 	if (data) {
 	    char *script = realloc(data, size+2);
 	    if (script) {
+		data = script;
 		script[size] = '\n';
 		script[size+1] = '\0';
 		fix_string(script);
 		PyRun_SimpleString(script);
+	    } else {
+		SystemError(0, "Not enough memory");
 	    }
 	    free(data);
 	} else {
@@ -406,12 +409,15 @@ int start(int argc, char **argv)
 	int size;
 	char *data = GetContents(script_name, arc_data, arc_size, &size);
 	if (data) {
-	    char *script;
+	    char *script = realloc(data, size+2);
 	    if (script) {
+		data = script;
 		script[size] = '\n';
 		script[size+1] = '\0';
 		fix_string(script);
 		PyRun_SimpleString(script);
+	    } else {
+		SystemError(0, "Not enough memory");
 	    }
 	    free(data);
 	} else {
