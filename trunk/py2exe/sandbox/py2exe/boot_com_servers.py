@@ -15,6 +15,11 @@ sys.stderr.write("PATH is %s\n" % sys.path)
 ################################################################
 import pythoncom
 
+# Add some extra imports here, just to avoid putting them as "hidden imports"
+# anywhere else - this script has the best idea about what it needs.
+# (and hidden imports are currently disabled :)
+import win32com.server.policy, win32com.server.util
+
 # tell the win32 COM registering/unregistering code that we're inside
 # of an EXE/DLL
 if not hasattr(sys, "frozen"):
