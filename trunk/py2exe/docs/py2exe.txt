@@ -19,6 +19,14 @@
 
 .. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=1.16
 
+.. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
+
+.. _gmane: http://www.gmane.org/
+
+.. _http: http://news.gmane.org/gmane.comp.python.py2exe/
+
+.. _nntp: nntp://news.gmane.org/gmane.comp.python.py2exe
+
 py2exe - convert python scripts into standalone windows programs
 ================================================================
 
@@ -38,6 +46,9 @@ win32com client and server modules and other standalone programs.
 
 News
 ----
+
+Please don't mail me directly about py2exe, please use the `py2exe
+mailing list`_, which is also available on gmane_, via http_ and nntp_.
 
 **py2exe 0.5.2** released
 
