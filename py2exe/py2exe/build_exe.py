@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.17  2003/07/24 09:22:26  theller
+# Disallow dll com servers when using Python 2.2.
+#
 # Revision 1.16  2003/07/24 08:11:39  theller
 # Patch for COM server support from Mark Hammond. Very cool!
 #
@@ -129,7 +132,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 
 import sys, os, string
 from distutils.core import Command
