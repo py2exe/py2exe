@@ -1,3 +1,16 @@
+2004-07-13  Thomas Heller  <theller@python.net>
+
+	* source\run_dll.c: From Mark Hammond: patch to correctly manage
+	the thread state.
+
+	* py2exe\build_exe.py (py2exe.build_executable): Add a line feed
+	to the script's code, to avoid problems compiling it when it
+	contains trailing white space.
+
+	* py2exe\build_exe.py: Fix a problem with 2.4 when no extension
+	modules are needed - py2exe didn't track that python24.dll is
+	needed.  Add the '_emx_link' symbol to the ignored imports list.
+
 2004-07-09  Thomas Heller  <theller@python.net>
 
 	*  (Message): py2exe 0.5.2 released.
