@@ -22,6 +22,14 @@
 ##
 
 # $Log$
+# Revision 1.12  2003/05/09 19:26:41  theller
+# No more warnings from modulefinder any more!
+#
+# The reasons are Just's improvements, and I was wrongly assuming
+# mf.badmodules() were the things to warn about. I was wrong!
+#
+# Removed apply() to get rid of future warnings in py23.
+#
 # Revision 1.11  2003/05/09 19:01:51  theller
 # Post-release version number changes.
 #
@@ -200,6 +208,8 @@ class py2exe (Command):
          "comma-separated list of modules to inject into sys.modules"),
         ("icon=", None,
          "path to an icon file for the executable(s)"),
+        ("typelib=", None,
+         "a type library to embed"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -224,6 +234,8 @@ class py2exe (Command):
         self.force_imports = None
         self.icon = None
         self.progids = None
+
+        self.typelib = None
 
         # The following options cannot be given from the command line
         # because they are not present in 'user_options' above. So we
@@ -412,29 +424,9 @@ class py2exe (Command):
 ##            "xml.dom": ["HierarchyRequestErr"],
             }
 
-        mod_attrs = {
-## Hmm. These are module which are automatically available
-## when wxPython is imported.
-## Maybe when wxPythin is detected, these should go into mf.excludes?
-            "wxPython": ["miscc", "windowsc", "streamsc", "gdic", "sizersc", "controls2c",
-                         "printfwc", "framesc", "stattoolc", "misc2c", "controlsc",
-                         "windows2c", "eventsc", "windows3c", "clip_dndc", "mdic",
-                         "imagec", "cmndlgsc", "filesysc"],
-##            "gnosis.xml.pickle": ["XMLUnpicklingError"],
-##            "gnosis.xml.pickle.ext": ["add_xml_helper", "XMLP_Helper"],
-##            "gnosis.xml.pickle.util": ["subnodes", "setParanoia",
-##                                       "setDeepCopy", "getDeepCopy",
-##                                       "_klass", "get_class_from_stack",
-##                                       "add_class_to_store", "get_class_from_store",
-##                                       "getExcludeParentAttr", "safe_eval", "safe_content",
-##                                       "get_class_full_search", "_EmptyClass",
-##                                       "remove_class_from_store", "unsafe_string",
-##                                       "get_class_from_vapor", "unsafe_content",
-##                                       "getParanoia", "safe_string", "_module"],
-####            "gnosis.xml.pickle.doc": ["__version__"],
-            }
+        from tools.modulefinder import ModuleFinder, AddPackagePath, ReplacePackage
 
-        from tools.modulefinder import ModuleFinder, AddPackagePath
+        ReplacePackage("_xmlplus", "xml")
 
         try:
             res = imp.find_module("win32com")
@@ -895,6 +887,11 @@ class py2exe (Command):
                 for id, data in st.binary():
                     add_resource(exe_name, data, RT_STRING, id, delete)
                     delete = 0
+
+            if self.typelib:
+                data = open(self.typelib, "rb").read()
+                add_resource(exe_name, data, "TYPELIB", 1, delete)
+                delete = 0
 
             delete = self.add_versioninfo(exe_name, delete)
 
