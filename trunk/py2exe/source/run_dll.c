@@ -73,27 +73,23 @@ extern int run_script(void);
 int load_pythoncom(void)
 {
 	char dll_path[_MAX_PATH+_MAX_FNAME+1];
-	char *winver = "";
-	char major = 'x', minor = 'y';
+	char major[35] = "x"; // itoa max size is 33.
+	char minor[35] = "y";
 #ifdef _DEBUG
 	char *suffix = "_d";
 #else
 	char *suffix = "";
 #endif
-
-	PyObject *ob_winver = PySys_GetObject("winver");
-	if (PyString_Check(ob_winver))
-		winver = PyString_AsString(ob_winver);
-	// works until Python 10!
-	if (winver && strlen(winver)>=3) {
-		major = winver[0];
-		minor = winver[2];
+	// no reference added by PySys_GetObject
+	PyObject *ob_vi = PySys_GetObject("version_info");
+	if (ob_vi && PyTuple_Check(ob_vi) && PyTuple_Size(ob_vi)>1) {
+		itoa(PyInt_AsLong(PyTuple_GET_ITEM(ob_vi, 0)), major, 10);
+		itoa(PyInt_AsLong(PyTuple_GET_ITEM(ob_vi, 1)), minor, 10);
 	}
-
 	// shouldn't do this twice
 	assert(gPythoncom == NULL);
 
-	snprintf(dll_path, sizeof(dll_path), "pythoncom%c%c%s.dll", major, minor, suffix);
+	snprintf(dll_path, sizeof(dll_path), "pythoncom%s%s%s.dll", major, minor, suffix);
 	gPythoncom = GetModuleHandle(dll_path);
 	if (gPythoncom == NULL) {
 		// not already loaded - try and load from the current dir
@@ -104,13 +100,12 @@ int load_pythoncom(void)
 			temp--;
 		// and printf directly in the buffer.
 		snprintf(temp, sizeof(dll_path)-strlen(temp),
-			 "pythoncom%c%c%s.dll", major, minor, suffix);
+			 "pythoncom%s%s%s.dll", major, minor, suffix);
 		gPythoncom = LoadLibraryEx(dll_path, // points to name of executable module 
 					   NULL, // HANDLE hFile, // reserved, must be NULL 
 					   LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 			); 
 	}
-	Py_XDECREF(ob_winver);
 	if (gPythoncom == NULL)
 		// give up in disgust
 		return -1;
