@@ -15,6 +15,9 @@ New keywords for distutils' setup function specify what to build:
     com_server
         list of module names containing com server classes
 
+    ctypes_com_server
+        list of module names containing com server classes
+
     zipfile
         name of shared zipfile to generate, may specify a subdirectory,
         defaults to 'library.zip'
@@ -59,13 +62,14 @@ keys in the dictionary are recognized, most are optional:
 # special one contained in this module.
 #
 
-__version__ = "0.5.4"
+__version__ = "0.5.5"
 
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
 class Distribution(distutils.dist.Distribution):
 
     def __init__(self, attrs):
+        self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
         self.com_server = attrs.pop("com_server", [])
         self.service = attrs.pop("com_server", [])
         self.windows = attrs.pop("com_server", [])
