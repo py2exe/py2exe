@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.7  2002/05/07 17:49:52  theller
+# Support _svc_deps_ for services - thanks to Matthew King for the patches.
+#
 # Revision 1.6  2002/05/07 13:01:49  theller
 # Fix some small problems reported by pychecker.
 # Don't crash on Win98, where add_resource is nonfunctional.
@@ -87,7 +90,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.3.3"
+__version__ = "0.3.4"
 
 import sys, os, string
 from distutils.core import Command
@@ -120,6 +123,27 @@ _c_suffixes = ['.pyd', '.dll'] #+ ['_d.pyd', '_d.dll']
 # We should make it easy for us and simply refuse to build
 # when running the debug python binary...
 
+def imp_find_module(name):
+    names = name.split('.')
+    path = None
+    for name in names:
+        result = imp.find_module(name, path)
+        path = [result[1]]
+    return result
+
+def progid_to_modname(progid):
+    from win32com.client.gencache import clsidToTypelib
+    import pywintypes
+
+    clsid = pywintypes.IID(progid) # This auto-converts named to IDs.
+
+    try:
+        typelibCLSID, lcid, major, minor = clsidToTypelib[str(clsid)]
+    except KeyError:
+        print "Please run makepy first on '%s'" % progid
+
+    return "win32com.gen_py.%sx%xx%xx%x" % (str(typelibCLSID)[1:-1], lcid, major, minor)
+
 class py2exe (Command):
 
     description = "create executable windows programs from scripts"
@@ -149,6 +173,8 @@ class py2exe (Command):
          "comma-separated list of modules to exclude"),
         ("includes=", 'i',
          "comma-separated list of modules to include"),
+        ("progids=", None,
+         "include COM support for these progids"),
         ("packages=", 'p',
          "comma-separated list of packages to include"),
         ("force-imports=", None,
@@ -178,6 +204,7 @@ class py2exe (Command):
         self.packages = None
         self.force_imports = None
         self.icon = None
+        self.progids = None
 
         # The following options cannot be given from the command line
         # because they are not present in 'user_options' above. So we
@@ -259,6 +286,14 @@ class py2exe (Command):
 
         for name in self.vrc_names:
             self.ensure_string("version_" + name, "")
+
+        if self.progids:
+            self.progids = map(string.strip, string.split(self.progids, ','))
+            for progid in self.progids:
+                self.includes.append(progid_to_modname(progid))
+        # XXX We must also create a gen_py directory, with a dicts.dat
+        # and __init__.py file in it. Or not? And why is it created automatically
+        # if we start such an exe from the explorer (but NOT from the command-prompt?)
 
 
     # finalize_options()
@@ -389,9 +424,6 @@ class py2exe (Command):
         else:
             AddPackagePath("win32com", res[1] + 'ext')
 
-##        if sys.hexversion >= 0x02020000 and not self.ascii:
-##            self.packages.append("encodings")
-
         for script in self.distribution.scripts:
             self.announce("+----------------------------------------------------")
             self.announce("| Processing script %s with py2exe-%s" % (script, __version__))
@@ -429,6 +461,7 @@ class py2exe (Command):
                           script)
             self.announce(repr(extra_path + sys.path))
             excludes = ["os2", "posix", "dos", "mac", "macfs", "macfsn",
+                        "macpath",
                         "MACFS", "pwd", "MacOS", "macostools",
                         "EasyDialogs", "termios", "TERMIOS",
                         "java.lang", "org.python.core", "riscos",
@@ -459,7 +492,7 @@ class py2exe (Command):
                 # Very weird...
                 # Find path of package
                 try:
-                    path = imp.find_module(f)[1]
+                    path = imp_find_module(f)[1]
                 except ImportError:
                     self.warn("No package named %s" % f)
                     continue
