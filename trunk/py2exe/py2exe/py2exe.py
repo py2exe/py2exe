@@ -471,10 +471,7 @@ class py2exe (Command):
 
     def copy_dlls(self, final_dir, dlls):
         for src in dlls:
-            basename = os.path.basename(src)
-            if string.lower(basename) in self.EXCLUDE:
-                continue
-            dst = os.path.join(final_dir, basename)
+            dst = os.path.join(final_dir, os.path.basename(src))
             try:
                 self.copy_file(src, dst)
             except Exception, detail:
@@ -482,33 +479,6 @@ class py2exe (Command):
                 traceback.print_exc()
     # copy_dlls()
          
-    # DLLs to be excluded
-    # XXX This list is NOT complete (it cannot be)
-    # Note: ALL ENTRIES MUST BE IN LOWER CASE!
-    EXCLUDE = (
-        "advapi32.dll",
-        "comctl32.dll",
-        "comdlg32.dll",
-        "gdi32.dll",
-        "imm32.dll",
-        "kernel32.dll",
-        "msvcrt.dll",
-        "msvcirt.dll",
-        "msvcrtd.dll",
-        "ntdll.dll",
-        "ole32.dll",
-        "oleaut32.dll",
-        "rpcrt4.dll",
-        "shell32.dll",
-        "shlwapi.dll",
-        "user32.dll",
-        "winmm.dll",
-        "winspool.drv",
-        "ws2_32.dll",
-        "ws2help.dll",
-        "wsock32.dll",
-        )
-
     def fix_extmodules(self, missing, extensions, path):
         if not self.debug:
             return missing, extensions
@@ -696,7 +666,40 @@ def bin_depends(path, images):
     
 # bin_depends()
 
+# DLLs to be excluded
+# XXX This list is NOT complete (it cannot be)
+# Note: ALL ENTRIES MUST BE IN LOWER CASE!
+EXCLUDED_DLLS = (
+    "advapi32.dll",
+    "comctl32.dll",
+    "comdlg32.dll",
+    "crtdll.dll",
+    "gdi32.dll",
+    "imm32.dll",
+    "kernel32.dll",
+    "mfc42.dll",
+    "msvcirt.dll",
+    "msvcrt.dll",
+    "msvcrtd.dll",
+    "ntdll.dll",
+    "odbc32.dll",
+    "ole32.dll",
+    "oleaut32.dll",
+    "rpcrt4.dll",
+    "shell32.dll",
+    "shlwapi.dll",
+    "user32.dll",
+    "version.dll",
+    "winmm.dll",
+    "winspool.drv",
+    "ws2_32.dll",
+    "ws2help.dll",
+    "wsock32.dll",
+    )
+
 def isSystemDLL(pathname):
+    if (string.lower(os.path.basename(pathname))) in EXCLUDED_DLLS:
+        return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
     # Is it sufficient to use the Image Load Address?
     import struct
