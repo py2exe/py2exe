@@ -578,6 +578,8 @@ class py2exe(Command):
 
         for res_type, res_id, data in getattr(target, "other_resources", []):
             if not self.dry_run:
+                if isinstance(res_type, str):
+                    res_type = unicode(res_type)
                 add_resource(unicode(exe_path), data, res_type, res_id, False)
 
         typelib = getattr(target, "typelib", None)
