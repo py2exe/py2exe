@@ -233,8 +233,10 @@ int run_script(void)
 				if (sub && PyCode_Check(sub)) {
 					PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
 									    d, d);
-					if (!discard)
+					if (!discard) {
 						PyErr_Print();
+						rc = 255;
+					}
 					Py_XDECREF(discard);
 					/* keep going even if we fail */
 				}
