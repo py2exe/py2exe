@@ -3,7 +3,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 # $Id$
 
@@ -235,10 +235,8 @@ class deinstall(Command):
 ############################################################################
 
 run = Interpreter("py2exe.run",
-##                  ["source/run.c"],
                   ["source/run.c", "source/start.c"],
                   include_dirs=["source/zlib"],
-##                  libraries=["zlibstat", "mylib"],
                   libraries=["zlibstat"],
                   library_dirs=["source/zlib/static32"],
                   extra_link_args=["/NOD:LIBC"],
@@ -246,10 +244,8 @@ run = Interpreter("py2exe.run",
                   )
 
 run_w = Interpreter("py2exe.run_w",
-##                    ["source/run_w.c"],
                     ["source/run_w.c", "source/start.c"],
                     include_dirs=["source/zlib"],
-##                    libraries=["zlibstat", "user32", "mylib"],
                     libraries=["zlibstat", "user32"],
                     library_dirs=["source/zlib/static32"],
                     extra_link_args=["/NOD:LIBC"],
