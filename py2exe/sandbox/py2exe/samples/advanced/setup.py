@@ -85,11 +85,14 @@ interp = dict(
 ################################################################
 # COM pulls in a lot of stuff which we don't want or need.
 
-excludes = ["pywin", "pywin.debugger", "pywin.debugger.dbgcon", "pywin.dialogs"]
+excludes = ["pywin", "pywin.debugger", "pywin.debugger.dbgcon",
+            "pywin.dialogs", "pywin.dialogs.list"]
 
 setup(
     options = {"py2exe": {"typelibs":
                           [('{565783C6-CB41-11D1-8B02-00600806D9B6}', 0, 1, 2)],
+                          # create a compressed zip archive
+                          "compressed": 1,
                           "optimize": 2,
                           "excludes": excludes}},
     # The lib directory contains everything except the executables and the python dll.
