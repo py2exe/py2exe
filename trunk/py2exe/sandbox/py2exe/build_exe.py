@@ -298,7 +298,8 @@ class py2exe(Command):
             dst = self.build_executable(target, "run_w.exe", arcname, target.script)
             all_files.append(dst)
         for target in dist.service:
-            dst = self.build_service(target, "run_svc.exe", arcname)
+            # Note: we may want to give the user the option of using run_w.exe
+            dst = self.build_service(target, "run.exe", arcname)
             all_files.append(dst)
 
         for target in dist.com_server:
@@ -393,27 +394,7 @@ class py2exe(Command):
 
         vars = {"service_module_names" : target.modules}
         boot = self.get_boot_script("service")
-        exe_path = self.build_executable(target, template, arcname, boot, vars)
-
-        # and the service specific resources.
-        from resources.StringTables import StringTable, RT_STRING
-        # resource id in the EXE of the serviceclass,
-        # see source/PythonService.cpp
-        RESOURCE_SERVICE_NAME = 1016
-
-        st = StringTable()
-        klass_name, svc_name, svc_display_name, svc_deps = \
-                                            self.get_service_names(module_name)
-        st.add_string(RESOURCE_SERVICE_NAME,
-                        "%s.%s" % (module_name, klass_name))
-        st.add_string(RESOURCE_SERVICE_NAME+1, svc_name)
-        st.add_string(RESOURCE_SERVICE_NAME+2, svc_display_name)
-        # XXX service probably won't have a | in them?
-        st.add_string(RESOURCE_SERVICE_NAME+3, "|".join(svc_deps))
-        for id, data in st.binary():
-            add_resource(exe_path, data, RT_STRING, id, 0)
-
-        return exe_path
+        return self.build_executable(target, template, arcname, boot, vars)
 
     def build_executable(self, target, template, arcname, script, vars={}):
         # Build an executable for the target
@@ -623,14 +604,6 @@ class py2exe(Command):
                               "os.path",
                               "Carbon.Folder", "Carbon.Folders",
                               ]
-            # If services are built, do not complain that servicemanager is missing.
-            # It is a builtin module in run_service.exe!
-            #
-            # XXX Is it better to exclude it here, or to remove it
-            # from the missing list afterwards?
-            if self.distribution.service:
-                self.excludes.append("servicemanager")
-            
             # special dlls which must be copied to the exe_dir, not the lib_dir
             names = "python pywintypes pythoncom".split()
             names = ["%s%d%d" % (name, sys.version_info[0], sys.version_info[1])
