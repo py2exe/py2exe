@@ -576,7 +576,12 @@ class py2exe (Command):
             file.close()
             if self.icon:
                 from py2exe_util import update_icon
-                update_icon(exe_name, self.icon, 1)
+                try:
+                    update_icon(exe_name, self.icon, 1)
+                except:
+                    self.warn("Icons can only be changed on windows NT, see traceback")
+                    import traceback
+                    traceback.print_exc()
 
             file = open(exe_name, "ab")
             file.write(header)
