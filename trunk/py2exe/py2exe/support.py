@@ -1,11 +1,5 @@
 import marshal, imp, sys, strop
 
-if 0:
-    print "sys.path is", sys.path
-    print "__debug__ is", __debug__
-
-### XXX Should use imp to determine extensions to use!!!
-
 sys.importers = []
 
 _StringType = type("")
@@ -18,9 +12,9 @@ for desc in imp.get_suffixes():
         _c_suffixes.append(desc)
     if desc[2] == imp.PY_COMPILED:
         _pyc_suffix = desc
+del desc
 
 class _MyImportManager(imputil.ImportManager):
-
     def _import_top_module(self, name):
         # scan sys.path looking for a location in the filesystem that contains
         # the module, or an Importer object that can import the module.
