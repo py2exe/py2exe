@@ -9,9 +9,12 @@ test_wx_console = dict(
     script = "test_wx.py",
     dest_base = "test_wx_console")
 
+excludes = ["pywin", "pywin.debugger", "pywin.debugger.dbgcon", "pywin.dialogs"]
+
 setup(
     options = {"py2exe": {"typelibs":
-               [('{565783C6-CB41-11D1-8B02-00600806D9B6}', 0, 1, 2)]}},
+                          [('{565783C6-CB41-11D1-8B02-00600806D9B6}', 0, 1, 2)],
+                          "excludes": excludes}},
     zipfile = "lib/shared.zip",
     service = ["MyService"],
     com_server = ["win32com.servers.interp"],
