@@ -192,6 +192,10 @@ class py2exe(Command):
 
         mf = self.create_modulefinder()
 
+        # These are the name of a script, but used as a module!
+        for f in dist.isapi:
+            mf.load_file(f.script)
+
         if self.typelibs:
             print "*** generate typelib stubs ***"
             from distutils.dir_util import mkpath
@@ -441,6 +445,19 @@ class py2exe(Command):
             self.copy_file(dll, dst)
             self.lib_files.append(dst)
 
+        for target in self.distribution.isapi:
+            print "*** copy isapi support DLL ***"
+            # Locate the support DLL, and copy as "_script.dll", just like
+            # isapi itself
+            import isapi
+            src_name = is_debug_build and "PyISAPI_loader_d.dll" or \
+                                          "PyISAPI_loader.dll"
+            src = os.path.join(isapi.__path__[0], src_name)
+            # destination name is "_{module_name}.dll" just like pyisapi does.
+            script_base = os.path.splitext(os.path.basename(target.script))[0]
+            dst = os.path.join(self.exe_dir, "_" + script_base + ".dll")
+            self.copy_file(src, dst)
+
         if self.distribution.has_data_files():
             print "*** copy data files ***"
             install_data = self.reinitialize_command('install_data')
@@ -478,6 +495,9 @@ class py2exe(Command):
                                      arcname)
             self.service_exe_files.append(dst)
 
+        for target in dist.isapi:
+            dst = self.build_isapi(target, self.get_isapi_template(), arcname)
+
         for target in dist.com_server:
             if getattr(target, "create_exe", True):
                 dst = self.build_comserver(target, self.get_comexe_template(),
@@ -501,6 +521,9 @@ class py2exe(Command):
     def get_service_template(self):
         return is_debug_build and "run_d.exe" or "run.exe"
 
+    def get_isapi_template(self):
+        return is_debug_build and "run_isapi_d.dll" or "run_isapi.dll"
+
     def get_comexe_template(self):
         return is_debug_build and "run_w_d.exe" or "run_w.exe"
 
@@ -515,12 +538,13 @@ class py2exe(Command):
         dist.service = FixupTargets(dist.service, "modules")
         dist.windows = FixupTargets(dist.windows, "script")
         dist.console = FixupTargets(dist.console, "script")
+        dist.isapi = FixupTargets(dist.isapi, "modules")
 
         # make sure all targets use the same directory, this is
         # also the directory where the pythonXX.dll must reside
         paths = sets.Set()
         for target in dist.com_server + dist.service \
-                + dist.windows + dist.console:
+                + dist.windows + dist.console + dist.isapi:
             paths.add(os.path.dirname(target.get_dest_base()))
 
         if len(paths) > 1:
@@ -584,6 +608,13 @@ class py2exe(Command):
         boot = self.get_boot_script("service")
         return self.build_executable(target, template, arcname, boot, vars)
 
+    def build_isapi(self, target, template, arcname):
+        from py2exe_util import add_resource
+        target_module = os.path.splitext(os.path.basename(target.script))[0]
+        vars = {"isapi_module_name" : target_module,
+               }
+        return self.build_executable(target, template, arcname, None, vars)
+
     def build_executable(self, target, template, arcname, script, vars={}):
         # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
@@ -628,9 +659,10 @@ class py2exe(Command):
             code_objects.append(
                     compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
             )
-        code_object = compile(open(script, "U").read() + "\n",
-                              os.path.basename(script), "exec")
-        code_objects.append(code_object)
+        if script:
+            code_object = compile(open(script, "U").read() + "\n",
+                                  os.path.basename(script), "exec")
+            code_objects.append(code_object)
         code_bytes = marshal.dumps(code_objects)
 
         if self.distribution.zipfile is None:

@@ -33,6 +33,7 @@ console = [...] # list of scripts to convert into console executables
 windows = [...] # list of scripts to convert into gui executables
 com_servers = [...] # list of fully qualified class names to build into the exe com server
 service = [...] # list of fully qualified class names to build into a service executable
+isapi = [...], # list of script names to build into an ISAPI extension.
 zipfile = "xxx.zip" # filename of the zipfile containing the pure Python modules
 
 All of the above arguments are optional. The zipfile name defaults to

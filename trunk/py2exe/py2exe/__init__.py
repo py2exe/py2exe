@@ -70,6 +70,7 @@ class Distribution(distutils.dist.Distribution):
         self.service = attrs.pop("com_server", [])
         self.windows = attrs.pop("com_server", [])
         self.console = attrs.pop("com_server", [])
+        self.isapi = attrs.pop("isapi", [])
         self.zipfile = attrs.pop("zipfile", "library.zip")
 
         distutils.dist.Distribution.__init__(self, attrs)
