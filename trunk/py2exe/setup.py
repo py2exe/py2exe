@@ -3,7 +3,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 # $Id$
 
@@ -102,14 +102,8 @@ class BuildInterpreters(build_ext.build_ext):
                 runtime_library_dirs=inter.runtime_library_dirs,
                 extra_postargs=extra_args,
                 debug=self.debug)
-            if not self.debug:
-                try:
-                    self.spawn(["upx", "-9", "-q", exe_filename + '.exe'])
-                except DistutilsExecError, details:
-                    self.announce(
-                        "warning: upx.exe could be used to compress the executable")
-                    self.announce("warning: %s" % str(details))
-
+            # cannot use upx any longer, since this collides with
+            # the update resource code.
 
     # build_extensions ()
 
