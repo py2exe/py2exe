@@ -66,7 +66,9 @@ static PyObject *Py_MessageBox(PyObject *self, PyObject *args)
 	return PyInt_FromLong(MessageBox(hwnd, message, title, flags));
 }
 
-PyMethodDef method[] = { "_MessageBox", Py_MessageBox, METH_VARARGS };
+PyMethodDef method[] = {
+	{ "_MessageBox", Py_MessageBox, METH_VARARGS }
+};
 
 int WINAPI
 WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
