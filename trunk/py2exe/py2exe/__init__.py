@@ -4,7 +4,7 @@ import sys
 import py2exe
 import distutils.command
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 distutils.command.__all__.append('py2exe')
 

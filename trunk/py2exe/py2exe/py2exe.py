@@ -7,10 +7,7 @@ windows programs from scripts."""
 
 __revision__ = "$Id$"
 
-__version__ = "0.2.2"
-
-# ToDo:
-#
+__version__ = "0.2.3"
 
 import sys, os, string
 from distutils.core import Command
@@ -72,6 +69,8 @@ class py2exe (Command):
          "comma-separated list of packages to include"),
         ("force-imports=", None,
          "comma-separated list of modules to inject into sys.modules"),
+        ("icon=", None,
+         "path to an icon file for the executable(s)"),
         ]
     
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
@@ -89,6 +88,7 @@ class py2exe (Command):
         self.includes = None
         self.packages = None
         self.force_imports = None
+        self.icon = None
 
     # initialize_options()
 
@@ -573,6 +573,12 @@ class py2exe (Command):
         if not self.dry_run:
             file = open(exe_name, "wb")
             file.write(self.get_exe_bytes(use_runw))
+            file.close()
+            if self.icon:
+                from py2exe_util import update_icon
+                update_icon(exe_name, self.icon, 1)
+
+            file = open(exe_name, "ab")
             file.write(header)
             file.write(open(arcname, "rb").read())
             file.close()
