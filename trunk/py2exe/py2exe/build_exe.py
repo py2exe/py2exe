@@ -22,6 +22,9 @@
 ##
 
 # $Log$
+# Revision 1.16  2003/07/24 08:11:39  theller
+# Patch for COM server support from Mark Hammond. Very cool!
+#
 # Revision 1.15  2003/06/03 20:04:08  theller
 # Add magic to find pywintypesXX.dll and pythoncomXX.dll.
 #
@@ -225,7 +228,7 @@ class py2exe (Command):
         ("typelib=", None,
          "a type library to embed"),
         ]
-    
+
     boolean_options = ['keep-temp', 'force', 'debug', 'windows', 'console']
 
     def initialize_options (self):
@@ -287,6 +290,10 @@ class py2exe (Command):
         if self.service is not None and not self.service:
             raise DistutilsOptionError, \
                   "service must be a class name"
+
+        if self.com_dll and sys.version_info < (2, 3):
+            raise DistutilsOptionError, \
+                  "com dll servers are only supported in Python 2.3 and later"
 
         self.com_any = self.com_dll or self.com_exe
         if self.com_any and (self.console or self.windows or self.service):
