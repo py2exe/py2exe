@@ -324,14 +324,14 @@ void fix_string(char *src)
 
 int start(int argc, char **argv)
 {
-    int result = 255;
+    int result = 0; /* default return code */
     char modulename[_MAX_PATH];
     char dirname[_MAX_PATH];
     
     /* Open the executable file and map it to memory */
     if(!GetModuleFileName(NULL, modulename, sizeof(modulename))) {
 	SystemError(GetLastError(), "Retrieving module name");
-	return result;
+	return 255;
     }
     {
 	char *cp;
@@ -343,12 +343,13 @@ int start(int argc, char **argv)
     arc_data = MapExistingFile(modulename, &arc_size);
     if(!arc_data) {
 	SystemError(GetLastError(), "Opening archive");
-	return result;
+	return 255;
     }
 
     if (!GetScriptInfo(arc_data, arc_size)) {
 	/* XXX Raise Error */
 	SystemError (0, "Could not get Script info\n");
+	result = 255;
 	goto finish;
     }
 
@@ -437,6 +438,8 @@ int start(int argc, char **argv)
 		script[size+1] = '\0';
 		fix_string(script);
 		PyRun_SimpleString(script);
+		/* If the script calls sys.exit(), we will never return. True? */
+		/* How can we retrieve a return code? */
 	    } else {
 		SystemError(0, "Not enough memory");
 	    }
@@ -452,5 +455,5 @@ int start(int argc, char **argv)
     /* Clean up */
     UnmapViewOfFile (arc_data);
     
-    return 0;
+    return result;
 }
