@@ -6,12 +6,12 @@ py2exe
 
   Abstract
   
-    **py2exe** is a distutils extension to onvert python scripts into
+    **py2exe** is a distutils extension to convert python scripts into
     executable windows programs.
 
   News
 
-    **2000/01/24** -- *<font color="red">Release 0.2.0 finds needed dlls automatically, has
+    **2000/01/31** -- *<font color="red">Release 0.2.0 finds needed dlls automatically, has
     new command-line options, can build programs containing modules
     imported via the registry (pythoncom, pywintypes).</font>*
 
