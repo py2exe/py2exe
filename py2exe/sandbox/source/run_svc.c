@@ -27,6 +27,9 @@
  * $Id$
  *
  * $Log$
+ * Revision 1.1  2003/08/29 12:42:41  mhammond
+ * Renable services in the new world order.
+ *
  * Revision 1.3  2002/05/07 17:50:37  theller
  * Support _svc_deps_ for services - thanks to Matthew King for the code.
  *
@@ -127,13 +130,17 @@ BOOL InstallService(void)
 			     NULL,                      // LocalSystem account 
 			     NULL);                     // no password 
 
-    if (hservice)
-	fprintf(stderr, "Service '%s' (%s) installed\n", svc_name, svc_displayname);
-    else {
-	fprintf(stderr, "Service '%s' could not be installed, error code %d\n",
-		svc_name, GetLastError());
-	CloseServiceHandle(hservice);
-    }
+	if (hservice) {
+		fprintf(stderr, "Service '%s' (%s) installed\n", svc_name, svc_displayname);
+		CloseServiceHandle(hservice);
+	} else {
+		DWORD errCode = GetLastError();
+		if (errCode == ERROR_SERVICE_EXISTS)
+			fprintf(stderr, "Service '%s' was already installed.\n", svc_name);
+		else
+			fprintf(stderr, "Service '%s' could not be installed, error code %d\n",
+				svc_name, errCode);
+	}
     CloseServiceHandle(hmgr);
     return hservice ? TRUE : FALSE;
 }
@@ -157,9 +164,14 @@ BOOL RemoveService(void)
     hservice = OpenService(hmgr,
 			   svc_name,
 			   SERVICE_ALL_ACCESS);
-    if (!hservice) {
-	fprintf(stderr, "Could not open service '%s', error code %d\n", svc_name, GetLastError());
-	return FALSE;
+	if (!hservice) {
+		DWORD errCode = GetLastError();
+		if (errCode == ERROR_SERVICE_DOES_NOT_EXIST)
+			fprintf(stderr, "The service '%s' is not installed.\n", svc_name);
+		else
+			fprintf(stderr, "Could not open service '%s', error code %d\n",
+					svc_name, errCode);
+		return FALSE;
     }
 
     result = DeleteService(hservice);
