@@ -496,7 +496,7 @@ extern "C" int PythonService_main(int argc, char **argv)
 	if (LoadStringA(GetModuleHandle(NULL), RESOURCE_SERVICE_NAME+2, svcDisplayNameBuf, sizeof(svcDisplayNameBuf))>1)
 		svcDisplayName = svcDisplayNameBuf;
 	
-	printf("%s - '%s' service\n", argv[0], svcDisplayName);
+	printf("%s - %s\n", argv[0], svcDisplayName);
 	printf("Options:\n");
 #ifndef BUILD_FREEZE
 	printf(" -register - register the EXE - this must be done at least once.\n");
