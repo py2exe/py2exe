@@ -24,16 +24,26 @@ if sys.frozen == "windows_exe":
         softspace = 0
         _file = None
         _error = None
-        def write(self, text):
+        def write(self, text, alert=sys._MessageBox):
             if self._file is None and self._error is None:
                 fname = sys.executable + '.log'
                 try:
                     self._file = open(fname, 'a')
                 except Exception, details:
                     self._error = details
+                    import atexit
+                    atexit.register(alert, 0,
+                                    "The logfile '%s' could be opened:\n %s" % (fname, details),
+                                    "Errors occurred")
+                else:
+                    import atexit
+                    atexit.register(alert, 0,
+                                    "See the logfile '%s' for details" % fname,
+                                    "Errors occurred")
             if self._file is not None:
                 self._file.write(text)
     sys.stderr = Stderr()
+    del sys._MessageBox
     del Stderr
 
     class Blackhole(object):
