@@ -12,3 +12,7 @@ rd /s/q build
 call py15 setup.py build
 call py15 setup.py build -g
 call py15 setup.py bdist_wininst --dist-dir upload --target-version 1.5
+rd /s/q build
+call py21 setup.py build
+call py21 setup.py build -g
+call py21 setup.py bdist_wininst --dist-dir upload --target-version 2.1

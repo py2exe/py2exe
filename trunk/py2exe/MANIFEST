@@ -25,3 +25,5 @@ tools1.5\imputil.py
 tools1.5\modulefinder.py
 tools2.0\__init__.py
 tools2.0\modulefinder.py
+tools2.1\__init__.py
+tools2.1\modulefinder.py
