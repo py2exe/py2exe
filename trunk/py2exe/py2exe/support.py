@@ -34,16 +34,26 @@ del desc
 # strings.
 # So we have to sublcass imputil.ImportManager.
 #
+try:
+    unicode
+except NameError:
+    _stringtypes = (type(""),)
+else:
+    _stringtypes = (type(""), type(unicode("")))
+
 class _MyImportManager(imputil.ImportManager):
-    def _import_top_module(self, name, _stringtype=type(""), sys=sys):
+    def _import_top_module(self, name, _stringtypes=_stringtypes, sys=sys):
         for item in sys.importers + sys.path:
-            if isinstance(item, _stringtype):
-                module = self.fs_imp.import_from_dir(item, name)
+            for typ in _stringtypes:
+                if isinstance(item, typ):
+                    module = self.fs_imp.import_from_dir(item, name)
+                    break
             else:
                 module = item.import_top(name)
             if module:
                 return module
         return None
+del _stringtypes
 
 _ModuleType = type(sys)         ### doesn't work in JPython...
 
