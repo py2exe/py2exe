@@ -136,7 +136,7 @@ class ModuleFinder(Base):
         print >> ofi, "<h1>py2exe cross reference for %s</h1>" % sys.argv[0]
 
         for name in names:
-            if self._types[name]  == imp.PY_SOURCE:
+            if self._types[name] in (imp.PY_SOURCE, imp.PKG_DIRECTORY):
                 print >> ofi, '<a name="%s"><b><tt>%s</tt></b></a>' % (name, name)
                 if name == "__main__":
                     for fname in self._scripts:
