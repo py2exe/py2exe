@@ -72,12 +72,14 @@ if sys.frozen != "dll":
     for i in range(1, len(sys.argv)):
         arg = sys.argv[i].lower()
         # support "exe /regserver"
-        if arg.find("/reg") > -1 or arg.find("--reg") > -1:
+        if arg.find("/reg") > -1 or arg.find("--reg") > -1 \
+               or arg.find("-regserver") > -1:
             DllRegisterServer()
             break
 
         # support "exe /unreg...r"
-        if arg.find("/unreg") > -1 or arg.find("--unreg") > -1:
+        if arg.find("/unreg") > -1 or arg.find("--unreg") > -1 \
+               or arg.find("-unregserver") > -1:
             DllUnregisterServer()
             break
         
