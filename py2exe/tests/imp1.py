@@ -1,0 +1,3 @@
+import xml
+
+print xml
