@@ -1,15 +1,5 @@
 """Find modules used by a script, using introspection."""
 
-# Taken from Python 2.2a distribution,
-# enhanced to track dependencies of modules whether they are
-# found or not
-
-#
-# $Log$
-#
-#
-
-
 import dis
 import imp
 import marshal
@@ -92,25 +82,17 @@ def _try_registry(name):
 
 class ModuleFinder:
 
-    def __init__(self, path=None, debug=0, excludes = [], replace_paths = [],
-                 mod_attrs = {},
-                 aggressive=0):
+    def __init__(self, path=None, debug=0, excludes = [], replace_paths = []):
         if path is None:
             path = sys.path
         self.path = path
         self.modules = {}
         self.badmodules = {}
-        # neededby maps module names to a dict whose keys are
-        # the module names that imported this module.
-        self.neededby = {}
         self.debug = debug
         self.indent = 0
         self.excludes = excludes
         self.replace_paths = replace_paths
-        self.mod_attrs = mod_attrs
         self.processed_paths = []   # Used in debugging only
-        self.aggressive = aggressive
-        self.os_path = os.environ['PATH'] # save this
 
     def msg(self, level, str, *args):
         if level <= self.debug:
@@ -271,8 +253,7 @@ class ModuleFinder:
             return None
         try:
             fp, pathname, stuff = self.find_module(partname,
-                                                   parent and parent.__path__,
-                                                   parent)
+                                                   parent and parent.__path__)
         except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
@@ -333,10 +314,6 @@ class ModuleFinder:
                         if not self.badmodules.has_key(name):
                             self.badmodules[name] = {}
                         self.badmodules[name][m.__name__] = None
-                    else:
-                        if not self.neededby.has_key(name):
-                            self.neededby[name] = {}
-                        self.neededby[name][m.__name__] = None
             elif op == IMPORT_FROM:
                 name = co.co_names[oparg]
                 assert lastname is not None
@@ -378,90 +355,26 @@ class ModuleFinder:
         self.modules[fqname] = m = Module(fqname)
         return m
 
-    def find_module(self, name, path, parent=None):
-        if parent:
-            attrs = self.mod_attrs.get(parent.__name__, [])
-            if name in attrs:
-                self.excludes.append(name)
-                raise ImportError, name
-            
-        if name in self.excludes:
-            self.msgout(3, "find_module -> Excluded")
+    def find_module(self, name, path):
+        if path:
+            fullname = '.'.join(path)+'.'+name
+        else:
+            fullname = name
+        if fullname in self.excludes:
+            self.msgout(3, "find_module -> Excluded", fullname)
             raise ImportError, name
 
         if path is None:
             if name in sys.builtin_module_names:
-                self.find_extdeps(name)
                 return (None, None, ("", "", imp.C_BUILTIN))
 
             if sys.platform=="win32":
                 result = _try_registry(name)
                 if result:
-                    self.find_extdeps(name)
                     return result
                     
-        result = imp.find_module(name, path)
-        if result:
-            file, pathname, (suff, mode, type) = result
-            # C_BUILTIN should not be needed here any more,
-            # because it is handled above
-            if type in (imp.C_EXTENSION, imp.C_BUILTIN):
-                self.find_extdeps(name, path)
-        return result
-
-    def find_extdeps(self, name, path=None):
-        if not self.aggressive:
-            return
-        if not path:
-            path = []
-        # Finding modules needed be builtins or extensions
-        # Fairly expensive: We start a python interpreter with the -v and -S flags,
-        # let it import the requested module, and scan the error output
-        # for 'import ... #...' lines.
-        #
-        # This fixes the following kind of problems:
-        # - If you 'import multiarry' from NumPy, ModuleFinder now
-        #   finds that _numpy is needed
-        # - If you 'import cPickle' (which is builtin), ModuleFinder now
-        #   finds that types, string, copy_reg, cStringIO are needed.
-        #
-        # This method can be improved in the following way:
-        #
-        # Importing an extension module can also populate sys.modules
-        # with other builtin modules. An example is the wxPython.wxc
-        # extension module, which defines builtin modules like
-        # miscc, printfwc, clip_dndc, and so on.
-        # These builtin modules can easily be detected by scanning
-        # the error output for '# cleanup[1] ....' lines.
-        import re
-        os.environ['PYTHONPATH'] = string.join(self.path + path, os.pathsep)
-        # We must include sys.path into PATH because otherwise dll's
-        # may not be found.
-        # Example: 'import dde' fails with 'win32ui.pyd not
-        # found on PATH' if 'import win32ui' is not done before.
-        os.environ['PATH'] = self.os_path + os.pathsep + string.join(self.path, os.pathsep)
-
-        imp_pat = re.compile("import ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*) #")
-        mod_pat = re.compile("# cleanup\[[0-9]\] ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*)")
-        _, out, err = os.popen3('%s -S -v -c "import %s"' % \
-                       (sys.executable, name))
-        _ = out.read()
-        os.environ['PATH'] = self.os_path
-
-        for line in err.readlines():
-            imported = imp_pat.match(line)
-            if imported:
-                modname = imported.groups()[0]
-                if modname != name:
-                    self.import_hook(modname)
-                    if not self.neededby.has_key(modname):
-                        self.neededby[modname] = {}
-                    self.neededby[modname][name] = None
-            cleaned = mod_pat.match(line)
-            if cleaned:
-                modname = cleaned.groups()[0]
-                if modname not in (name, 'signal', 'exceptions'):
-                    self.excludes.append(modname)
+            path = self.path
+        return imp.find_module(name, path)
 
     def report(self):
         print
@@ -487,6 +400,15 @@ class ModuleFinder:
                 mods = self.badmodules[key].keys()
                 mods.sort()
                 print "?", key, "from", string.join(mods, ', ')
+
+    def any_missing(self):
+        keys = self.badmodules.keys()
+        missing = []
+        for key in keys:
+            if key not in self.excludes:
+                # Missing, and its not supposed to be
+                missing.append(key)
+        return missing
 
     def replace_paths_in_code(self, co):
         new_filename = original_filename = os.path.normpath(co.co_filename)
