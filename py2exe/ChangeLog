@@ -1,7 +1,23 @@
+2004-04-27  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py: Fix ModuleFinders import_module() method,
+	see http://python.org/sf/876278.  I assume the fix will it make
+	into Python 2.4, but not earlier versions.
+
 2004-04-26  Thomas Heller  <theller@python.net>
 
 	* (Message): Add flush() methods to the Blackhole and Stderr
 	objects for windows programs.
+
+
+2004-04-18  Mark Hammond
+	
+	* (build_exe.py): Patch sys.winver in the distributed
+	pythonxx.dll, so that there is no possibility of conflicts with
+	existing distributions and the registry keys found there.  Of
+	note, ActivePython/old win32all versions registered 'Modules', and
+	these were used in preference to the one shipped with py2exe,
+	generally causing problem.
 
 2004-04-07  Thomas Heller  <theller@python.net>
 
