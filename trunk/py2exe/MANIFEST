@@ -1,13 +1,13 @@
 MANIFEST
 MANIFEST.in
-C:\sf\py2exe\setup.py
+setup.py
 docs\index.html
 docs\py2exe.css
-docs\py2exe.html
 py2exe\__init__.py
 py2exe\py2exe.py
 py2exe\support.py
 source\archive.h
+source\py2exe_util.c
 source\run.c
 source\run_w.c
 source\start.c
