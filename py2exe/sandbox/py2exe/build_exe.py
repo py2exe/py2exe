@@ -93,10 +93,11 @@ def FixupTargets(targets, default_attribute):
             # Create a default target object, with the string as the attribute
             target = Target(**{default_attribute: target_def})
         else:
-            if not target_def.has_key(default_attribute):
+            d = getattr(target_def, "__dict__", target_def)
+            if not d.has_key(default_attribute):
                 raise DistutilsOptionError, \
-                      "Target %s requires a '%s' definition" % (target_def, default_attribute)
-            target = Target(**target_def)
+                      "This target class requires an attribute '%s'" % default_attribute
+            target = Target(**d)
         target.validate()
         ret.append(target)
     return ret
@@ -584,7 +585,37 @@ class py2exe(Command):
             data = open(typelib, "rb").read()
             add_resource(exe_path, data, "TYPELIB", 1, False)
 
+        self.add_versioninfo(target, exe_path)
+
         return exe_path
+
+    def add_versioninfo(self, target, exe_path):
+        # Try to build and add a versioninfo resource
+
+        def get(name, md = self.distribution.metadata):
+            # Try to get an attribute from the target, if not defined
+            # there, from the distribution's metadata, or None.  Note
+            # that only *some* attributes are allowed by distutils on
+            # the distribution's metadata: version, description, and
+            # name.
+            return getattr(target, name, getattr(md, name, None))
+
+        version = get("version")
+        if version is None:
+            return
+
+        from py2exe.resources.VersionInfo import Version, RT_VERSION
+        version = Version(version,
+                          file_description = get("description"),
+                          comments = get("comments"),
+                          company_name = get("company_name"),
+                          legal_copyright = get("copyright"),
+                          legal_trademarks = get("trademarks"),
+                          original_filename = os.path.basename(exe_path),
+                          product_name = get("name"),
+                          product_version = version)
+        from py2exe_util import add_resource
+        add_resource(exe_path, version.resource_bytes(), RT_VERSION, 1, False)
 
     def find_dependend_dlls(self, use_runw, dlls, pypath, dll_excludes):
         import py2exe_util
