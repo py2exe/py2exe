@@ -48,8 +48,8 @@ else:
 # resource constants
 RT_BITMAP=2
 
-_c_suffixes = [triple[0] for triple in imp.get_suffixes()
-               if triple[2] == imp.C_EXTENSION]
+_c_suffixes = [_triple[0] for _triple in imp.get_suffixes()
+               if _triple[2] == imp.C_EXTENSION]
 
 def imp_find_module(name):
     # same as imp.find_module, but handles dotted names
@@ -113,7 +113,7 @@ def FixupTargets(targets, default_attribute):
     for target_def in targets:
         if type(target_def) in types.StringTypes :
             # Create a default target object, with the string as the attribute
-            target = Target(**{default_attribute: target})
+            target = Target(**{default_attribute: target_def})
         else:
             if not target_def.has_key(default_attribute):
                 raise DistutilsOptionError, \
