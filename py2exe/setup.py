@@ -1,5 +1,5 @@
 ##
-##	   Copyright (c) 2000, 2001, 2002 Thomas Heller
+##	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
