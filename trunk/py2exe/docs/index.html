@@ -48,6 +48,13 @@ href="LICENSE.txt">license</a>. <!--............................................
 
 <h2>News</h2>
 <dl>
+      <dt><b>2003/08/07</b></dt>
+      <dd><i>
+	  There's a new advice if you get this error when running the executable:
+	  <b>LookupError: no codec search functions registered</b><br>
+	  See <a href=#codec>below</a>.
+      </i></dd>
+
       <dt><b>2003/07/24</b></dt>
       <dd><i>Release 0.4.1:
 	  <br>
@@ -393,13 +400,20 @@ href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/p
 <h2>Problems</h2>
 
 <h3>Unicode problems</h3>
-<p>Recent Python versions contain support for <em>unicode</em>, which requires
+<p><a name="codec">Recent Python</a> versions contain support for <em>unicode</em>, which requires
 the <b>encodings</b> package to be included in the exe-file. This is not included
 by default, and it would be very difficult for py2exe to find that this is needed.<br>
 So if your exe-file reports errors like
  <tt>LookupError: no codec search functions registered: can't find encoding</tt> or
 <tt>LookupError: unknown encoding</tt>, you should advise py2exe to include this package
 with the <tt>'--packages encodings'</tt> command line option.<br>
+
+<p><font color=red>It has been discovered that there may be still
+problems finding the encoding even if the above switch has been
+used.  Python versions 2.2.3 and 2.3 show this behaviour, it seems
+that additionally specifying the <tt>--force-imports encoding</tt>
+command line option fixes this.
+</font></p>
 
 <h3>Import errors</h3>
 
