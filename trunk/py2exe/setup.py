@@ -235,7 +235,7 @@ class deinstall(Command):
 ############################################################################
 
 run = Interpreter("py2exe.run",
-                  ["source/run.c", "source/start.c"],
+                  ["source/run.c", "source/start.c", "source/icon.rc"],
                   include_dirs=["source/zlib"],
                   libraries=["zlibstat"],
                   library_dirs=["source/zlib/static32"],
@@ -244,7 +244,7 @@ run = Interpreter("py2exe.run",
                   )
 
 run_w = Interpreter("py2exe.run_w",
-                    ["source/run_w.c", "source/start.c"],
+                    ["source/run_w.c", "source/start.c", "source/icon.rc"],
                     include_dirs=["source/zlib"],
                     libraries=["zlibstat", "user32"],
                     library_dirs=["source/zlib/static32"],
