@@ -23,17 +23,19 @@
 
 <h2>Abstract</h2>
 
-<p><b>py2exe</b> is a distutils extension to convert python scripts into executable
-windows programs, which are able to run without requiring a python installation.
+<p><b>py2exe</b> is a <a
+href="http://www.python.org/doc/current/dist/">distutils</a> extension
+to convert python scripts into executable windows programs, which are
+able to run without requiring a python installation.
 
 <!--...............................................................................-->
 
 <h2>Status</h2>
 
-<p><b>py2exe</b> is reaching a stable state.
-<br>It has been used to create wxPython, Tkinter, Pmw, PyGTK, pygame, win32com client and
-other standalone programs.
-<p>I would like to thank everyone who tried out this little utility and gave me feedback.
+<p><b>py2exe</b> is reaching a stable state.  <br>It has been used to
+create wxPython, Tkinter, Pmw, PyGTK, pygame, win32com client and
+other standalone programs.  <p>I would like to thank everyone who
+tried out this little utility and gave me feedback.
 
 <p><b>py2exe</b> is distributed under an open-source <a href=LICENSE.txt>license</a>.
 <!--...............................................................................-->
@@ -42,19 +44,19 @@ other standalone programs.
 
 <dl>
 <dt><b>2001/04/26</b></dt>
-<dd><i>Release 0.2.6:
-Support (and a binary distribution) for Python 2.1.<br>
-Some changes from Barry Scott (thanks, Barry): <br>
-</i><tt>PYTHONHOME</tt><i> and </i><tt>PYTHONPATH</tt><i>
-do no longer pollute subprocesses:
-running </i><tt>os.system('python -c "import os"')</tt><i>
-now works as expected from the executable.<br>
-The packed executable now returns an exit code of 0 or the value given to
+
+<dd><i>Release 0.2.6: Support (and a binary distribution) for Python
+2.1.<br> Some changes from Barry Scott (thanks, Barry): <br>
+</i><tt>PYTHONHOME</tt><i> and </i><tt>PYTHONPATH</tt><i> do no longer
+pollute subprocesses: running </i><tt>os.system('python -c "import
+os"')</tt><i> now works as expected from the executable.<br> The
+packed executable now returns an exit code of 0 or the value given to
 </i><tt>sys.exit(n)</tt><i>.
 </i>
 </dd>
 
 <dt><b>2001/04/05</b></dt>
+
 <dd><i>Release 0.2.5:
 Full Tkinter support, <b>py2exe</b> automatically copies your
 tcl/tk installation into the dist directory if your script uses Tkinter.
@@ -105,31 +107,31 @@ executable, see the</i> <tt>--icon</tt> <i>command line flag.</i>
 Assuming you have a python script <tt>myscript.py</tt> which you want to
 convert into an executable windows program, able to run even on systems without
 a python installation. If you don't already have written
-a <i>distutils</i> setup-script, write one, and insert the statement <tt>import&nbsp;py2exe</tt> before calling the setup function.
+a <i>distutils</i> <a href="http://www.python.org/doc/current/dist/setup-script.html">setup-script</a>, write one, and insert the statement <tt>import&nbsp;py2exe</tt> before calling the setup function.
 </p>
 <p>Here's a simple one:
 <pre>
 
-         # setup.py
-         from distutils.core import setup
-         import py2exe
+# setup.py
+from distutils.core import setup
+import py2exe
 
-         setup(name="myscript",
-               scripts=["myscript.py"],
-         )
+setup(name="myscript",
+      scripts=["myscript.py"],
+)
 
 </pre>
 <p>Running:
 <pre>
 
-        python setup.py py2exe --help
+python setup.py py2exe --help
 
 </pre>
 <p>will display all available command-line flags for the <b>py2exe</b> command.
 <p>Now you can call the setup script like this:
 <pre>
 
-         python setup.py py2exe
+python setup.py py2exe
 
 </pre>
 <p>and a sub-directory <tt>dist\myscript</tt> will be created, containing
@@ -156,18 +158,18 @@ where files is a sequence of files to be copied.
 Here's an example:
 <pre>
 
-         # setup.py
-         from distutils.core import setup
-         import glob
-         import py2exe
+# setup.py
+from distutils.core import setup
+import glob
+import py2exe
 
-         setup(name="myscript",
-               scripts=["myscript.py"],
-               data_files=[("bitmaps",
-                            ["bm/large.gif", "bm/small.gif"]),
-                           ("fonts",
-                            glob("fonts\\*.fnt"))],
-         )
+setup(name="myscript",
+      scripts=["myscript.py"],
+      data_files=[("bitmaps",
+                   ["bm/large.gif", "bm/small.gif"]),
+                  ("fonts",
+                   glob("fonts\\*.fnt"))],
+)
 
 </pre>
 <p>
@@ -301,31 +303,29 @@ required. You can download and install the latest release from
 <p>To build the zip-compatible archive <b>py2exe</b> needs a <tt>zip.exe</tt>
 utility somewhere on the PATH, or Jim Ahlstrom's zipfile-module.
 <h3>
-Python 1.6 and later</h3>
+Python 2.0 and later</h3>
 <p>Everything is already included in the python distribution.
 
 <!--...............................................................................-->
 
 <h2>Download and project information</h2>
-<p>Older versions are available, but you have to guess the URL's.
-
 <h3>Binaries (windows installer)</h3>
 
 <p>The binary distributions now contain an uninstaller, you can uninstall <b>py2exe</b>
-from the Control Panel applet (but you won't ;-).<br>
+from the Control Panel applet (but you won't ;-).
 
-<p>For Python 2.1: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.1.exe">py2exe-0.2.6.win32-py2.1.exe</a>.
+<p>For Python 2.2: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.2.exe">py2exe-0.2.6.win32-py2.2.exe</a>.
 
-<p>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.0.exe">py2exe-0.2.6.win32-py2.0.exe</a>.
+<br>For Python 2.1: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.1.exe">py2exe-0.2.6.win32-py2.1.exe</a>.
 
-<p>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py1.5.exe">py2exe-0.2.6.win32-py1.5.exe</a>.
+<br>For Python 2.0: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py2.0.exe">py2exe-0.2.6.win32-py2.0.exe</a>.
 
-<p>A Python 2.1 version will be published as soon as the final release is out.
+<br>For Python 1.5: <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.win32-py1.5.exe">py2exe-0.2.6.win32-py1.5.exe</a>.
 
 <h3>Source code</h3>
 <p>Download <a href="http://starship.python.net/crew/theller/py2exe/py2exe-0.2.6.zip">py2exe-0.2.6.zip</a>.
-<h3>
-Project hosting</h3>
+
+<h3>Project hosting</h3>
 <p>The project is hosted at <a href="http://sourceforge.net/projects/py2exe/">http://sourceforge.net/projects/py2exe/</a>.
 
 <!--...............................................................................-->
@@ -363,15 +363,24 @@ your scripts starts, and so PyImport_ImportModule can find them.
 some of the more difficult command line flags, also less warnings should be printed
 when building.
 
+<!--
 <p>Clean up and document the environment in which the script is run, provide
 a way to add hooks so that the build executable can import modules
 from the file system (may be usefull for extensible applications).
+-->
 
-<p>Allow local (dll) and inproc (exe) COM servers to be built.
+<p>Allow local (exe) and inproc (dll) COM servers to be built.
 
+<!--
 <p>Provide a way to require even less files: provide more custom prebuilt
 interpreters, so that eventually everything can be packed into a <i>single</i>
 file (which can be run without unpacking anything).
+-->
+<!--...............................................................................-->
+
+<h2>Links</h2>
+
+<p>Here is a preliminary <a href="http://aspn.activestate.com/ASPN/Mail/Message/543305">recipe</a> how to build local <b>COM servers</b> with <b>py2exe</b>, and <a href="http://aspn.activestate.com/ASPN/Mail/Message/766627">here</a> is another one.
 
 <!--...............................................................................-->
 
@@ -385,7 +394,7 @@ allowing you do distribute Python programs as one or two files"</i>.
 is based on an early version of squeeze.
 
 <p>Gordon McMillan's <a href="http://www.mcmillan-inc.com/install1.html">installer</a>
-is similar to <b>py2exe</b>.
+is similar to <b>py2exe</b>, but also works on Linux.
 </ul>
 
 <hr>
