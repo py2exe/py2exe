@@ -1,7 +1,7 @@
 # A very simple setup script to create 2 executables.
 #
-# hello.py is a simple "hello, world" type program, which allows to
-# explore the environment in which the script runs.
+# hello.py is a simple "hello, world" type program, which alse allows
+# to explore the environment in which the script runs.
 #
 # test_wx.py is a simple wxPython program, it will be converted into a
 # console-less program.
@@ -22,12 +22,12 @@ from distutils.core import setup
 import py2exe
 
 setup(
-    # The first three parameters are not required, if they are given,
-    # a versioninfo resource is built from them and added to the
-    # executables.
-    version = "0.5.6",
+    # The first three parameters are not required, if at least a
+    # 'version' is given, then a versioninfo resource is built from
+    # them and added to the executables.
+    version = "0.5.0",
     description = "py2exe sample script",
-    name="py2exe samples",
+    name = "py2exe samples",
 
     # targets to build
     windows = ["test_wx.py"],
