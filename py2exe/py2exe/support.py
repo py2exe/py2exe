@@ -148,7 +148,7 @@ class _MyImporter(imputil.Importer):
         # If importing a normal module, __file__ is inserted into the module.
         # XXX What should WE do?
 
-        import imp, marshal, strop, sys
+        import imp, marshal, sys
 
         dict = {}
 
@@ -162,7 +162,12 @@ class _MyImporter(imputil.Importer):
             dict['__file__'] = pathname
             return 0, imp.load_module(fqname, fp, pathname, desc), dict
 
-        fqname = strop.replace(fqname, '.', '\\')
+        if hasattr(fqname, 'replace'):
+            fqname = fqname.replace('.', '\\')
+        else:
+            import strop
+            fqname = strop.replace(fqname, '.', '\\')
+            
 
         name = fqname + _pyc_suffix[0]
         try:
