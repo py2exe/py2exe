@@ -264,7 +264,7 @@ class ModuleFinder:
         try:
             fp, pathname, stuff = self.find_module(partname,
                                                    parent and parent.__path__)
-        except ImportError:string.join(self.path, os.pathsep)
+        except ImportError:
             self.msgout(3, "import_module ->", None)
             return None
         try:
@@ -385,19 +385,20 @@ class ModuleFinder:
                     self.find_extdeps(name)
                     return result
                     
-            path = self.path
         result = imp.find_module(name, path)
         if result:
             file, pathname, (suff, mode, type) = result
             # C_BUILTIN should not be needed here any more,
             # because it is handled above
             if type in (imp.C_EXTENSION, imp.C_BUILTIN):
-                self.find_extdeps(name)
+                self.find_extdeps(name, path)
         return result
 
-    def find_extdeps(self, name):
+    def find_extdeps(self, name, path=None):
         if not self.scan_extdeps:
             return
+        if not path:
+            path = []
         # Finding modules needed be builtins or extensions
         # Fairly expensive: We start a python interpreter with the -v and -S flags,
         # let it import the requested module, and scan the error output
@@ -418,28 +419,35 @@ class ModuleFinder:
         # These builtin modules can easily be detected by scanning
         # the error output for '# cleanup[1] ....' lines.
         import re
-        os.environ['PYTHONPATH'] = string.join(self.path, os.pathsep)
+        os.environ['PYTHONPATH'] = string.join(self.path + path, os.pathsep)
         # We must include sys.path into PATH because otherwise dll's
         # may not be found.
         # Example: 'import dde' fails with 'win32ui.pyd not
         # found on PATH' if 'import win32ui' is not done before.
         os.environ['PATH'] = self.os_path + os.pathsep + string.join(self.path, os.pathsep)
 
-        pattern = re.compile("import ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*) #")
+        imp_pat = re.compile("import ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*) #")
+        mod_pat = re.compile("# cleanup\[[0-9]\] ([a-zA-Z_][a-zA-Z0-9_]*(\.[a-zA-Z_][a-zA-Z0-9_]*)*)")
         _, out, err = os.popen3('%s -S -v -c "import %s"' % \
                        (sys.executable, name))
         _ = out.read()
         os.environ['PATH'] = self.os_path
 
         for line in err.readlines():
-            result = pattern.match(line)
+            result = imp_pat.match(line)
             if result:
-                other = result.groups()[0]
-                if other != name:
-                    self.import_hook(other)
-                    if not self.neededby.has_key(other):
-                        self.neededby[other] = {}
-                    self.neededby[other][name] = None
+                needed = result.groups()[0]
+                if needed != name:
+                    self.import_hook(needed)
+                    if not self.neededby.has_key(needed):
+                        self.neededby[needed] = {}
+                    self.neededby[needed][name] = None
+            result = mod_pat.match(line)
+            if result:
+                name = result.groups()[0]
+                self.excludes.append(name)
+                
+                
 
     def report(self):
         print
