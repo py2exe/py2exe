@@ -288,7 +288,11 @@ class py2exe(Command):
                      verbose=self.verbose,
                      dry_run=self.dry_run)
 
-        all_files = []
+        self.lib_files = []
+        self.console_exe_files = []
+        self.windows_exe_files = []
+        self.service_exe_files = []
+        self.comserver_files = []
 
         print "*** copy extensions ***"
         # copy the extensions to the target directory
@@ -306,14 +310,14 @@ class py2exe(Command):
             # So we do it via a custom loader - see create_loader()
             dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
             self.copy_file(src, dst)
-            all_files.append(dst)
+            self.lib_files.append(dst)
 
         # create the shared zipfile containing all Python modules
         archive_name = os.path.join(self.lib_dir,
                                     os.path.basename(dist.zipfile))
         arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
                                    verbose=self.verbose, dry_run=self.dry_run)
-        all_files.append(arcname)
+        self.lib_files.append(arcname)
 
         print "*** copy dlls ***"
         for dll in dlls:
@@ -325,7 +329,7 @@ class py2exe(Command):
             else:
                 dst = os.path.join(self.lib_dir, base)
             self.copy_file(dll, dst)
-            all_files.append(dst)
+            self.lib_files.append(dst)
 
         if self.distribution.has_data_files():
             print "*** copy data files ***"
@@ -334,36 +338,31 @@ class py2exe(Command):
             install_data.ensure_finalized()
             install_data.run()
 
-            all_files.extend(install_data.get_outputs())
+            self.lib_files.extend(install_data.get_outputs())
 
         # build the executables
         for target in dist.console:
             dst = self.build_executable(target, self.get_console_template(),
                                         arcname, target.script)
-            all_files.append(dst)
+            self.console_exe_files.append(dst)
         for target in dist.windows:
             dst = self.build_executable(target, self.get_windows_template(),
                                         arcname, target.script)
-            all_files.append(dst)
+            self.windows_exe_files.append(dst)
         for target in dist.service:
             dst = self.build_service(target, self.get_service_template(),
                                      arcname)
-            all_files.append(dst)
+            self.service_exe_files.append(dst)
 
         for target in dist.com_server:
             if getattr(target, "create_exe", True):
                 dst = self.build_comserver(target, self.get_comexe_template(),
                                            arcname)
-                all_files.append(dst)
+                self.comserver_files.append(dst)
             if getattr(target, "create_dll", True):
                 dst = self.build_comserver(target, self.get_comdll_template(),
                                            arcname)
-                all_files.append(dst)
-
-        # XXX debug code!
-##        for name in all_files:
-##            assert name.startswith(self.dist_dir)
-##            print "*", name[len(self.dist_dir)+1:]
+                self.comserver_files.append(dst)
 
     # for user convenience, let subclasses override the templates to use
     def get_console_template(self):
