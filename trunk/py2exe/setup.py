@@ -26,7 +26,7 @@ standalone windows executable programs from
 python scripts.
 """
 
-__version__ = "0.2.7"
+__version__ = "0.3.0"
 
 # $Id$
 
@@ -279,6 +279,42 @@ run_w = Interpreter("py2exe.run_w",
                     define_macros=[("ZLIB_DLL", None), ("_WINDOWS", None)],
                     )
 
+PYWIN32DIR = "c:/PWin32"
+
+PyWin32_BuildDir = PYWIN32DIR + "/build/temp.win32-%s/Release" % sys.winver
+
+run_svc = Interpreter("py2exe.run_svc",
+                      ["source/PythonService.cpp",
+                       "source/run_svc.c", "source/start.c",
+                       PYWIN32DIR + "/win32/src/PythonServiceMessages.mc"
+                       ],
+                      include_dirs=["source/zlib",
+                                    PYWIN32DIR + "/win32/src"],
+                      libraries=["zlibstat", "user32", "advapi32",
+                                 "oleaut32", "ole32", "shell32"],
+                      library_dirs=["source/zlib/static32",
+                                    PyWin32_BuildDir],
+                      extra_link_args=["/NOD:LIBC"],
+                      define_macros=[("ZLIB_DLL", None),
+                                     ("_WINDOWS", None),
+                                     ("BUILD_FREEZE", None),
+                                     ("BUILD_PY2EXE", None),
+                                     ("WIN32", None),
+                                     ("__WIN32__", None),
+##                                     ("_UNICODE", None),
+##                                     ("UNICODE", None),
+                                     ("NDEBUG", None),
+                                     ("STRICT", None)
+                                     ]
+                      )
+
+pywintypes_lib = PyWin32_BuildDir + "/pywintypes.lib"
+
+if not os.path.isdir(PYWIN32DIR):
+    print "Please set the PYWIN32DIR variable in this setup script"
+if not os.path.isfile(pywintypes_lib):
+    print "Please build pywintypes first"
+
 setup(name="py2exe",
       version=__version__,
       description="Build standalone executables for windows",
@@ -297,8 +333,8 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
-      interpreters = [run, run_w],
-      packages=['py2exe', 'py2exe.tools'],
+      interpreters = [run, run_w, run_svc],
+      packages=['py2exe', 'py2exe.tools', 'py2exe.resources'],
       )
 
 # Local Variables:

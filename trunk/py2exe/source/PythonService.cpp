@@ -49,6 +49,11 @@ BOOL WINAPI DebugControlHandler ( DWORD dwCtrlType );
 
 BOOL LocatePythonServiceClass( DWORD dwArgc, LPTSTR *lpszArgv, PyObject **result );
 
+#ifdef BUILD_PY2EXE
+extern "C" BOOL InstallService(void);
+extern "C" BOOL RemoveService(void);
+#endif
+
 SERVICE_STATUS neverStartedStatus = {
 	SERVICE_WIN32_OWN_PROCESS,
 	SERVICE_STOPPED,
@@ -439,6 +444,13 @@ extern "C" int PythonService_main(int argc, char **argv)
 	        // Get out of here.
 			return RegisterPythonServiceExe() ? 0 : 1;
         }
+#else
+#ifdef BUILD_PY2EXE
+	if (_stricmp("install", argv[1]+1) == 0)
+		return InstallService() ? 0 : 1;
+	if (_stricmp("remove", argv[1]+1) == 0)
+		return RemoveService() ? 0 : 1;
+#endif
 #endif
         if ( _stricmp( "debug", argv[1]+1 ) == 0 ) {
 			/* Debugging the service.  If this EXE has a service name
@@ -480,8 +492,17 @@ extern "C" int PythonService_main(int argc, char **argv)
     printf("Options:\n");
 #ifndef BUILD_FREEZE
 	printf(" -register - register the EXE - this must be done at least once.\n");
+#else
+#ifdef BUILD_PY2EXE
+	printf(" -install - Install this service.\n");
+	printf(" -remove - Remove this service.\n");
 #endif
+#endif
+#ifdef BUILD_PY2EXE
+    printf(" -debug [parms] - debug the service.\n");
+#else
     printf(" -debug servicename [parms] - debug the Python service.\n");
+#endif
     printf("\nStarting service - this may take several seconds - please wait...\n");
 
     if (!StartServiceCtrlDispatcher( DispatchTable)) {
