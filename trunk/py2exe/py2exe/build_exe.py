@@ -783,9 +783,9 @@ class py2exe(Command):
             templates.add(self.get_service_template())
         for target in self.distribution.com_server:
             if getattr(target, "create_exe", True):
-                templates.add(get_comexe_template())
+                templates.add(self.get_comexe_template())
             if getattr(target, "create_dll", True):
-                templates.add(get_comexe_template())
+                templates.add(self.get_comdll_template())
 
         templates = [os.path.join(os.path.dirname(__file__), t) for t in templates]
 
@@ -851,7 +851,11 @@ class py2exe(Command):
                 continue
             src = item.__file__
             if src:
-                suffix = os.path.splitext(src)[1]
+                base, ext = os.path.splitext(src)
+                suffix = ext
+                if sys.platform.startswith("win") and ext in [".dll", ".pyd"] \
+                   and base.endswith("_d"):
+                    suffix = "_d" + ext
 
                 if suffix in _py_suffixes:
                     py_files.append(item)
