@@ -24,10 +24,12 @@ py2exe options, to be specified in the options keyword to the setup function:
 
     unbuffered - if true, use unbuffered binary stdout and stderr
     optimize - string or int (0, 1, or 2)
-    includes - string containing a list of module names to include
-    excludes - string containing a list of module names to exclude
-    packages - string containing a list of packages to include
-    dll_excludes - string containing a list of dlls to exclude
+
+    includes - list of module names to include
+    excludes - list of module names to exclude
+    packages - list of packages to include with subpackages
+    dll_excludes - list of dlls to exclude
+
     dist_dir - directory where to build the final files
     typelibs - list of gen_py generated typelibs to include (XXX more text needed)
 
@@ -43,6 +45,7 @@ keys in the dictionary are recognized, most are optional:
     create_dll (COM) - boolean, if false, don't build a server dll
     bitmap_resources - list of 2-tuples (id, pathname)
     icon_resources - list of 2-tuples (id, pathname)
+    other_resources - list of 3-tuples (resource_type, id, datastring)
 """
 # py2exe/__init__.py
 
@@ -55,7 +58,7 @@ keys in the dictionary are recognized, most are optional:
 # special one contained in this module.
 #
 
-__version__ = "0.5.0a3"
+__version__ = "0.5.0a4"
 
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
