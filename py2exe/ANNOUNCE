@@ -6,8 +6,6 @@ into executable windows programs, able to run without requiring a
 python installation.  Console and Windows (GUI) applications, windows
 NT services, exe and dll COM servers are supported.
 
-**py2exe 0.5.4** released (2004/10/22)
-
 Changes in this release:
 
     * The new ``--xref`` or ``-x`` command line switch instructs
@@ -26,7 +24,7 @@ Changes in this release:
     * Mark Hammond fixed some thread state issues with dll com
       servers.
 
-    * Mark Hammind added support for standalone ISAPI dlls.
+    * Mark Hammond added support for standalone ISAPI dlls.
 
     * py2exe now can handle python modules with the '.pyw' extension.
 
