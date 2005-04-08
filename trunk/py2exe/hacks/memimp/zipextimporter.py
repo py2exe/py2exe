@@ -50,6 +50,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
         if result:
             return result
 
+        fullname = fullname.replace(".", "\\")
         for s in self._suffixes:
             if (fullname + s) in self._files:
                 return self
@@ -60,13 +61,15 @@ class ZipExtensionImporter(zipimport.zipimporter):
             return zipimport.zipimporter.load_module(self, fullname)
         except zipimport.ZipImportError:
             pass
+        initname = fullname.split(".")[-1]
+        fullname = fullname.replace(".", "\\")
         for s in self._suffixes:
             path = fullname + s
             if path in self._files:
                 # XXX should check sys.modules first ? See PEP302 on reload
                 # XXX maybe in C code...
                 code = self.get_data(path)
-                mod = _memimporter.import_module(code, "init" + fullname)
+                mod = _memimporter.import_module(code, "init" + initname)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
                 mod.__loader__ = self
                 if _memimporter.get_verbose_flag():
