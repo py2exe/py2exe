@@ -1,23 +1,26 @@
 /*
  * Memory DLL loading code
- * Version 0.0.1
+ * Version 0.0.2
  *
- * Copyright (c) 2004 by Joachim Bauch / mail@joachim-bauch.de
+ * Copyright (c) 2004-2005 by Joachim Bauch / mail@joachim-bauch.de
  * http://www.joachim-bauch.de
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
- * 
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- * 
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is MemoryModule.c
+ *
+ * The Initial Developer of the Original Code is Joachim Bauch.
+ *
+ * Portions created by Joachim Bauch are Copyright (C) 2004-2005
+ * Joachim Bauch. All Rights Reserved.
  *
  */
 
@@ -203,7 +206,7 @@ PerformBaseRelocation(PMEMORYMODULE module, DWORD delta)
 			}
 
 			// advance to next relocation block
-			(char *)relocation += relocation->SizeOfBlock;
+			relocation = (PIMAGE_BASE_RELOCATION)(((DWORD)relocation) + relocation->SizeOfBlock);
 		}
 	}
 }
@@ -301,19 +304,16 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 
 	// reserve memory for image of library
 	code = (unsigned char *)VirtualAlloc((LPVOID)(old_header->OptionalHeader.ImageBase),
-					     old_header->OptionalHeader.SizeOfImage,
-					     MEM_RESERVE,
-					     PAGE_READWRITE);
+		old_header->OptionalHeader.SizeOfImage,
+		MEM_RESERVE,
+		PAGE_READWRITE);
 
-	if (code == NULL) {
-		// try to allocate memory at arbitrary position
-		code = (unsigned char *)VirtualAlloc(NULL,
-						     old_header->OptionalHeader.SizeOfImage,
-						     MEM_RESERVE,
-						     PAGE_READWRITE);
-//		fprintf(stderr, "allocate mem at %p instead of %p\n", code, old_header->OptionalHeader.ImageBase);
-	}
-//	else fprintf(stderr, "allocated mem at image base %p \n", old_header->OptionalHeader.ImageBase);
+    if (code == NULL)
+        // try to allocate memory at arbitrary position
+        code = (unsigned char *)VirtualAlloc(NULL,
+            old_header->OptionalHeader.SizeOfImage,
+            MEM_RESERVE,
+            PAGE_READWRITE);
     
 	if (code == NULL)
 	{
@@ -330,17 +330,17 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 	result->initialized = 0;
 
 	// XXX: is it correct to commit the complete memory region at once?
-	//      calling DllEntry raises an exception if we don't...
+    //      calling DllEntry raises an exception if we don't...
 	VirtualAlloc(code,
-		     old_header->OptionalHeader.SizeOfImage,
-		     MEM_COMMIT,
-		     PAGE_READWRITE);
+		old_header->OptionalHeader.SizeOfImage,
+		MEM_COMMIT,
+		PAGE_READWRITE);
 
 	// commit memory for headers
 	headers = (unsigned char *)VirtualAlloc(code,
-						old_header->OptionalHeader.SizeOfHeaders,
-						MEM_COMMIT,
-						PAGE_READWRITE);
+		old_header->OptionalHeader.SizeOfHeaders,
+		MEM_COMMIT,
+		PAGE_READWRITE);
 	
 	// copy PE header to code
 	memcpy(headers, dos_header, dos_header->e_lfanew + old_header->OptionalHeader.SizeOfHeaders);
@@ -391,7 +391,7 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 
 	return (HMEMORYMODULE)result;
 
-  error:
+error:
 	// cleanup
 	MemoryFreeLibrary(result);
 	return NULL;
@@ -463,7 +463,7 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
 
 		if (module->codeBase != NULL)
 			// release memory of library
-			VirtualFree(module->codeBase, module->headers->OptionalHeader.SizeOfImage, MEM_RELEASE);
+			VirtualFree(module->codeBase, 0, MEM_RELEASE);
 
 		HeapFree(GetProcessHeap(), 0, module);
 	}
