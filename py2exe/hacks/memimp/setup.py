@@ -7,7 +7,7 @@ setup(name="memimporter",
       author="Thomas Heller",
       author_email="theller@python.net",
 ##      url="http://starship.python.net/crew/theller/py2exe/",
-      license="LGPL",
+      license="MPL",
       platforms="Windows",
 ##      download_url="http://sourceforge.net/project/showfiles.php?group_id=15583",
       
