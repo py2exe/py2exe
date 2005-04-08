@@ -323,7 +323,8 @@ class py2exe(Command):
         bdist_base = self.get_finalized_command('bdist').bdist_base
         self.bdist_dir = os.path.join(bdist_base, 'winexe')
 
-        self.collect_dir = os.path.abspath(os.path.join(self.bdist_dir, "collect"))
+        collect_name = "collect-%d.%d" % sys.version_info[:2]
+        self.collect_dir = os.path.abspath(os.path.join(self.bdist_dir, collect_name))
         self.mkpath(self.collect_dir)
 
         self.temp_dir = os.path.abspath(os.path.join(self.bdist_dir, "temp"))
@@ -344,12 +345,12 @@ class py2exe(Command):
         
         # byte compile the python modules into the target directory
         print "*** byte compile python files ***"
-        byte_compile(py_files,
-                     target_dir=self.collect_dir,
-                     optimize=self.optimize,
-                     force=0,
-                     verbose=self.verbose,
-                     dry_run=self.dry_run)
+        compiled_files = byte_compile(py_files,
+                                      target_dir=self.collect_dir,
+                                      optimize=self.optimize,
+                                      force=0,
+                                      verbose=self.verbose,
+                                      dry_run=self.dry_run)
 
         self.lib_files = []
         self.console_exe_files = []
@@ -383,8 +384,11 @@ class py2exe(Command):
             archive_name = os.path.join(self.lib_dir,
                                         os.path.basename(dist.zipfile))
 
-        arcname = self.make_lib_archive(archive_name, base_dir=self.collect_dir,
-                                   verbose=self.verbose, dry_run=self.dry_run)
+        arcname = self.make_lib_archive(archive_name,
+                                        base_dir=self.collect_dir,
+                                        files=compiled_files,
+                                        verbose=self.verbose,
+                                        dry_run=self.dry_run)
         if dist.zipfile is not None:
             self.lib_files.append(arcname)
 
@@ -1028,31 +1032,25 @@ class py2exe(Command):
 
         return mf
 
-    def make_lib_archive(self, zip_filename, base_dir, verbose=0,
-                         dry_run=0):
-        # Like distutils "make_archive", except we can specify the
-        # compression to use - default is ZIP_STORED to keep the
-        # runtime performance up.
-        # Also, we don't append '.zip' to the filename.
+    def make_lib_archive(self, zip_filename, base_dir, files,
+                         verbose=0, dry_run=0):
+        # Like distutils "make_archive", but we can specify the files
+        # to include, and the compression to use - default is
+        # ZIP_STORED to keep the runtime performance up.  Also, we
+        # don't append '.zip' to the filename.
         from distutils.dir_util import mkpath
         mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
-        def visit (z, dirname, names):
-            for name in names:
-                path = os.path.normpath(os.path.join(dirname, name))
-                if os.path.isfile(path):
-                    z.write(path, path)
 
         if self.compressed:
             compression = zipfile.ZIP_DEFLATED
         else:
             compression = zipfile.ZIP_STORED
+
         if not dry_run:
             z = zipfile.ZipFile(zip_filename, "w",
                                 compression=compression)
-            save_cwd = os.getcwd()
-            os.chdir(base_dir)
-            os.path.walk('', visit, z)
-            os.chdir(save_cwd)
+            for f in files:
+                z.write(os.path.join(base_dir, f), f)
             z.close()
 
         return zip_filename
@@ -1148,6 +1146,7 @@ EXCLUDED_DLLS = (
     "ws2_32.dll",
     "ws2help.dll",
     "wsock32.dll",
+    "netapi32.dll"
     )
 
 def isSystemDLL(pathname):
@@ -1253,6 +1252,17 @@ byte_compile(files, optimize=%s, force=%s,
                 if verbose:
                     print "skipping byte-compilation of %s to %s" % \
                           (file.__file__, dfile)
+    compiled_files = []
+    for file in py_files:
+        cfile = file.__name__.replace('.', '\\')
+
+        if file.__path__:
+            dfile = cfile + '\\__init__.py' + (optimize and 'o' or 'c')
+        else:
+            dfile = cfile + '.py' + (optimize and 'o' or 'c')
+        compiled_files.append(dfile)
+    return compiled_files
+        
 # byte_compile()
 
 # win32com makepy helper.
