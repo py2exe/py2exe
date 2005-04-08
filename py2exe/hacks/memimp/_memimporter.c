@@ -12,14 +12,16 @@ import_module(PyObject *self, PyObject *args)
 	char *data;
 	int size;
 	char *initfuncname;
+	char *fullname;
 	HMEMORYMODULE hmem;
 	FARPROC do_init;
 
-	if (!PyArg_ParseTuple(args, "s#s:import_module", &data, &size, &initfuncname))
+	if (!PyArg_ParseTuple(args, "s#ss:import_module", &data, &size, &initfuncname, &fullname))
 		return NULL;
 	hmem = MemoryLoadLibrary(data);
 	if (!hmem) {
-		PyErr_SetString(PyExc_ImportError, "MemoryLoadLibrary failed");
+		PyErr_Format(PyExc_ImportError,
+			     "MemoryLoadLibrary failed loading %s", fullname);
 		return NULL;
 	}
 	do_init = MemoryGetProcAddress(hmem, initfuncname);
