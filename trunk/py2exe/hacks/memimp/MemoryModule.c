@@ -35,17 +35,87 @@
 
 #include "MemoryModule.h"
 
-typedef struct {
+typedef struct tagMEMORYMODULE {
 	PIMAGE_NT_HEADERS headers;
 	unsigned char *codeBase;
 	HMODULE *modules;
 	int numModules;
 	int initialized;
+
+	char *name;
+	int refcount;
+	struct tagMEMORYMODULE *next, *prev;
 } MEMORYMODULE, *PMEMORYMODULE;
 
 typedef BOOL (WINAPI *DllEntryProc)(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved);
 
 #define GET_HEADER_DICTIONARY(module, idx)	&(module)->headers->OptionalHeader.DataDirectory[idx]
+
+MEMORYMODULE *loaded; /* linked list of loaded memory modules */
+
+void Register(char *name, MEMORYMODULE *module)
+{
+	module->name = strdup(name);
+	module->next = loaded;
+	if (loaded)
+		loaded->prev = module;
+	module->prev = NULL;
+	loaded = module;
+}
+
+void Unregister(MEMORYMODULE *module)
+{
+	free(module->name);
+	if (module->prev)
+		module->prev->next = module->next;
+	if (module->next)
+		module->next->prev = module->prev;
+	if (module == loaded)
+		loaded = module->next;
+}
+
+HMODULE MyLoadLibrary(LPCTSTR lpFileName)
+{
+	MEMORYMODULE *p = loaded;
+	while (p) {
+		// If already loaded, only increment the reference count
+		if (0 == stricmp(lpFileName, p->name)) {
+			p->refcount++;
+			return (HMODULE)p;
+		}
+		p = p->next;
+	}
+	// A possible extension would be to provide a callback function
+	// to find a library: MemoryFindLibrary
+	return LoadLibrary(lpFileName);
+}
+
+FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
+{
+	MEMORYMODULE *p = loaded;
+	while (p) {
+		if ((HMODULE)p == hModule)
+			return MemoryGetProcAddress(p, lpProcName);
+		p = p->next;
+	}
+	return GetProcAddress(hModule, lpProcName);
+}
+
+BOOL MyFreeLibrary(HMODULE hModule)
+{
+	MEMORYMODULE *p = loaded;
+	while (p) {
+		if ((HMODULE)p == hModule) {
+			if (--p->refcount == 0) {
+				Unregister(p);
+				MemoryFreeLibrary(p);
+			}
+			return TRUE;
+		}
+		p = p->next;
+	}
+	return FreeLibrary(hModule);
+}
 
 #ifdef DEBUG_OUTPUT
 static void
@@ -224,7 +294,8 @@ BuildImportTable(PMEMORYMODULE module)
 		for (; !IsBadReadPtr(importDesc, sizeof(IMAGE_IMPORT_DESCRIPTOR)) && importDesc->Name; importDesc++)
 		{
 			DWORD *thunkRef, *funcRef;
-			HMODULE handle = LoadLibrary((LPCSTR)(codeBase + importDesc->Name));
+			HMODULE handle = MyLoadLibrary((LPCSTR)(codeBase + importDesc->Name));
+			fprintf(stderr, "MEM: LoadLibrary(%s) -> %x\n", (LPCSTR)(codeBase + importDesc->Name), handle);
 			if (handle == INVALID_HANDLE_VALUE)
 			{
 #if DEBUG_OUTPUT
@@ -253,11 +324,11 @@ BuildImportTable(PMEMORYMODULE module)
 			}
 			for (; *thunkRef; thunkRef++, funcRef++)
 			{
-				if IMAGE_SNAP_BY_ORDINAL(*thunkRef)
-					*funcRef = (DWORD)GetProcAddress(handle, (LPCSTR)IMAGE_ORDINAL(*thunkRef));
-				else {
+				if IMAGE_SNAP_BY_ORDINAL(*thunkRef) {
+					*funcRef = (DWORD)MyGetProcAddress(handle, (LPCSTR)IMAGE_ORDINAL(*thunkRef));
+				} else {
 					PIMAGE_IMPORT_BY_NAME thunkData = (PIMAGE_IMPORT_BY_NAME)(codeBase + *thunkRef);
-					*funcRef = (DWORD)GetProcAddress(handle, (LPCSTR)&thunkData->Name);
+					*funcRef = (DWORD)MyGetProcAddress(handle, (LPCSTR)&thunkData->Name);
 				}
 				if (*funcRef == 0)
 				{
@@ -274,7 +345,7 @@ BuildImportTable(PMEMORYMODULE module)
 	return result;
 }
 
-HMEMORYMODULE MemoryLoadLibrary(const void *data)
+HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 {
 	PMEMORYMODULE result;
 	PIMAGE_DOS_HEADER dos_header;
@@ -328,6 +399,9 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 	result->numModules = 0;
 	result->modules = NULL;
 	result->initialized = 0;
+	result->next = result->prev = NULL;
+	result->refcount = 1;
+	result->name = NULL;
 
 	// XXX: is it correct to commit the complete memory region at once?
     //      calling DllEntry raises an exception if we don't...
@@ -388,6 +462,8 @@ HMEMORYMODULE MemoryLoadLibrary(const void *data)
 		}
 		result->initialized = 1;
 	}
+
+	Register(name, result);
 
 	return (HMEMORYMODULE)result;
 
@@ -456,7 +532,7 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
 			// free previously opened libraries
 			for (i=0; i<module->numModules; i++)
 				if (module->modules[i] != INVALID_HANDLE_VALUE)
-					FreeLibrary(module->modules[i]);
+					MyFreeLibrary(module->modules[i]);
 
 			free(module->modules);
 		}
