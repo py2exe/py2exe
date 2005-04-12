@@ -143,9 +143,12 @@ class py2exe(Command):
 
         ("single-file", 's',
          "create a single-file executable (well, two files at least;-)"),
+
+        ("ascii", 'a',
+         "do not automatically include encodings and codecs"),
         ]
 
-    boolean_options = ["compressed", "xref", "single-file"]
+    boolean_options = ["compressed", "xref", "single-file", "ascii"]
 
     def initialize_options (self):
         self.xref =0
@@ -160,6 +163,7 @@ class py2exe(Command):
         self.dll_excludes = None
         self.typelibs = None
         self.single_file = 0
+        self.ascii = 0
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -174,10 +178,10 @@ class py2exe(Command):
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
-##        if self.single_file:
-##            if self.compressed:
-##                self.warn("compressed is incompatible with single-file: ignored")
-##            self.compressed = 0
+        if self.single_file:
+            if self.compressed:
+                self.warn("compressed is incompatible with single-file: ignored")
+            self.compressed = 0
 
     def run(self):
         build = self.reinitialize_command('build')
@@ -928,8 +932,9 @@ class py2exe(Command):
 
     def plat_prepare(self):
         self.includes.append("warnings") # needed by Python itself
-        self.packages.append("encodings")
-        self.includes.append("codecs")
+        if not self.ascii:
+            self.packages.append("encodings")
+            self.includes.append("codecs")
         if self.single_file:
             self.includes.append("zipextimporter")
             self.excludes.append("_memimporter")
