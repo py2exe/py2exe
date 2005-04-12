@@ -998,7 +998,7 @@ class py2exe(Command):
                              'termios',
                              'vms_lib']
             # special dlls which must be copied to the exe_dir, not the lib_dir
-            self.dlls_in_exedir = [python_dll]
+            self.dlls_in_exedir = [python_dll, "w9xpopen.exe"]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
