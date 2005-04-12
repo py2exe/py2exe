@@ -1,3 +1,12 @@
+2004-12-30  Thomas Heller  <theller@python.net>
+
+	* py2exe\build_exe.py (py2exe.find_needed_modules.visit): Patch
+	from Shane Holloway for better modulefinder's AddPackagePath
+	interactions.
+
+	* source\start.c: Patch from David Bolen, to make the unbuffered
+	option work.
+
 2004-10-22  Thomas Heller  <theller@python.net>
 
 	*  py2exe can now create module crosss references in HTML format,
