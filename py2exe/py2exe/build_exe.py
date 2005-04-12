@@ -352,24 +352,7 @@ class py2exe(Command):
                                         os.path.dirname(self.distribution.zipfile))
         self.mkpath(self.lib_dir)
 
-    def create_binaries(self, py_files, extensions, dlls):
-        dist = self.distribution
-        
-        # byte compile the python modules into the target directory
-        print "*** byte compile python files ***"
-        compiled_files = byte_compile(py_files,
-                                      target_dir=self.collect_dir,
-                                      optimize=self.optimize,
-                                      force=0,
-                                      verbose=self.verbose,
-                                      dry_run=self.dry_run)
-
-        self.lib_files = []
-        self.console_exe_files = []
-        self.windows_exe_files = []
-        self.service_exe_files = []
-        self.comserver_files = []
-
+    def copy_extensions(self, extensions):
         print "*** copy extensions ***"
         # copy the extensions to the target directory
         for item in extensions:
@@ -391,24 +374,9 @@ class py2exe(Command):
             else:
                 dst = os.path.join(self.collect_dir, os.path.basename(src))
                 self.copy_file(src, dst)
-                compiled_files.append(os.path.basename(dst))
+                self.compiled_files.append(os.path.basename(dst))
 
-        # create the shared zipfile containing all Python modules
-        if dist.zipfile is None:
-            fd, archive_name = tempfile.mkstemp()
-            os.close(fd)
-        else:
-            archive_name = os.path.join(self.lib_dir,
-                                        os.path.basename(dist.zipfile))
-
-        arcname = self.make_lib_archive(archive_name,
-                                        base_dir=self.collect_dir,
-                                        files=compiled_files,
-                                        verbose=self.verbose,
-                                        dry_run=self.dry_run)
-        if dist.zipfile is not None:
-            self.lib_files.append(arcname)
-
+    def copy_dlls(self, dlls):
         self.announce("*** copy dlls ***")
         for dll in dlls:
             base = os.path.basename(dll)
@@ -433,6 +401,43 @@ class py2exe(Command):
                 self.patch_python_dll_winver(dst)
 
             self.lib_files.append(dst)
+
+    def create_binaries(self, py_files, extensions, dlls):
+        dist = self.distribution
+        
+        # byte compile the python modules into the target directory
+        print "*** byte compile python files ***"
+        self.compiled_files = byte_compile(py_files,
+                                           target_dir=self.collect_dir,
+                                           optimize=self.optimize,
+                                           force=0,
+                                           verbose=self.verbose,
+                                           dry_run=self.dry_run)
+
+        self.lib_files = []
+        self.console_exe_files = []
+        self.windows_exe_files = []
+        self.service_exe_files = []
+        self.comserver_files = []
+
+        self.copy_extensions(extensions)
+        self.copy_dlls(dlls)
+
+        # create the shared zipfile containing all Python modules
+        if dist.zipfile is None:
+            fd, archive_name = tempfile.mkstemp()
+            os.close(fd)
+        else:
+            archive_name = os.path.join(self.lib_dir,
+                                        os.path.basename(dist.zipfile))
+
+        arcname = self.make_lib_archive(archive_name,
+                                        base_dir=self.collect_dir,
+                                        files=self.compiled_files,
+                                        verbose=self.verbose,
+                                        dry_run=self.dry_run)
+        if dist.zipfile is not None:
+            self.lib_files.append(arcname)
 
         for target in self.distribution.isapi:
             print "*** copy isapi support DLL ***"
