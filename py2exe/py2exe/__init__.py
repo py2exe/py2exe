@@ -62,7 +62,7 @@ keys in the dictionary are recognized, most are optional:
 # special one contained in this module.
 #
 
-__version__ = "0.5.5"
+__version__ = "0.6.0"
 
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
