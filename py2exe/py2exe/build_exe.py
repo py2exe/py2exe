@@ -139,10 +139,13 @@ class py2exe(Command):
          "create a compressed zipfile"),
 
         ("xref", 'x',
-         "create and show a module crosss reference")
+         "create and show a module cross reference"),
+
+        ("single-file", 's',
+         "create a single-file executable (well, two files at least;-)"),
         ]
 
-    boolean_options = ["compressed", "xref"]
+    boolean_options = ["compressed", "xref", "single-file"]
 
     def initialize_options (self):
         self.xref =0
@@ -156,6 +159,7 @@ class py2exe(Command):
         self.dist_dir = None
         self.dll_excludes = None
         self.typelibs = None
+        self.single_file = 0
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -170,6 +174,10 @@ class py2exe(Command):
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
+##        if self.single_file:
+##            if self.compressed:
+##                self.warn("compressed is incompatible with single-file: ignored")
+##            self.compressed = 0
 
     def run(self):
         build = self.reinitialize_command('build')
@@ -372,9 +380,14 @@ class py2exe(Command):
             # pythoncom23.dll into pythoncom.dll, and win32com contains
             # magic which relies on this exact filename.
             # So we do it via a custom loader - see create_loader()
-            dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
-            self.copy_file(src, dst)
-            self.lib_files.append(dst)
+            if not self.single_file:
+                dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
+                self.copy_file(src, dst)
+                self.lib_files.append(dst)
+            else:
+                dst = os.path.join(self.collect_dir, os.path.basename(src))
+                self.copy_file(src, dst)
+                compiled_files.append(os.path.basename(dst))
 
         # create the shared zipfile containing all Python modules
         if dist.zipfile is None:
@@ -392,7 +405,7 @@ class py2exe(Command):
         if dist.zipfile is not None:
             self.lib_files.append(arcname)
 
-        print "*** copy dlls ***"
+        self.announce("*** copy dlls ***")
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
@@ -619,6 +632,10 @@ class py2exe(Command):
         boot_code = compile(file(boot, "U").read(),
                             os.path.abspath(boot), "exec")
         code_objects = [boot_code]
+        if self.single_file:
+            code_objects.append(
+                compile("import zipextimporter; zipextimporter.install()",
+                        "<install zipextimporter>", "exec"))
         for var_name, var_val in vars.items():
             code_objects.append(
                     compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
@@ -856,9 +873,10 @@ class py2exe(Command):
                     py_files.append(item)
                 elif suffix in _c_suffixes:
                     extensions.append(item)
-                    loader = self.create_loader(item)
-                    if loader:
-                        py_files.append(loader)
+                    if not self.single_file:
+                        loader = self.create_loader(item)
+                        if loader:
+                            py_files.append(loader)
                 else:
                     raise RuntimeError \
                           ("Don't know how to handle '%s'" % repr(src))
@@ -904,13 +922,17 @@ class py2exe(Command):
         if not self.dry_run:
             open(pathname, "w").write(source)
         else:
-            return
+            return None
         from modulefinder import Module
         return Module(item.__name__, pathname)
 
     def plat_prepare(self):
         self.includes.append("warnings") # needed by Python itself
-##        self.packages.append("encodings")
+        self.packages.append("encodings")
+        self.includes.append("codecs")
+        if self.single_file:
+            self.includes.append("zipextimporter")
+            self.excludes.append("_memimporter")
         if self.compressed:
             self.includes.append("zlib")
 
