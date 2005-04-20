@@ -35,14 +35,16 @@ typedef void *HMEMORYMODULE;
 extern "C" {
 #endif
 
-HMEMORYMODULE MemoryLoadLibrary(char *, const void *);
+typedef void *(*FINDPROC)();
+
+HMEMORYMODULE MemoryLoadLibrary(char *, const void *, FINDPROC, void *);
 
 FARPROC MemoryGetProcAddress(HMEMORYMODULE, const char *);
 
 void MemoryFreeLibrary(HMEMORYMODULE);
 
 BOOL MyFreeLibrary(HMODULE hModule);
-HMODULE MyLoadLibrary(LPCTSTR lpFileName);
+HMODULE MyLoadLibrary(char *lpFileName, FINDPROC, void *);
 FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 
 #ifdef __cplusplus
