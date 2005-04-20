@@ -32,6 +32,7 @@
 #ifdef DEBUG_OUTPUT
 #include <stdio.h>
 #endif
+#include <stdio.h>
 
 #include "MemoryModule.h"
 
@@ -61,6 +62,16 @@ void Register(char *name, MEMORYMODULE *module)
 		loaded->prev = module;
 	module->prev = NULL;
 	loaded = module;
+
+	if (0 == strcmp(name, "pywintypes23.dll")) {
+		FARPROC proc;
+		proc = MyGetProcAddress(module, "initpywintypes");
+		proc();
+	} else if (0 == strcmp(name, "pythoncom23.dll")) {
+		FARPROC proc;
+		proc = MyGetProcAddress(module, "initpythoncom");
+		proc();
+	}
 }
 
 void Unregister(MEMORYMODULE *module)
@@ -74,7 +85,7 @@ void Unregister(MEMORYMODULE *module)
 		loaded = module->next;
 }
 
-HMODULE MyLoadLibrary(LPCTSTR lpFileName)
+HMODULE MyLoadLibrary(char *lpFileName, FINDPROC findproc, void *userdata)
 {
 	MEMORYMODULE *p = loaded;
 	while (p) {
@@ -85,8 +96,15 @@ HMODULE MyLoadLibrary(LPCTSTR lpFileName)
 		}
 		p = p->next;
 	}
-	// A possible extension would be to provide a callback function
-	// to find a library: MemoryFindLibrary
+	if (findproc) {
+		void *pdata = findproc(lpFileName, userdata);
+		if (pdata) {
+			HMODULE hMod = MemoryLoadLibrary(lpFileName, pdata,
+							 findproc, userdata);
+			free(p);
+			return hMod;
+		}
+	}
 	return LoadLibrary(lpFileName);
 }
 
@@ -282,7 +300,7 @@ PerformBaseRelocation(PMEMORYMODULE module, DWORD delta)
 }
 
 static int
-BuildImportTable(PMEMORYMODULE module)
+BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 {
 	int result=1;
 	unsigned char *codeBase = module->codeBase;
@@ -294,7 +312,8 @@ BuildImportTable(PMEMORYMODULE module)
 		for (; !IsBadReadPtr(importDesc, sizeof(IMAGE_IMPORT_DESCRIPTOR)) && importDesc->Name; importDesc++)
 		{
 			DWORD *thunkRef, *funcRef;
-			HMODULE handle = MyLoadLibrary((LPCSTR)(codeBase + importDesc->Name));
+			HMODULE handle = MyLoadLibrary(codeBase + importDesc->Name,
+						       findproc, userdata);
 			fprintf(stderr, "MEM: LoadLibrary(%s) -> %x\n", (LPCSTR)(codeBase + importDesc->Name), handle);
 			if (handle == INVALID_HANDLE_VALUE)
 			{
@@ -345,7 +364,7 @@ BuildImportTable(PMEMORYMODULE module)
 	return result;
 }
 
-HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
+HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc, void *userdata)
 {
 	PMEMORYMODULE result;
 	PIMAGE_DOS_HEADER dos_header;
@@ -355,6 +374,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 	DllEntryProc DllEntry;
 	BOOL successfull;
 
+	fprintf(stderr, "MemoryLoadLibrary %s\n", name);
 	dos_header = (PIMAGE_DOS_HEADER)data;
 	if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
 	{
@@ -432,7 +452,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 		PerformBaseRelocation(result, locationDelta);
 
 	// load required dlls and adjust function table of imports
-	if (!BuildImportTable(result))
+	if (!BuildImportTable(result, findproc, userdata))
 		goto error;
 
 	// mark memory pages depending on section headers and release
@@ -493,13 +513,13 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, const char *name)
 	// search function name in list of exported names
 	nameRef = (DWORD *)(codeBase + exports->AddressOfNames);
 	ordinal = (WORD *)(codeBase + exports->AddressOfNameOrdinals);
+
 	for (i=0; i<exports->NumberOfNames; i++, nameRef++, ordinal++)
 		if (stricmp(name, (const char *)(codeBase + *nameRef)) == 0)
 		{
 			idx = *ordinal;
 			break;
 		}
-
 	if (idx == -1)
 		// exported symbol not found
 		return NULL;
