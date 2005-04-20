@@ -46,6 +46,7 @@ void MemoryFreeLibrary(HMEMORYMODULE);
 BOOL MyFreeLibrary(HMODULE hModule);
 HMODULE MyLoadLibrary(char *lpFileName, FINDPROC, void *);
 FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName);
+HMODULE MyGetModuleHandle(LPCTSTR lpModuleName);
 
 #ifdef __cplusplus
 }
