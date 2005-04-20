@@ -3,6 +3,7 @@ MemoryModule.c
 MemoryModule.h
 LICENSE.txt
 README.txt
+readme-MemoryModule.txt
 _memimporter.c
 zipextimporter.py
 setup.py
