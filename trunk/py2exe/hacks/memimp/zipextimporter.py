@@ -42,18 +42,27 @@ import _memimporter
 class ZipExtensionImporter(zipimport.zipimporter):
     _suffixes = [s[0] for s in imp.get_suffixes() if s[2] == imp.C_EXTENSION]
 
-    def __init__(self, path):
-        zipimport.zipimporter.__init__(self, path)
+##    def __init__(self, path):
+##        zipimport.zipimporter.__init__(self, path)
 
     def find_module(self, fullname, path=None):
         result = zipimport.zipimporter.find_module(self, fullname, path)
         if result:
             return result
-
+        if fullname in ("pywintypes", "pythoncom"):
+            fullname = fullname + "%d%d" % sys.version_info[:2]
         fullname = fullname.replace(".", "\\")
         for s in self._suffixes:
             if (fullname + s) in self._files:
                 return self
+        return None
+
+    def locate_dll_image(self, name):
+        # A callback function for_memimporter.import_module.  Tries to
+        # locate additional dlls.  Returns the image as Python string,
+        # or None if not found.
+        if name in self._files:
+            return self.get_data(name)
         return None
 
     def load_module(self, fullname):
@@ -63,13 +72,16 @@ class ZipExtensionImporter(zipimport.zipimporter):
             pass
         initname = fullname.split(".")[-1]
         fullname = fullname.replace(".", "\\")
+        if fullname in ("pywintypes", "pythoncom"):
+            fullname = fullname + "%d%d" % sys.version_info[:2]
         for s in self._suffixes:
             path = fullname + s
             if path in self._files:
                 # XXX should check sys.modules first ? See PEP302 on reload
                 # XXX maybe in C code...
                 code = self.get_data(path)
-                mod = _memimporter.import_module(code, "init" + initname, fullname)
+                mod = _memimporter.import_module(code, "init" + initname, path,
+                                                 self.locate_dll_image)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
                 mod.__loader__ = self
                 if _memimporter.get_verbose_flag():
@@ -78,19 +90,12 @@ class ZipExtensionImporter(zipimport.zipimporter):
         raise zipimport.ZipImportError, "can't find module %s" % fullname
 
     def __repr__(self):
-        return "<ZipExtensionImporter at %x>" % id(self)
+        return "<%s object %r>" % (self.__class__.__name__, self.archive)
 
 def install():
     "Install the zipextimporter"
     sys.path_hooks.insert(0, ZipExtensionImporter)
     sys.path_importer_cache.clear()
 
-if __name__ == "__main__":
-    # test code
-    import zlib
-    install()
-
-    sys.path.insert(0, r"lib.zip")
-    import _ctypes
-
-    print _ctypes.__loader__, _ctypes.__file__
+##if __name__ == "__main__":
+##    print ZipExtensionImporter("lib.zip")
