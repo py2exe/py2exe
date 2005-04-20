@@ -1,6 +1,6 @@
 /*
  * Memory DLL loading code
- * Version 0.0.2
+ * Version 0.0.2 with additions from Thomas Heller
  *
  * Copyright (c) 2004-2005 by Joachim Bauch / mail@joachim-bauch.de
  * http://www.joachim-bauch.de
@@ -22,6 +22,8 @@
  * Portions created by Joachim Bauch are Copyright (C) 2004-2005
  * Joachim Bauch. All Rights Reserved.
  *
+ * Portions Copyright (C) 2005 Thomas Heller.
+ *
  */
 
 // disable warnings about pointer <-> DWORD conversions
@@ -36,12 +38,23 @@
 
 #include "MemoryModule.h"
 
+#define FOR_PYTHON // define this to enable special processing for pywintypes and pythoncom
+
+/******************************************************************/
+
+struct NAME_TABLE {
+	char *name;
+	DWORD ordinal;
+};
+
 typedef struct tagMEMORYMODULE {
 	PIMAGE_NT_HEADERS headers;
 	unsigned char *codeBase;
 	HMODULE *modules;
 	int numModules;
 	int initialized;
+
+	struct NAME_TABLE *name_table;
 
 	char *name;
 	int refcount;
@@ -62,16 +75,17 @@ void Register(char *name, MEMORYMODULE *module)
 		loaded->prev = module;
 	module->prev = NULL;
 	loaded = module;
-
+#ifdef FOR_PYTHON
 	if (0 == strcmp(name, "pywintypes23.dll")) {
 		FARPROC proc;
-		proc = MyGetProcAddress(module, "initpywintypes");
+		proc = MyGetProcAddress((HMODULE)module, "initpywintypes");
 		proc();
 	} else if (0 == strcmp(name, "pythoncom23.dll")) {
 		FARPROC proc;
-		proc = MyGetProcAddress(module, "initpythoncom");
+		proc = MyGetProcAddress((HMODULE)module, "initpythoncom");
 		proc();
 	}
+#endif
 }
 
 void Unregister(MEMORYMODULE *module)
@@ -83,6 +97,23 @@ void Unregister(MEMORYMODULE *module)
 		module->next->prev = module->prev;
 	if (module == loaded)
 		loaded = module->next;
+}
+
+HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
+{
+	MEMORYMODULE *p = loaded;
+	OutputDebugString(lpModuleName);
+	while (p) {
+		// If already loaded, only increment the reference count
+		if (0 == stricmp(lpModuleName, p->name)) {
+			OutputDebugString("MyGetModuleHandle -> return MEMORYMODULE");
+			return (HMODULE)p;
+		}
+		p = p->next;
+	}
+	OutputDebugString(lpModuleName);
+	OutputDebugString("MyGetModuleHandle -> calling GetModuleHandle()");
+	return GetModuleHandle(lpModuleName);
 }
 
 HMODULE MyLoadLibrary(char *lpFileName, FINDPROC findproc, void *userdata)
@@ -422,6 +453,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 	result->next = result->prev = NULL;
 	result->refcount = 1;
 	result->name = NULL;
+	result->name_table = NULL;
 
 	// XXX: is it correct to commit the complete memory region at once?
     //      calling DllEntry raises an exception if we don't...
@@ -493,14 +525,58 @@ error:
 	return NULL;
 }
 
+int _compare(const struct NAME_TABLE *p1, const struct NAME_TABLE *p2)
+{
+	return stricmp(p1->name, p2->name);
+}
+
+int _find(const char **name, const struct NAME_TABLE *p)
+{
+	return stricmp(*name, p->name);
+}
+
+struct NAME_TABLE *GetNameTable(PMEMORYMODULE module)
+{
+	unsigned char *codeBase;
+	PIMAGE_EXPORT_DIRECTORY exports;
+	PIMAGE_DATA_DIRECTORY directory;
+	DWORD i, *nameRef;
+	WORD *ordinal;
+	struct NAME_TABLE *p, *ptab;
+
+	if (module->name_table)
+		return module->name_table;
+
+	codeBase = module->codeBase;
+	directory = GET_HEADER_DICTIONARY(module, IMAGE_DIRECTORY_ENTRY_EXPORT);
+	exports = (PIMAGE_EXPORT_DIRECTORY)(codeBase + directory->VirtualAddress);
+
+	nameRef = (DWORD *)(codeBase + exports->AddressOfNames);
+	ordinal = (WORD *)(codeBase + exports->AddressOfNameOrdinals);
+
+	p = ((PMEMORYMODULE)module)->name_table = (struct NAME_TABLE *)malloc(sizeof(struct NAME_TABLE)
+									      * exports->NumberOfNames);
+	if (p == NULL)
+		return NULL;
+	ptab = p;
+	for (i=0; i<exports->NumberOfNames; ++i) {
+		p->name = (char *)(codeBase + *nameRef++);
+		p->ordinal = *ordinal++;
+		++p;
+	}
+	qsort(ptab, exports->NumberOfNames, sizeof(struct NAME_TABLE), _compare);
+	return ptab;
+}
+
 FARPROC MemoryGetProcAddress(HMEMORYMODULE module, const char *name)
 {
 	unsigned char *codeBase = ((PMEMORYMODULE)module)->codeBase;
 	int idx=-1;
-	DWORD i, *nameRef;
-	WORD *ordinal;
+	struct NAME_TABLE *ptab;
+	struct NAME_TABLE *found;
 	PIMAGE_EXPORT_DIRECTORY exports;
 	PIMAGE_DATA_DIRECTORY directory = GET_HEADER_DICTIONARY((PMEMORYMODULE)module, IMAGE_DIRECTORY_ENTRY_EXPORT);
+
 	if (directory->Size == 0)
 		// no export table found
 		return NULL;
@@ -510,24 +586,20 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, const char *name)
 		// DLL doesn't export anything
 		return NULL;
 
-	// search function name in list of exported names
-	nameRef = (DWORD *)(codeBase + exports->AddressOfNames);
-	ordinal = (WORD *)(codeBase + exports->AddressOfNameOrdinals);
-
-	for (i=0; i<exports->NumberOfNames; i++, nameRef++, ordinal++)
-		if (stricmp(name, (const char *)(codeBase + *nameRef)) == 0)
-		{
-			idx = *ordinal;
-			break;
-		}
-	if (idx == -1)
+	ptab = GetNameTable((PMEMORYMODULE)module);
+	if (ptab == NULL)
+		// some failure
+		return NULL;
+	found = bsearch(&name, ptab, exports->NumberOfNames, sizeof(struct NAME_TABLE), _find);
+	if (found == NULL)
 		// exported symbol not found
 		return NULL;
-
+	
+	idx = found->ordinal;
 	if ((DWORD)idx > exports->NumberOfFunctions)
 		// name <-> ordinal number don't match
 		return NULL;
-
+	
 	// AddressOfFunctions contains the RVAs to the "real" functions
 	return (FARPROC)(codeBase + *(DWORD *)(codeBase + exports->AddressOfFunctions + (idx*4)));
 }
@@ -560,6 +632,9 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
 		if (module->codeBase != NULL)
 			// release memory of library
 			VirtualFree(module->codeBase, 0, MEM_RELEASE);
+
+		if (module->name_table != NULL)
+			free(module->name_table);
 
 		HeapFree(GetProcessHeap(), 0, module);
 	}
