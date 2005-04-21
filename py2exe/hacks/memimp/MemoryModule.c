@@ -38,8 +38,6 @@
 
 #include "MemoryModule.h"
 
-#define FOR_PYTHON // define this to enable special processing for pywintypes and pythoncom
-
 /******************************************************************/
 
 struct NAME_TABLE {
@@ -75,17 +73,6 @@ void Register(char *name, MEMORYMODULE *module)
 		loaded->prev = module;
 	module->prev = NULL;
 	loaded = module;
-#ifdef FOR_PYTHON
-	if (0 == strcmp(name, "pywintypes23.dll")) {
-		FARPROC proc;
-		proc = MyGetProcAddress((HMODULE)module, "initpywintypes");
-		proc();
-	} else if (0 == strcmp(name, "pythoncom23.dll")) {
-		FARPROC proc;
-		proc = MyGetProcAddress((HMODULE)module, "initpythoncom");
-		proc();
-	}
-#endif
 }
 
 void Unregister(MEMORYMODULE *module)
