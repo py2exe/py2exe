@@ -42,9 +42,6 @@ import _memimporter
 class ZipExtensionImporter(zipimport.zipimporter):
     _suffixes = [s[0] for s in imp.get_suffixes() if s[2] == imp.C_EXTENSION]
 
-##    def __init__(self, path):
-##        zipimport.zipimporter.__init__(self, path)
-
     def find_module(self, fullname, path=None):
         result = zipimport.zipimporter.find_module(self, fullname, path)
         if result:
