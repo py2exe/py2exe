@@ -15,7 +15,7 @@ import marshal
 import zipfile
 import sets
 import tempfile
-
+import struct
 
 def _is_debug_build():
     for ext, _, _ in imp.get_suffixes():
@@ -378,6 +378,9 @@ class py2exe(Command):
 
     def copy_dlls(self, dlls):
         self.announce("*** copy dlls ***")
+        if self.single_file:
+            self.copy_dlls_single_file(dlls)
+            return
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
@@ -401,6 +404,33 @@ class py2exe(Command):
                 self.patch_python_dll_winver(dst)
 
             self.lib_files.append(dst)
+
+    def copy_dlls_single_file(self, dlls):
+        for dll in dlls:
+            base = os.path.basename(dll)
+            if base.lower() in self.dlls_in_exedir:
+                # These special dlls cannot be in the lib directory,
+                # they must go into the exe directory.
+                dst = os.path.join(self.exe_dir, base)
+                _, copied = self.copy_file(dll, dst)
+                if not self.dry_run and copied and base.lower() == python_dll.lower():
+                    # If we actually copied pythonxy.dll, we have to patch it.
+                    #
+                    # Previously, the code did it every time, but this
+                    # breaks if, for example, someone runs UPX over the
+                    # dist directory.  Patching an UPX'd dll seems to work
+                    # (no error is detected when patching), but the
+                    # resulting dll does not work anymore.
+                    # 
+                    # The function restores the file times so
+                    # dependencies still work correctly.
+                    self.patch_python_dll_winver(dst)
+
+                self.lib_files.append(dst)
+                continue
+            dst = os.path.join(self.collect_dir, os.path.basename(dll))
+            self.copy_file(dll, dst)
+            self.compiled_files.append(os.path.basename(dst))
 
     def create_binaries(self, py_files, extensions, dlls):
         dist = self.distribution
@@ -495,6 +525,19 @@ class py2exe(Command):
 
         if dist.zipfile is None:
             os.unlink(arcname)
+
+        if self.single_file:
+            if self.distribution.zipfile:
+                print "Adding %s to %s" % (python_dll, arcname)
+                arcbytes = open(arcname, "rb").read()
+                arcfile = open(arcname, "wb")
+                arcfile.write("<pythondll>")
+                bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
+                arcfile.write(struct.pack("i", len(bytes)))
+                arcfile.write(bytes) # python dll
+                arcfile.write(arcbytes)
+            # remove the bundled python dll
+            os.remove(os.path.join(self.exe_dir, python_dll))
 
     # for user convenience, let subclasses override the templates to use
     def get_console_template(self):
@@ -595,7 +638,6 @@ class py2exe(Command):
         return self.build_executable(target, template, arcname, boot, vars)
 
     def build_isapi(self, target, template, arcname):
-        from py2exe_util import add_resource
         target_module = os.path.splitext(os.path.basename(target.script))[0]
         vars = {"isapi_module_name" : target_module,
                }
@@ -632,7 +674,7 @@ class py2exe(Command):
             f = open(exe_path, "a+b")
             f.close()
         except IOError, why:
-            print "WARNING: File %s could not be opened - %s" % (pathname, why)
+            print "WARNING: File %s could not be opened - %s" % (exe_path, why)
 
         # We create a list of code objects, and write it as a marshaled
         # stream.  The framework code then just exec's these in order.
@@ -658,7 +700,6 @@ class py2exe(Command):
         if self.distribution.zipfile is None:
             relative_arcname = os.path.basename(exe_path)
 
-        import struct
         si = struct.pack("iiii",
                          0x78563412, # a magic value,
                          self.optimize,
@@ -670,6 +711,20 @@ class py2exe(Command):
         self.announce("add script resource, %d bytes" % len(script_bytes))
         if not self.dry_run:
             add_resource(unicode(exe_path), script_bytes, u"PYTHONSCRIPT", 1, True)
+            # add the pythondll as resource, and delete in self.exe_dir
+            if self.single_file:
+                dll_path = os.path.join(self.exe_dir, python_dll)
+                bytes = open(dll_path, "rb").read()
+                # image, bytes, lpName, lpType
+
+                if self.distribution.zipfile is None:
+                    print "Adding %s as resource" % python_dll
+                    add_resource(unicode(exe_path), bytes,
+                                 # for some reason, the 3. argument MUST BE UPPER CASE,
+                                 # otherwise the resource will not be found.
+                                 unicode(python_dll).upper(), 1, False)
+ 
+##later...                os.remove(dll_path)
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
@@ -747,7 +802,7 @@ class py2exe(Command):
             return
             
         from py2exe_util import add_resource
-        add_resource(unicode(exe_path), version.resource_bytes(), RT_VERSION, 1, False)
+        add_resource(unicode(exe_path), bytes, RT_VERSION, 1, False)
 
     def patch_python_dll_winver(self, dll_name, new_winver = None):
         from py2exe.resources.StringTables import StringTable, RT_STRING
@@ -867,8 +922,11 @@ class py2exe(Command):
         
         for item in mf.modules.values():
             # There may be __main__ modules (from mf.run_script), but
-            # we don't need it in the zipfile we build.
+            # we don't need them in the zipfile we build.
             if item.__name__ == "__main__":
+                continue
+            if self.single_file and item.__name__ in ("pythoncom", "pywintypes"):
+                # these are handled specially in zipextimporter.
                 continue
             src = item.__file__
             if src:
@@ -943,7 +1001,8 @@ class py2exe(Command):
         if self.single_file:
             self.includes.append("zipextimporter")
             self.excludes.append("_memimporter")
-        if self.compressed:
+##        if self.compressed:
+        if 1:
             self.includes.append("zlib")
 
         # os.path will never be found ;-)
@@ -1299,8 +1358,7 @@ byte_compile(files, optimize=%s, force=%s,
 
 # win32com makepy helper.
 def collect_win32com_genpy(path, typelibs):
-    from modulefinder import Module
-    import win32com, pywintypes
+    import win32com
     from win32com.client import gencache, makepy
     old_gen_path = win32com.__gen_path__
     num = 0
@@ -1319,7 +1377,7 @@ def collect_win32com_genpy(path, typelibs):
             mod = gencache.GetModuleForTypelib(*info)
             for clsid, name in mod.CLSIDToPackageMap.items():
                 try:
-                    sub_mod = gencache.GetModuleForCLSID(clsid)
+                    gencache.GetModuleForCLSID(clsid)
                     num += 1
                     #print "", name
                 except ImportError:

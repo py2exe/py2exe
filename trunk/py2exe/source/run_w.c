@@ -23,7 +23,7 @@
 
 #include <windows.h>
 #include <stdio.h>
-#include <Python.h>
+#include "Python-dynload.h"
 
 void SystemError(int error, char *msg)
 {
@@ -53,6 +53,7 @@ void SystemError(int error, char *msg)
 
 extern int init(char *);
 extern int start(int argc, char **argv);
+extern void init_memimporter(void);
 
 static PyObject *Py_MessageBox(PyObject *self, PyObject *args)
 {
@@ -81,11 +82,11 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 	if (result)
 		return result;
 
+	init_memimporter();
 	mod = PyImport_ImportModule("sys");
 	if (mod)
 		PyObject_SetAttrString(mod,
 				       "_MessageBox",
 				       PyCFunction_New(&method[0], NULL));
-
 	return start(__argc, __argv);
 }
