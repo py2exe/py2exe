@@ -50,6 +50,7 @@ void SystemError(int error, char *msg)
 
 extern int init(char *);
 extern int start(int argc, char **argv);
+extern void init_memimporter(void);
 
 int main (int argc, char **argv)
 {
@@ -57,5 +58,6 @@ int main (int argc, char **argv)
 	result = init("console_exe");
 	if (result)
 		return result;
+	init_memimporter();
 	return start(argc, argv);
 }

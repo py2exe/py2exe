@@ -25,10 +25,16 @@
  * $Id$
  *
  */
+
+/*
 #include <Python.h>
 #include <marshal.h>
 #include <compile.h>
 #include <eval.h>
+*/
+#include "Python-dynload.h"
+
+#include <stdio.h>
 #include <windows.h>
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
@@ -50,66 +56,147 @@ void fini(void);
 char *pScript;
 char *pZipBaseName;
 int numScriptBytes;
-char dirname[_MAX_PATH]; // my directory
+char modulename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // from GetModuleName()
+char dirname[_MAX_PATH]; // directory part of GetModuleName()
 char libdirname[_MAX_PATH]; // library directory - probably same as above.
-char modulename[_MAX_PATH];
+char libfilename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // library filename
 struct scriptinfo *p_script_info;
+
+static BOOL _LocateScript(HMODULE hmod)
+{
+	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
+	HGLOBAL hgbl;
+	char *cp;
+
+	// get module filename
+	if (!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
+		SystemError(GetLastError(), "Retrieving module name");
+		return FALSE;
+	}
+	// get directory of modulename
+	strcpy(dirname, modulename);
+	cp = strrchr(dirname, '\\');
+	*cp = '\0';
+
+	// load the script resource
+	if (!hrsrc) {
+		SystemError(GetLastError(), "Could not locate script resource:");
+		return FALSE;
+	}
+	hgbl = LoadResource(hmod, hrsrc);
+	if (!hgbl) {
+		SystemError(GetLastError(), "Could not load script resource:");
+		return FALSE;
+	}
+	p_script_info = (struct scriptinfo *)pScript = LockResource(hgbl);
+	if (!pScript)  {
+		SystemError(GetLastError(), "Could not lock script resource:");
+		return FALSE;
+	}
+	// validate script resource
+	numScriptBytes = p_script_info->data_bytes;
+	pScript += sizeof(struct scriptinfo);
+	if (p_script_info->tag != 0x78563412) {
+		SystemError (0, "Bug: Invalid script resource");
+		return FALSE;
+	}
+	// let pScript point to the start of the python script resource
+	pScript += strlen(p_script_info->zippath) + 1;
+
+	// get full pathname of the 'library.zip' file
+	snprintf(libfilename, sizeof(libfilename),
+		 "%s\\%s", dirname, p_script_info->zippath);
+	return TRUE; // success
+}
+
+static BOOL _LoadPythonDLL(HMODULE hmod)
+{
+	HRSRC hrsrc;
+	char buffer[32];
+	FILE *fp;
+
+	// Try to locate pythonxy.dll as resource in the exe
+	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), PYTHONDLL);
+	if (hrsrc) {
+		HGLOBAL hgbl = LoadResource(hmod, hrsrc);
+		if (!_load_python(PYTHONDLL, LockResource(hgbl))) {
+			SystemError(GetLastError(), "Could not load python dll");
+			return FALSE;
+		}
+		return TRUE;
+	}
+
+	// Try to load pythonxy.dll from the start of the library.zip file
+	fp = fopen(libfilename, "rb");
+	if (fp == NULL) {
+		SystemError(0, "Could not open zipfile for reading");
+		return FALSE;
+	}
+	memset(buffer, 0, sizeof(buffer));
+	if (11 != fread(buffer, 1, 11, fp)) {
+		SystemError(0, "Could not read data from zipfile");
+		return FALSE;
+	}
+	if (0 == strcmp(buffer, "<pythondll>")) {
+		int nBytes, res;
+		char *p;
+
+		fread(&nBytes, 1, sizeof(int), fp);
+		p = malloc(nBytes);
+		if (p == NULL) {
+			SystemError(0, "Could not allocate memory for pythondll");
+			return FALSE;
+		}
+		fread(p, 1, nBytes, fp);
+		fclose(fp);
+		res = _load_python(PYTHONDLL, p);
+		free(p);
+		if (!res) {
+			SystemError(GetLastError(), "Could not load python dll");
+			return FALSE;
+		}
+		return TRUE;
+	}
+	// try to load pythonxy.dll from the file system
+	{
+		char buffer[_MAX_PATH + _MAX_FNAME + _MAX_EXT];
+		snprintf(buffer, sizeof(buffer), "%s\\%s", dirname, PYTHONDLL);
+		printf("*** LoadLibrary %s\n", buffer);
+		if (!_load_python(buffer, NULL)) {
+			SystemError(GetLastError(), "LoadLibrary(pythondll) failed");
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
 
 /*
  * returns an error code if initialization fails
  */
 int init_with_instance(HMODULE hmod, char *frozen)
 {
-	/* Open the executable file and map it to memory */
-	if(!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
-		SystemError(GetLastError(), "Retrieving module name");
+	if (!_LocateScript(hmod))
 		return 255;
-	}
-	{
-		char *cp;
-		strcpy(dirname, modulename);
-		cp = strrchr(dirname, '\\');
-		*cp = '\0';
-	}
 
-	{
-		HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
-		HGLOBAL hgbl;
-
-		if (!hrsrc) {
-			SystemError (GetLastError(), "Could not locate script resource:");
-			return 255;
-		}
-		hgbl = LoadResource(hmod, hrsrc);
-		if (!hgbl) {
-			SystemError (GetLastError(), "Could not load script resource:");
-			return 255;
-		}
-		p_script_info = (struct scriptinfo *)pScript = LockResource(hgbl);
-		if (!pScript)  {
-			SystemError (GetLastError(), "Could not lock script resource:");
-			return 255;
-		}
-	}
-	numScriptBytes = p_script_info->data_bytes;
-	pScript += sizeof(struct scriptinfo);
-	if (p_script_info->tag != 0x78563412) {
-		SystemError (0, "Bug: Invalid script resource");
+	if (!_LoadPythonDLL(hmod))
 		return 255;
-	}
-	pScript += strlen(p_script_info->zippath) + 1;
+
+	printf("dirname '%s', zippath '%s'\n", dirname, p_script_info->zippath);
+	printf("SUCCESS _load_python(" PYTHONDLL ")\n");
 	{
 		/* If the zip path has any path component, then build our Python
 		   home directory from that.
 		*/
-		char buffer[_MAX_PATH * 3 + _MAX_FNAME + _MAX_EXT];
 		char *fname;
 		int lib_dir_len;
 		pZipBaseName = pScript - 1;
+		/* let pZipBaseName point to the basename of the zippath */
 		while (pZipBaseName > p_script_info->zippath && \
 		       *(pZipBaseName-1) != '\\')
 			pZipBaseName--;
+		/* dirname is the directory of the executable */
 		strcpy(libdirname, dirname);
+		/* length of lib director name */
 		lib_dir_len = pZipBaseName-p_script_info->zippath; /* incl. tail slash */
 		if (lib_dir_len) {
 			char *p = libdirname+strlen(libdirname);
@@ -120,10 +207,11 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		}
 		/* Fully-qualify it */
 		GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
-		/* From Barry Scott */
-		/* Must not set the PYTHONHOME env var as this prevents
-		   python being used in os.system or os.popen */
-		Py_SetPythonHome(libdirname);
+	}
+	/* From Barry Scott */
+	/* Must not set the PYTHONHOME env var as this prevents
+	   python being used in os.system or os.popen */
+	Py_SetPythonHome(libdirname);
 
 /*
  * PYTHONPATH entries will be inserted in front of the
@@ -133,36 +221,38 @@ int init_with_instance(HMODULE hmod, char *frozen)
  * We need the module's directory, because zipimport needs zlib.pyd.
  * And, of course, the zipfile itself.
  */
+	{
+		char buffer[_MAX_PATH * 3 + 256];
 		sprintf(buffer, "PYTHONPATH=%s;%s\\%s",
 			libdirname, libdirname, pZipBaseName);
 		_putenv (buffer);
-		_putenv ("PYTHONSTARTUP=");
-		_putenv ("PYTHONOPTIMIZE=");
-		_putenv ("PYTHONDEBUG=");
-		_putenv("PYTHONINSPECT=");
+	}
+	_putenv ("PYTHONSTARTUP=");
+	_putenv ("PYTHONOPTIMIZE=");
+	_putenv ("PYTHONDEBUG=");
+	_putenv("PYTHONINSPECT=");
 
-		if (getenv("PY2EXEVERBOSE")) 
-			_putenv ("PYTHONVERBOSE=1");
-		else
-			_putenv ("PYTHONVERBOSE=");
+	if (getenv("PY2EXEVERBOSE")) 
+		_putenv ("PYTHONVERBOSE=1");
+	else
+		_putenv ("PYTHONVERBOSE=");
 
- 		if (p_script_info->unbuffered) {
+	if (p_script_info->unbuffered) {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
- 			_setmode(fileno(stdin), O_BINARY);
- 			_setmode(fileno(stdout), O_BINARY);
+		_setmode(fileno(stdin), O_BINARY);
+		_setmode(fileno(stdout), O_BINARY);
 #endif
 #ifdef HAVE_SETVBUF
- 			setvbuf(stdin,	(char *)NULL, _IONBF, BUFSIZ);
- 			setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
- 			setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stdin,	(char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stdout, (char *)NULL, _IONBF, BUFSIZ);
+		setvbuf(stderr, (char *)NULL, _IONBF, BUFSIZ);
 #else /* !HAVE_SETVBUF */
- 			setbuf(stdin,  (char *)NULL);
- 			setbuf(stdout, (char *)NULL);
- 			setbuf(stderr, (char *)NULL);
+		setbuf(stdin,  (char *)NULL);
+		setbuf(stdout, (char *)NULL);
+		setbuf(stderr, (char *)NULL);
 #endif /* !HAVE_SETVBUF */
- 		}
- 
 	}
+ 
 
 	Py_NoSiteFlag = 1;
 	Py_OptimizeFlag = p_script_info->optimize;
@@ -184,7 +274,7 @@ int init_with_instance(HMODULE hmod, char *frozen)
 	   run_dll.c passes "dll"
 	*/
 	if (frozen == NULL)
-		PySys_SetObject("frozen", Py_True);
+		PySys_SetObject("frozen", PyBool_FromLong(1));
 	else {
 		PyObject *o = PyString_FromString(frozen);
 		if (o) {
@@ -245,7 +335,7 @@ int run_script(void)
 			int i, max = PySequence_Length(seq);
 			for (i=0;i<max;i++) {
 				PyObject *sub = PySequence_GetItem(seq, i);
-				if (sub && PyCode_Check(sub)) {
+				if (sub /*&& PyCode_Check(sub) */) {
 					PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
 									    d, d);
 					if (!discard) {

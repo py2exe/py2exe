@@ -21,11 +21,14 @@
  * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
-
+#include "Python-dynload.h"
+#include <assert.h>
 #include <windows.h>
 #include <stdio.h>
 #include <olectl.h>
-#include <Python.h> // XXX
+//#include <Python.h> // XXX
+
+#include "../hacks/memimp/MemoryModule.h"
 
 // Function pointers we load from pythoncom
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
@@ -71,6 +74,7 @@ HMODULE gInstance = 0;
 extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
+extern void init_memimporter(void);
 
 int load_pythoncom(void)
 {
@@ -82,17 +86,21 @@ int load_pythoncom(void)
 #else
 	char *suffix = "";
 #endif
+/*
 	// no reference added by PySys_GetObject
 	PyObject *ob_vi = PySys_GetObject("version_info");
 	if (ob_vi && PyTuple_Check(ob_vi) && PyTuple_Size(ob_vi)>1) {
 		itoa(PyInt_AsLong(PyTuple_GET_ITEM(ob_vi, 0)), major, 10);
 		itoa(PyInt_AsLong(PyTuple_GET_ITEM(ob_vi, 1)), minor, 10);
 	}
+*/
 	// shouldn't do this twice
 	assert(gPythoncom == NULL);
 
-	snprintf(dll_path, sizeof(dll_path), "pythoncom%s%s%s.dll", major, minor, suffix);
-	gPythoncom = GetModuleHandle(dll_path);
+	snprintf(dll_path, sizeof(dll_path), PYTHONCOM);
+	gPythoncom = MyGetModuleHandle(dll_path);
+	// GetModuleFileNameA and LoadLibraryEx would not work in single-file dlls
+/*
 	if (gPythoncom == NULL) {
 		// not already loaded - try and load from the current dir
 		char *temp;
@@ -109,15 +117,34 @@ int load_pythoncom(void)
 					   LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 			); 
 	}
-	if (gPythoncom == NULL)
+*/
+	if (gPythoncom == NULL) {
+		OutputDebugString("GetModuleHandle pythoncom failed");
 		// give up in disgust
 		return -1;
+	}
 
-	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)GetProcAddress(gPythoncom, "DllCanUnloadNow");
-	Pyc_DllGetClassObject = (__PROC__DllGetClassObject)GetProcAddress(gPythoncom, "DllGetClassObject");
-	PyCom_CoUninitialize = (__PROC__PyCom_CoUninitialize)GetProcAddress(gPythoncom, "PyCom_CoUninitialize");
+	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)MyGetProcAddress(gPythoncom, "DllCanUnloadNow");
+	Pyc_DllGetClassObject = (__PROC__DllGetClassObject)MyGetProcAddress(gPythoncom, "DllGetClassObject");
+	PyCom_CoUninitialize = (__PROC__PyCom_CoUninitialize)MyGetProcAddress(gPythoncom, "PyCom_CoUninitialize");
 	return 0;
 }
+
+/* for debugging
+#define ODS(s) OutputDebugString(s)
+
+static int dprintf(char *fmt, ...)
+{
+	char Buffer[4096];
+	va_list marker;
+	int result;
+	
+	va_start(marker, fmt);
+	result = wvsprintf(Buffer, fmt, marker);
+	OutputDebugString(Buffer);
+	return result;
+}
+*/
 
 int check_init()
 {
@@ -132,10 +159,18 @@ int check_init()
 			   call in.
 			*/
 			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
-			if (Py_IsInitialized())
+			/* Before we call Python functions, we must make sure
+			   that the python dll is loaded - we are loading it
+			   at runtime now.  MyGetModuleHandle() should work,
+			   but we can aso check if the functions are
+			   available.
+			 */
+			if (Py_IsInitialized && Py_IsInitialized()) {
 				restore_state = PyGILState_Ensure();
+			}
 			// a little DLL magic.  Set sys.frozen='dll'
 			init_with_instance(gInstance, "dll");
+			init_memimporter();
 			frozen = PyInt_FromLong((LONG)gInstance);
 			if (frozen) {
 				PySys_SetObject("frozendllhandle", frozen);
@@ -234,7 +269,7 @@ STDAPI DllInstall(BOOL install, LPCWSTR cmdline)
 	if (!m) goto done;
 	func = PyObject_GetAttrString(m, "DllInstall");
 	if (!func) goto done;
-	args = Py_BuildValue("(Ou)", install ? Py_True : Py_False, cmdline);
+	args = Py_BuildValue("(Oi)", install ? 1 : 0, cmdline);
 	if (!args) goto done;
 	result = PyObject_Call(func, args, NULL);
 	if (result==NULL) goto done;
@@ -245,8 +280,9 @@ STDAPI DllInstall(BOOL install, LPCWSTR cmdline)
 	else if (result == Py_None)
 		; /* do nothing */
 	else
-		PySys_WriteStderr("Unexpected return type '%s' for DllInstall\n",
-						  result->ob_type->tp_name);
+		/* We cannot access internals of PyObject anymore */
+		PySys_WriteStderr("Unexpected return type for DllInstall\n");
+//						  result->ob_type->tp_name);
 done:
 	if (PyErr_Occurred()) {
 		PyErr_Print();

@@ -101,9 +101,13 @@ class BuildInterpreters(build_ext.build_ext):
             else:
                 exe_filename = os.path.join(self.build_lib,
                                             self.get_exe_filename(fullname))
+            if inter.target_desc == "executable":
+                exe_filename += ".exe"
+            else:
+                exe_filename += ".dll"
 
             if not (self.force or \
-                    newer_group(sources, exe_filename + '.exe', 'newer')):
+                    newer_group(sources + inter.depends, exe_filename, 'newer')):
                 self.announce("skipping '%s' interpreter (up-to-date)" %
                               inter.name)
                 continue # 'for' loop over all interpreters
@@ -126,7 +130,8 @@ class BuildInterpreters(build_ext.build_ext):
                                             macros=macros,
                                             include_dirs=inter.include_dirs,
                                             debug=self.debug,
-                                            extra_postargs=extra_args)
+                                            extra_postargs=extra_args,
+                                            depends=inter.depends)
 
             if inter.extra_objects:
                 objects.extend(inter.extra_objects)
@@ -147,25 +152,14 @@ class BuildInterpreters(build_ext.build_ext):
 
             # XXX - is msvccompiler.link broken?  From what I can see, the
             # following should work, instead of us checking the param:
-#            self.compiler.link(inter.target_desc,
-            if inter.target_desc == 'executable':
-                self.compiler.link_executable(
-                    objects, exe_filename, 
-                    libraries=self.get_libraries(inter),
-                    library_dirs=inter.library_dirs,
-                    runtime_library_dirs=inter.runtime_library_dirs,
-                    extra_postargs=extra_args,
-                    debug=self.debug)
-            else:
-                self.compiler.link_shared_lib(
-                    objects, exe_filename, 
-                    libraries=self.get_libraries(inter),
-                    library_dirs=inter.library_dirs,
-                    runtime_library_dirs=inter.runtime_library_dirs,
-                    export_symbols=inter.export_symbols,
-                    extra_postargs=extra_args,
-                    debug=self.debug)
-
+            self.compiler.link(inter.target_desc,
+                               objects, exe_filename, 
+                               libraries=self.get_libraries(inter),
+                               library_dirs=inter.library_dirs,
+                               runtime_library_dirs=inter.runtime_library_dirs,
+                               export_symbols=inter.export_symbols,
+                               extra_postargs=extra_args,
+                               debug=self.debug)
     # build_extensions ()
 
     def get_exe_fullname (self, inter_name):
@@ -299,17 +293,37 @@ class deinstall(Command):
 
 ############################################################################
 
+macros = [("PYTHONDLL", '\\"PYTHON%d%d.DLL\\"' % sys.version_info[:2]),
+          ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2])]
+depends = ["source/import-tab.c", "source/import-tab.h"]
+
 run = Interpreter("py2exe.run",
-                  ["source/run.c", "source/start.c", "source/icon.rc"],
+                  ["source/run.c", "source/start.c", "source/icon.rc",
+                   "source/Python-dynload.c",
+                   "hacks/memimp/MemoryModule.c",
+                   "hacks/memimp/_memimporter.c",
+                   ],
+                  depends=depends,
+                  define_macros=macros,
                   )
 
 run_w = Interpreter("py2exe.run_w",
-                    ["source/run_w.c", "source/start.c", "source/icon.rc"],
+                    ["source/run_w.c", "source/start.c", "source/icon.rc",
+                     "source/Python-dynload.c",
+                     "hacks/memimp/MemoryModule.c",
+                     "hacks/memimp/_memimporter.c",
+                     ],
                     libraries=["user32"],
+                    depends=depends,
+                    define_macros=macros,
                     )
 
 run_dll = Interpreter("py2exe.run_dll",
-                      ["source/run_dll.c", "source/start.c", "source/icon.rc"],
+                      ["source/run_dll.c", "source/start.c", "source/icon.rc",
+                       "source/Python-dynload.c",
+                       "hacks/memimp/MemoryModule.c",
+                       "hacks/memimp/_memimporter.c",
+                       ],
                       libraries=["user32"],
                       export_symbols=["DllCanUnloadNow,PRIVATE",
                                       "DllGetClassObject,PRIVATE",
@@ -317,10 +331,16 @@ run_dll = Interpreter("py2exe.run_dll",
                                       "DllUnregisterServer,PRIVATE",
                                       ],
                       target_desc = "shared_library",
+                      depends=depends,
+                      define_macros=macros,
                       )
 
 run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
-                             ["source/run_ctypes_dll.c", "source/start.c", "source/icon.rc"],
+                             ["source/run_ctypes_dll.c", "source/start.c", "source/icon.rc",
+                              "source/Python-dynload.c",
+                              "hacks/memimp/MemoryModule.c",
+                              "hacks/memimp/_memimporter.c",
+                              ],
                              libraries=["user32"],
                              export_symbols=["DllCanUnloadNow,PRIVATE",
                                              "DllGetClassObject,PRIVATE",
@@ -328,19 +348,26 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                                              "DllUnregisterServer,PRIVATE",
                                              ],
                              target_desc = "shared_library",
+                             depends=depends,
+                             define_macros=macros,
                              )
 
 run_isapi = Interpreter("py2exe.run_isapi",
                       ["source/run_isapi.c", "source/start.c",
+                       "source/Python-dynload.c",
+                       "hacks/memimp/MemoryModule.c",
+                       "hacks/memimp/_memimporter.c",
                        "source/icon.rc"],
-                      libraries=["user32"],
-                      export_symbols=["HttpExtensionProc",
-                                      "GetExtensionVersion",
-                                      "TerminateExtension",
-                                      "GetFilterVersion", "HttpFilterProc",
-                                      "TerminateFilter"],
-                      target_desc = "shared_library",
-                      )
+                        libraries=["user32"],
+                        export_symbols=["HttpExtensionProc",
+                                        "GetExtensionVersion",
+                                        "TerminateExtension",
+                                        "GetFilterVersion", "HttpFilterProc",
+                                        "TerminateFilter"],
+                        target_desc = "shared_library",
+                        depends=depends,
+                        define_macros=macros,
+                        )
 
 interpreters = [run, run_w, run_dll, run_ctypes_dll, run_isapi]
 
