@@ -33,7 +33,7 @@
 #include <eval.h>
 */
 #include "Python-dynload.h"
-
+#include "../hacks/memimp/MemoryModule.h"
 #include <stdio.h>
 #include <windows.h>
 
@@ -61,6 +61,19 @@ char dirname[_MAX_PATH]; // directory part of GetModuleName()
 char libdirname[_MAX_PATH]; // library directory - probably same as above.
 char libfilename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // library filename
 struct scriptinfo *p_script_info;
+
+
+static int dprintf(char *fmt, ...)
+{
+	char Buffer[4096];
+	va_list marker;
+	int result;
+	
+	va_start(marker, fmt);
+	result = vsprintf(Buffer, fmt, marker);
+	OutputDebugString(Buffer);
+	return result;
+}
 
 static BOOL _LocateScript(HMODULE hmod)
 {
@@ -123,14 +136,14 @@ static char *MapExistingFile(char *pathname, DWORD *psize)
 		return NULL;
 	nSizeLow = GetFileSize(hFile, &nSizeHigh);
 	hFileMapping = CreateFileMapping(hFile,
-					  NULL, PAGE_READONLY, 0, 0, NULL);
+					 NULL, PAGE_READONLY, 0, 0, NULL);
 	CloseHandle(hFile);
 
 	if (hFileMapping == INVALID_HANDLE_VALUE)
 		return NULL;
-    
+
 	data = MapViewOfFile(hFileMapping,
-			      FILE_MAP_READ, 0, 0, 0);
+			     FILE_MAP_READ, 0, 0, 0);
 
 	CloseHandle(hFileMapping);
 	if (psize)
@@ -142,6 +155,7 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 {
 	HRSRC hrsrc;
 	char *pBaseAddress;
+	int size;
 
 	// Try to locate pythonxy.dll as resource in the exe
 	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), PYTHONDLL);
@@ -151,30 +165,77 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 			SystemError(GetLastError(), "Could not load python dll");
 			return FALSE;
 		}
+		dprintf("Loaded pythondll as RESOURCE\n");
 		return TRUE;
 	}
 
 	// try to load pythonxy.dll as bytes at the start of the zipfile
-	pBaseAddress = MapExistingFile(libfilename, NULL);
+	pBaseAddress = MapExistingFile(libfilename, &size);
 	if (pBaseAddress) {
-		int res;
+		int res = 0;
 		if (0 == strncmp(pBaseAddress, "<pythondll>", 11))
 			res = _load_python(PYTHONDLL, pBaseAddress + 11 + sizeof(int));
 		UnmapViewOfFile(pBaseAddress);
-		if (res)
+		if (res) {
+			dprintf("Loaded pythondll as <pythondll> from %s\n", libfilename);
 			return TRUE;
+		}
 	}
+
 	// try to load pythonxy.dll from the file system
 	{
 		char buffer[_MAX_PATH + _MAX_FNAME + _MAX_EXT];
 		snprintf(buffer, sizeof(buffer), "%s\\%s", dirname, PYTHONDLL);
-		printf("*** LoadLibrary %s\n", buffer);
 		if (!_load_python(buffer, NULL)) {
 			SystemError(GetLastError(), "LoadLibrary(pythondll) failed");
 			return FALSE;
 		}
+		dprintf("Loaded pythondll from file %s\n", buffer);
 	}
 	return TRUE;
+}
+
+void _Import_Zlib(char *pdata)
+{
+	HMODULE hlib;
+	hlib = MemoryLoadLibrary("zlib.pyd", pdata, NULL, NULL);
+	if (hlib) {
+		void (*proc)(void);
+		proc = (void(*)(void))MemoryGetProcAddress(hlib, "initzlib");
+		if (proc) 
+			proc();
+	}
+}
+
+void _TryLoadZlib(HMODULE hmod)
+{
+	char *pBaseAddress;
+	char *pdata;
+	HRSRC hrsrc;
+
+	// Try to locate pythonxy.dll as resource in the exe
+	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "ZLIB.PYD");
+	if (hrsrc) {
+		HGLOBAL hglb = LoadResource(hmod, hrsrc);
+		if (hglb) {
+			_Import_Zlib(LockResource(hglb));
+		}
+		return;
+	}
+
+	// try to load zlib.pyd as bytes at the start of the zipfile
+	pdata = pBaseAddress = MapExistingFile(libfilename, NULL);
+	if (pBaseAddress) {
+		if (0 == strncmp(pBaseAddress, "<pythondll>", 11)) {
+			pdata += 11;
+			pdata += *(int *)pdata + sizeof(int);
+		}
+		if (0 == strncmp(pdata, "<zlib.pyd>", 10)) {
+			pdata += 10 + sizeof(int);
+			_Import_Zlib(pdata);
+		}
+		UnmapViewOfFile(pBaseAddress);
+	}
 }
 
 /*
@@ -188,8 +249,6 @@ int init_with_instance(HMODULE hmod, char *frozen)
 	if (!_LoadPythonDLL(hmod))
 		return 255;
 
-	printf("dirname '%s', zippath '%s'\n", dirname, p_script_info->zippath);
-	printf("SUCCESS _load_python(" PYTHONDLL ")\n");
 	{
 		/* If the zip path has any path component, then build our Python
 		   home directory from that.
@@ -289,6 +348,9 @@ int init_with_instance(HMODULE hmod, char *frozen)
 			Py_DECREF(o);
 		}
 	}
+
+	_TryLoadZlib(hmod);
+
 	/* clean up the environment so that os.system
 	   and os.popen processes can run python the normal way */
 	/* Hm, actually it would be better to set them to values saved before
