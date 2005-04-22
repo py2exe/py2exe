@@ -109,11 +109,39 @@ static BOOL _LocateScript(HMODULE hmod)
 	return TRUE; // success
 }
 
+static char *MapExistingFile(char *pathname, DWORD *psize)
+{
+	HANDLE hFile, hFileMapping;
+	DWORD nSizeLow, nSizeHigh;
+	char *data;
+
+	hFile = CreateFile(pathname,
+			    GENERIC_READ, FILE_SHARE_READ, NULL,
+			    OPEN_EXISTING,
+			    FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return NULL;
+	nSizeLow = GetFileSize(hFile, &nSizeHigh);
+	hFileMapping = CreateFileMapping(hFile,
+					  NULL, PAGE_READONLY, 0, 0, NULL);
+	CloseHandle(hFile);
+
+	if (hFileMapping == INVALID_HANDLE_VALUE)
+		return NULL;
+    
+	data = MapViewOfFile(hFileMapping,
+			      FILE_MAP_READ, 0, 0, 0);
+
+	CloseHandle(hFileMapping);
+	if (psize)
+		*psize = nSizeLow;
+	return data;
+}
+
 static BOOL _LoadPythonDLL(HMODULE hmod)
 {
 	HRSRC hrsrc;
-	char buffer[32];
-	FILE *fp;
+	char *pBaseAddress;
 
 	// Try to locate pythonxy.dll as resource in the exe
 	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), PYTHONDLL);
@@ -126,36 +154,15 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 		return TRUE;
 	}
 
-	// Try to load pythonxy.dll from the start of the library.zip file
-	fp = fopen(libfilename, "rb");
-	if (fp == NULL) {
-		SystemError(0, "Could not open zipfile for reading");
-		return FALSE;
-	}
-	memset(buffer, 0, sizeof(buffer));
-	if (11 != fread(buffer, 1, 11, fp)) {
-		SystemError(0, "Could not read data from zipfile");
-		return FALSE;
-	}
-	if (0 == strcmp(buffer, "<pythondll>")) {
-		int nBytes, res;
-		char *p;
-
-		fread(&nBytes, 1, sizeof(int), fp);
-		p = malloc(nBytes);
-		if (p == NULL) {
-			SystemError(0, "Could not allocate memory for pythondll");
-			return FALSE;
-		}
-		fread(p, 1, nBytes, fp);
-		fclose(fp);
-		res = _load_python(PYTHONDLL, p);
-		free(p);
-		if (!res) {
-			SystemError(GetLastError(), "Could not load python dll");
-			return FALSE;
-		}
-		return TRUE;
+	// try to load pythonxy.dll as bytes at the start of the zipfile
+	pBaseAddress = MapExistingFile(libfilename, NULL);
+	if (pBaseAddress) {
+		int res;
+		if (0 == strncmp(pBaseAddress, "<pythondll>", 11))
+			res = _load_python(PYTHONDLL, pBaseAddress + 11 + sizeof(int));
+		UnmapViewOfFile(pBaseAddress);
+		if (res)
+			return TRUE;
 	}
 	// try to load pythonxy.dll from the file system
 	{
