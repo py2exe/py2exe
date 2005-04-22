@@ -89,17 +89,17 @@ void Unregister(MEMORYMODULE *module)
 HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 {
 	MEMORYMODULE *p = loaded;
-	OutputDebugString(lpModuleName);
+//	OutputDebugString(lpModuleName);
 	while (p) {
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(lpModuleName, p->name)) {
-			OutputDebugString("MyGetModuleHandle -> return MEMORYMODULE");
+//			OutputDebugString("MyGetModuleHandle -> return MEMORYMODULE");
 			return (HMODULE)p;
 		}
 		p = p->next;
 	}
-	OutputDebugString(lpModuleName);
-	OutputDebugString("MyGetModuleHandle -> calling GetModuleHandle()");
+//	OutputDebugString(lpModuleName);
+//	OutputDebugString("MyGetModuleHandle -> calling GetModuleHandle()");
 	return GetModuleHandle(lpModuleName);
 }
 
@@ -332,9 +332,10 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 			DWORD *thunkRef, *funcRef;
 			HMODULE handle = MyLoadLibrary(codeBase + importDesc->Name,
 						       findproc, userdata);
-			fprintf(stderr, "MEM: LoadLibrary(%s) -> %x\n", (LPCSTR)(codeBase + importDesc->Name), handle);
+//			fprintf(stderr, "MEM: LoadLibrary(%s) -> %x\n", (LPCSTR)(codeBase + importDesc->Name), handle);
 			if (handle == INVALID_HANDLE_VALUE)
 			{
+				//LastError should already be set
 #if DEBUG_OUTPUT
 				OutputLastError("Can't load library");
 #endif
@@ -345,6 +346,7 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 			module->modules = (HMODULE *)realloc(module->modules, (module->numModules+1)*(sizeof(HMODULE)));
 			if (module->modules == NULL)
 			{
+				SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 				result = 0;
 				break;
 			}
@@ -369,6 +371,7 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 				}
 				if (*funcRef == 0)
 				{
+					SetLastError(ERROR_PROC_NOT_FOUND);
 					result = 0;
 					break;
 				}
@@ -392,10 +395,11 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 	DllEntryProc DllEntry;
 	BOOL successfull;
 
-	fprintf(stderr, "MemoryLoadLibrary %s\n", name);
+//	fprintf(stderr, "MemoryLoadLibrary %s\n", name);
 	dos_header = (PIMAGE_DOS_HEADER)data;
 	if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
 	{
+		SetLastError(ERROR_BAD_FORMAT);
 #if DEBUG_OUTPUT
 		OutputDebugString("Not a valid executable file.\n");
 #endif
@@ -405,6 +409,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 	old_header = (PIMAGE_NT_HEADERS)&((const unsigned char *)(data))[dos_header->e_lfanew];
 	if (old_header->Signature != IMAGE_NT_SIGNATURE)
 	{
+		SetLastError(ERROR_BAD_FORMAT);
 #if DEBUG_OUTPUT
 		OutputDebugString("No PE header found.\n");
 #endif
@@ -426,6 +431,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
     
 	if (code == NULL)
 	{
+		SetLastError(ERROR_NOT_ENOUGH_MEMORY);
 #if DEBUG_OUTPUT
 		OutputLastError("Can't reserve memory");
 #endif
@@ -484,6 +490,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 		DllEntry = (DllEntryProc)(code + result->headers->OptionalHeader.AddressOfEntryPoint);
 		if (DllEntry == 0)
 		{
+			SetLastError(ERROR_BAD_FORMAT); /* XXX ? */
 #if DEBUG_OUTPUT
 			OutputDebugString("Library has no entry point.\n");
 #endif
