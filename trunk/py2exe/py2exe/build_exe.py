@@ -141,14 +141,14 @@ class py2exe(Command):
         ("xref", 'x',
          "create and show a module cross reference"),
 
-        ("single-file", 's',
-         "create a single-file executable (well, two files at least;-)"),
+        ("bundle-files=", 'b',
+         "bundle dlls in the zipfile or the exe. Valid levels are 1, 2, or 3 (default)"),
 
         ("ascii", 'a',
          "do not automatically include encodings and codecs"),
         ]
 
-    boolean_options = ["compressed", "xref", "single-file", "ascii"]
+    boolean_options = ["compressed", "xref", "ascii"]
 
     def initialize_options (self):
         self.xref =0
@@ -162,7 +162,7 @@ class py2exe(Command):
         self.dist_dir = None
         self.dll_excludes = None
         self.typelibs = None
-        self.single_file = 0
+        self.bundle_files = 3
         self.ascii = 0
 
     def finalize_options (self):
@@ -170,6 +170,10 @@ class py2exe(Command):
         self.excludes = fancy_split(self.excludes)
         self.includes = fancy_split(self.includes)
         self.ignores = fancy_split(self.ignores)
+        self.bundle_files = int(self.bundle_files)
+        if self.bundle_files < 1 or self.bundle_files > 3:
+            raise DistutilsOptionError, \
+                  "single-file must be 1, 2, or 3, not %s" % self.bundle_files
         # includes is stronger than excludes
         for m in self.includes:
             if m in self.excludes:
@@ -363,7 +367,7 @@ class py2exe(Command):
             # pythoncom23.dll into pythoncom.dll, and win32com contains
             # magic which relies on this exact filename.
             # So we do it via a custom loader - see create_loader()
-            if not self.single_file:
+            if self.bundle_files > 2: # don't bundle pyds and dlls
                 dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
                 self.copy_file(src, dst)
                 self.lib_files.append(dst)
@@ -374,8 +378,8 @@ class py2exe(Command):
 
     def copy_dlls(self, dlls):
         self.announce("*** copy dlls ***")
-        if self.single_file:
-            self.copy_dlls_single_file(dlls)
+        if self.bundle_files < 3:
+            self.copy_dlls_bundle_files(dlls)
             return
         for dll in dlls:
             base = os.path.basename(dll)
@@ -401,31 +405,26 @@ class py2exe(Command):
 
             self.lib_files.append(dst)
 
-    def copy_dlls_single_file(self, dlls):
+    def copy_dlls_bundle_files(self, dlls):
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
-                # These special dlls cannot be in the lib directory,
-                # they must go into the exe directory.
+                # These special dlls cannot be bundled in the normal way
+                # Currently, these are pythonxy.dll and w9xpopen.exe
                 dst = os.path.join(self.exe_dir, base)
                 _, copied = self.copy_file(dll, dst)
                 if not self.dry_run and copied and base.lower() == python_dll.lower():
-                    # If we actually copied pythonxy.dll, we have to patch it.
-                    #
-                    # Previously, the code did it every time, but this
-                    # breaks if, for example, someone runs UPX over the
-                    # dist directory.  Patching an UPX'd dll seems to work
-                    # (no error is detected when patching), but the
-                    # resulting dll does not work anymore.
-                    # 
-                    # The function restores the file times so
-                    # dependencies still work correctly.
+                    # If we actually copied pythonxy.dll, we have to
+                    # patch it.  Well, since it's impossible to load
+                    # resources from the bundled dlls it probably
+                    # doesn't matter.
                     self.patch_python_dll_winver(dst)
-
                 self.lib_files.append(dst)
                 continue
+
             dst = os.path.join(self.collect_dir, os.path.basename(dll))
             self.copy_file(dll, dst)
+            # Make sure they will be included into the zipfile.
             self.compiled_files.append(os.path.basename(dst))
 
     def create_binaries(self, py_files, extensions, dlls):
@@ -521,19 +520,24 @@ class py2exe(Command):
 
         if dist.zipfile is None:
             os.unlink(arcname)
-
-        if self.single_file:
-            if self.distribution.zipfile:
-                print "Adding %s to %s" % (python_dll, arcname)
+        else:
+            if self.bundle_files < 2 or self.compressed:
                 arcbytes = open(arcname, "rb").read()
                 arcfile = open(arcname, "wb")
-                arcfile.write("<pythondll>")
-                bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
-                print "size of pythondll is %d bytes" % len(bytes)
-                arcfile.write(struct.pack("i", len(bytes)))
-                arcfile.write(bytes) # python dll
+
+                if self.bundle_files < 2: # bundle pythonxy.dll also
+                    print "Adding %s to %s" % (python_dll, arcname)
+                    arcfile.write("<pythondll>")
+                    bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
+                    print "size of pythondll is %d bytes" % len(bytes)
+                    arcfile.write(struct.pack("i", len(bytes)))
+                    arcfile.write(bytes) # python dll
+                
+                    # remove python dll from the exe_dir, since it is now bundled.
+                    os.remove(os.path.join(self.exe_dir, python_dll))
 
                 if self.compressed:
+                    # prepend zlib.pyd also
                     print "Adding zlib.pyd to %s at %d" % (arcname, arcfile.tell())
                     arcfile.write("<zlib.pyd>")
                     zlib_file = imp.find_module("zlib")[0]
@@ -542,8 +546,6 @@ class py2exe(Command):
                     arcfile.write(bytes) # zlib.pyd
 
                 arcfile.write(arcbytes)
-            # remove the bundled python dll
-            os.remove(os.path.join(self.exe_dir, python_dll))
 
     # for user convenience, let subclasses override the templates to use
     def get_console_template(self):
@@ -689,7 +691,7 @@ class py2exe(Command):
         boot_code = compile(file(boot, "U").read(),
                             os.path.abspath(boot), "exec")
         code_objects = [boot_code]
-        if self.single_file:
+        if self.bundle_files < 3:
             code_objects.append(
                 compile("import zipextimporter; zipextimporter.install()",
                         "<install zipextimporter>", "exec"))
@@ -717,28 +719,28 @@ class py2exe(Command):
         self.announce("add script resource, %d bytes" % len(script_bytes))
         if not self.dry_run:
             add_resource(unicode(exe_path), script_bytes, u"PYTHONSCRIPT", 1, True)
+
             # add the pythondll as resource, and delete in self.exe_dir
-            if self.single_file:
+            if self.bundle_files < 2 and self.distribution.zipfile is None:
+                # bundle pythonxy.dll
                 dll_path = os.path.join(self.exe_dir, python_dll)
                 bytes = open(dll_path, "rb").read()
                 # image, bytes, lpName, lpType
 
-                if self.distribution.zipfile is None:
-                    print "Adding %s as resource" % python_dll
-                    add_resource(unicode(exe_path), bytes,
-                                 # for some reason, the 3. argument MUST BE UPPER CASE,
-                                 # otherwise the resource will not be found.
-                                 unicode(python_dll).upper(), 1, False)
+                print "Adding %s as resource" % python_dll
+                add_resource(unicode(exe_path), bytes,
+                             # for some reason, the 3. argument MUST BE UPPER CASE,
+                             # otherwise the resource will not be found.
+                             unicode(python_dll).upper(), 1, False)
 
-                    if self.compressed:
-                        print "Adding zlib.pyd as resource"
-                        zlib_bytes = imp.find_module("zlib")[0].read()
-                        add_resource(unicode(exe_path), zlib_bytes,
-                                     # for some reason, the 3. argument MUST BE UPPER CASE,
-                                     # otherwise the resource will not be found.
-                                u"ZLIB.PYD", 1, False)
+            if self.bundle_files < 3 and self.compressed:
+                print "Adding zlib.pyd as resource"
+                zlib_bytes = imp.find_module("zlib")[0].read()
+                add_resource(unicode(exe_path), zlib_bytes,
+                             # for some reason, the 3. argument MUST BE UPPER CASE,
+                             # otherwise the resource will not be found.
+                             u"ZLIB.PYD", 1, False)
  
-##later...                os.remove(dll_path)
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
@@ -939,7 +941,7 @@ class py2exe(Command):
             # we don't need them in the zipfile we build.
             if item.__name__ == "__main__":
                 continue
-            if self.single_file and item.__name__ in ("pythoncom", "pywintypes"):
+            if self.bundle_files < 3 and item.__name__ in ("pythoncom", "pywintypes"):
                 # these are handled specially in zipextimporter.
                 continue
             src = item.__file__
@@ -954,7 +956,7 @@ class py2exe(Command):
                     py_files.append(item)
                 elif suffix in _c_suffixes:
                     extensions.append(item)
-                    if not self.single_file:
+                    if not self.bundle_files < 3:
                         loader = self.create_loader(item)
                         if loader:
                             py_files.append(loader)
@@ -1012,7 +1014,7 @@ class py2exe(Command):
         if not self.ascii:
             self.packages.append("encodings")
             self.includes.append("codecs")
-        if self.single_file:
+        if self.bundle_files < 3:
             self.includes.append("zipextimporter")
             self.excludes.append("_memimporter")
 ##        if self.compressed:
