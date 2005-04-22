@@ -178,10 +178,6 @@ class py2exe(Command):
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
-        if self.single_file:
-            if self.compressed:
-                self.warn("compressed is incompatible with single-file: ignored")
-            self.compressed = 0
 
     def run(self):
         build = self.reinitialize_command('build')
@@ -533,8 +529,18 @@ class py2exe(Command):
                 arcfile = open(arcname, "wb")
                 arcfile.write("<pythondll>")
                 bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
+                print "size of pythondll is %d bytes" % len(bytes)
                 arcfile.write(struct.pack("i", len(bytes)))
                 arcfile.write(bytes) # python dll
+
+                if self.compressed:
+                    print "Adding zlib.pyd to %s at %d" % (arcname, arcfile.tell())
+                    arcfile.write("<zlib.pyd>")
+                    zlib_file = imp.find_module("zlib")[0]
+                    bytes = zlib_file.read()
+                    arcfile.write(struct.pack("i", len(bytes)))
+                    arcfile.write(bytes) # zlib.pyd
+
                 arcfile.write(arcbytes)
             # remove the bundled python dll
             os.remove(os.path.join(self.exe_dir, python_dll))
@@ -723,6 +729,14 @@ class py2exe(Command):
                                  # for some reason, the 3. argument MUST BE UPPER CASE,
                                  # otherwise the resource will not be found.
                                  unicode(python_dll).upper(), 1, False)
+
+                    if self.compressed:
+                        print "Adding zlib.pyd as resource"
+                        zlib_bytes = imp.find_module("zlib")[0].read()
+                        add_resource(unicode(exe_path), zlib_bytes,
+                                     # for some reason, the 3. argument MUST BE UPPER CASE,
+                                     # otherwise the resource will not be found.
+                                u"ZLIB.PYD", 1, False)
  
 ##later...                os.remove(dll_path)
         # Handle all resources specified by the target
