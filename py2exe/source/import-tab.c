@@ -7,6 +7,7 @@
 	{ "PyMarshal_ReadObjectFromString", NULL },
 	{ "PyObject_CallFunction", NULL },
 	{ "PyString_AsStringAndSize", NULL },
+	{ "PyString_AsString", NULL },
 	{ "PyArg_ParseTuple", NULL },
 	{ "PyErr_Format", NULL },
 	{ "PyImport_ImportModule", NULL },
