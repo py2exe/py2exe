@@ -25,7 +25,9 @@
 #include <windows.h>
 #include "httpext.h"
 #include <httpfilt.h>
-#include "Python.h"
+//#include "Python.h"
+#include <stdio.h>
+#include "Python-dynload.h"
 
 
 typedef BOOL (__stdcall *__PROC__GetExtensionVersion)(HSE_VERSION_INFO  *pVer);
@@ -132,8 +134,11 @@ BOOL check_init()
 				PyObject *main = PyImport_ImportModule("__main__");
 				if (main) {
 					PyObject *name = PyObject_GetAttrString(main, "isapi_module_name");
-					if (name && PyString_Check(name))
-						(*pPyISAPISetOptions)(PyString_AS_STRING(name), TRUE);
+					char *str;
+					if (name && (str = PyString_AsString(name)))
+						(*pPyISAPISetOptions)(str, TRUE);
+					else
+						PyErr_Clear(); // In case PyString_AsString fails
 					Py_XDECREF(name);
 				}
 				Py_DECREF(main);

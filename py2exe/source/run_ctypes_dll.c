@@ -25,7 +25,9 @@
 #include <windows.h>
 #include <stdio.h>
 #include <olectl.h>
-#include <Python.h> // XXX
+
+#include <assert.h>
+#include "Python-dynload.h"
 
 // Function pointers we load from _ctypes.pyd
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
