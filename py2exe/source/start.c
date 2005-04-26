@@ -248,6 +248,10 @@ int init_with_instance(HMODULE hmod, char *frozen)
 
 	if (!_LoadPythonDLL(hmod))
 		return 255;
+	if (getenv("PY2EXE_VERBOSE")) {
+		Py_VerboseFlag = atoi(getenv("PY2EXE_VERBOSE"));
+	} else
+		Py_VerboseFlag = 0;
 
 	{
 		/* If the zip path has any path component, then build our Python
@@ -297,11 +301,6 @@ int init_with_instance(HMODULE hmod, char *frozen)
 	_putenv ("PYTHONOPTIMIZE=");
 	_putenv ("PYTHONDEBUG=");
 	_putenv("PYTHONINSPECT=");
-
-	if (getenv("PY2EXEVERBOSE")) 
-		_putenv ("PYTHONVERBOSE=1");
-	else
-		_putenv ("PYTHONVERBOSE=");
 
 	if (p_script_info->unbuffered) {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
