@@ -889,10 +889,15 @@ class py2exe(Command):
 
         self.announce("Resolving binary dependencies:")
         
-        alldlls, warnings = bin_depends(loadpath, images, dll_excludes)
+        # we add python.exe (aka sys.executable) to the list of images
+        # to scan for dependencies, but remove it later again from the
+        # results list.  In this way pythonXY.dll is collected, and
+        # also the libraries it depends on.
+        alldlls, warnings = bin_depends(loadpath, images + [sys.executable], dll_excludes)
+        alldlls.remove(sys.executable)
         for dll in alldlls:
             self.announce("  %s" % dll)
-        # ... but we don't need python.exe
+        # ... but we don't need the exe stubs run_xxx.exe
         for t in templates:
             alldlls.remove(t)
 
@@ -1019,8 +1024,7 @@ class py2exe(Command):
         if self.bundle_files < 3:
             self.includes.append("zipextimporter")
             self.excludes.append("_memimporter") # builtin in run_*.exe and run_*.dll
-##        if self.compressed:
-        if 1:
+        if self.compressed:
             self.includes.append("zlib")
 
         # os.path will never be found ;-)
