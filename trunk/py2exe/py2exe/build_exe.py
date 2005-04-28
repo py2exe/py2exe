@@ -264,6 +264,18 @@ class py2exe(Command):
             print "The following modules appear to be missing"
             print mf.any_missing()
 
+        if self.other_depends:
+            print
+            print "*** binary dependencies ***"
+            print "Your executable(s) also depend on these dlls which are not included,"
+            print "you may or may not need to distribute them."
+            print
+            print "Make sure you have the license if you distribute any of them, and"
+            print "make sure you don't distribute files belonging to the operating system."
+            print
+            for fnm in self.other_depends:
+                print "\t%s - %s" % (os.path.basename(fnm), fnm)
+
     def create_modulefinder(self):
         from modulefinder import ModuleFinder, ReplacePackage
         ReplacePackage("_xmlplus", "xml")
@@ -320,9 +332,11 @@ class py2exe(Command):
         dlls = [item.__file__ for item in extensions]
 ##        extra_path = ["."] # XXX
         extra_path = []
-        dlls, unfriendly_dlls = self.find_dependend_dlls(dlls,
-                                                         extra_path + sys.path,
-                                                         self.dll_excludes)
+        dlls, unfriendly_dlls, other_depends = \
+              self.find_dependend_dlls(dlls,
+                                       extra_path + sys.path,
+                                       self.dll_excludes)
+        self.other_depends = other_depends
         # dlls contains the path names of all dlls we need.
         # If a dll uses a function PyImport_ImportModule (or what was it?),
         # it's name is additionally in unfriendly_dlls.
@@ -521,7 +535,7 @@ class py2exe(Command):
         if dist.zipfile is None:
             os.unlink(arcname)
         else:
-            if self.bundle_files < 2 or self.compressed:
+            if self.bundle_files < 3 or self.compressed:
                 arcbytes = open(arcname, "rb").read()
                 arcfile = open(arcname, "wb")
 
@@ -529,13 +543,12 @@ class py2exe(Command):
                     print "Adding %s to %s" % (python_dll, arcname)
                     arcfile.write("<pythondll>")
                     bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
-                    print "size of pythondll is %d bytes" % len(bytes)
                     arcfile.write(struct.pack("i", len(bytes)))
                     arcfile.write(bytes) # python dll
                 
                 if self.compressed:
                     # prepend zlib.pyd also
-                    print "Adding zlib.pyd to %s at %d" % (arcname, arcfile.tell())
+                    print "Adding zlib.pyd to %s" % (arcname,)
                     arcfile.write("<zlib.pyd>")
                     zlib_file = imp.find_module("zlib")[0]
                     bytes = zlib_file.read()
@@ -729,14 +742,14 @@ class py2exe(Command):
                 bytes = open(dll_path, "rb").read()
                 # image, bytes, lpName, lpType
 
-                print "Adding %s as resource" % python_dll
+                print "Adding %s as resource to %s" % (python_dll, exe_path)
                 add_resource(unicode(exe_path), bytes,
                              # for some reason, the 3. argument MUST BE UPPER CASE,
                              # otherwise the resource will not be found.
                              unicode(python_dll).upper(), 1, False)
 
-            if self.bundle_files < 3 and self.compressed:
-                print "Adding zlib.pyd as resource"
+            if self.compressed and self.bundle_files < 3 and self.distribution.zipfile is None:
+                print "Adding zlib.pyd as resource to %s" % exe_path
                 zlib_bytes = imp.find_module("zlib")[0].read()
                 add_resource(unicode(exe_path), zlib_bytes,
                              # for some reason, the 3. argument MUST BE UPPER CASE,
@@ -893,7 +906,8 @@ class py2exe(Command):
         # to scan for dependencies, but remove it later again from the
         # results list.  In this way pythonXY.dll is collected, and
         # also the libraries it depends on.
-        alldlls, warnings = bin_depends(loadpath, images + [sys.executable], dll_excludes)
+        alldlls, warnings, other_depends = \
+                 bin_depends(loadpath, images + [sys.executable], dll_excludes)
         alldlls.remove(sys.executable)
         for dll in alldlls:
             self.announce("  %s" % dll)
@@ -901,7 +915,7 @@ class py2exe(Command):
         for t in templates:
             alldlls.remove(t)
 
-        return alldlls, warnings
+        return alldlls, warnings, other_depends
     # find_dependend_dlls()
 
     def get_hidden_imports(self):
@@ -1220,6 +1234,7 @@ def bin_depends(path, images, excluded_dlls):
     warnings = FileSet()
     images = FileSet(images)
     dependents = FileSet()
+    others = FileSet()
     while images:
         for image in images.copy():
             images.remove(image)
@@ -1229,14 +1244,16 @@ def bin_depends(path, images, excluded_dlls):
                 loadpath = os.path.dirname(abs_image) + ';' + path
                 for result in py2exe_util.depends(image, loadpath).items():
                     dll, uses_import_module = result
+                    if isSystemDLL(dll):
+                        others.add(dll)
+                        continue
                     if not dll in images \
                        and not dll in dependents \
-                       and not os.path.basename(dll).lower() in excluded_dlls \
-                       and not isSystemDLL(dll):
+                       and not os.path.basename(dll).lower() in excluded_dlls:
                         images.add(dll)
                         if uses_import_module:
                             warnings.add(dll)
-    return dependents, warnings
+    return dependents, warnings, others
     
 # DLLs to be excluded
 # XXX This list is NOT complete (it cannot be)
@@ -1269,7 +1286,8 @@ EXCLUDED_DLLS = (
     "ws2_32.dll",
     "ws2help.dll",
     "wsock32.dll",
-    "netapi32.dll"
+    "netapi32.dll",
+    "msvcr71.dll"
     )
 
 def isSystemDLL(pathname):
