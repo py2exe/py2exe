@@ -34,7 +34,6 @@
 #ifdef DEBUG_OUTPUT
 #include <stdio.h>
 #endif
-#include <stdio.h>
 
 #include "MemoryModule.h"
 
@@ -67,7 +66,6 @@ MEMORYMODULE *loaded; /* linked list of loaded memory modules */
 
 void Register(char *name, MEMORYMODULE *module)
 {
-	module->name = strdup(name);
 	module->next = loaded;
 	if (loaded)
 		loaded->prev = module;
@@ -89,41 +87,44 @@ void Unregister(MEMORYMODULE *module)
 HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 {
 	MEMORYMODULE *p = loaded;
-//	OutputDebugString(lpModuleName);
 	while (p) {
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(lpModuleName, p->name)) {
-//			OutputDebugString("MyGetModuleHandle -> return MEMORYMODULE");
 			return (HMODULE)p;
 		}
 		p = p->next;
 	}
-//	OutputDebugString(lpModuleName);
-//	OutputDebugString("MyGetModuleHandle -> calling GetModuleHandle()");
 	return GetModuleHandle(lpModuleName);
 }
 
 HMODULE MyLoadLibrary(char *lpFileName, FINDPROC findproc, void *userdata)
 {
 	MEMORYMODULE *p = loaded;
+	HMODULE hMod;
 	while (p) {
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(lpFileName, p->name)) {
 			p->refcount++;
+//			fprintf(stderr, "MyLoadLibrary DID find %s as %s\n", lpFileName, p->name);
 			return (HMODULE)p;
 		}
 		p = p->next;
 	}
+//	fprintf(stderr, "MyLoadLibrary did not find %s loaded\n", lpFileName);
 	if (findproc) {
 		void *pdata = findproc(lpFileName, userdata);
+//		if (pdata)
+//			fprintf(stderr, "MyLoadLibrary.findproc found %s\n", lpFileName);
 		if (pdata) {
-			HMODULE hMod = MemoryLoadLibrary(lpFileName, pdata,
-							 findproc, userdata);
+			hMod = MemoryLoadLibrary(lpFileName, pdata,
+						 findproc, userdata);
 			free(p);
 			return hMod;
 		}
 	}
-	return LoadLibrary(lpFileName);
+	hMod = LoadLibrary(lpFileName);
+//	fprintf(stderr, "Loaded %s with LoadLibrary, handle %p\n", lpFileName, hMod);
+	return hMod;
 }
 
 FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
@@ -330,9 +331,10 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 		for (; !IsBadReadPtr(importDesc, sizeof(IMAGE_IMPORT_DESCRIPTOR)) && importDesc->Name; importDesc++)
 		{
 			DWORD *thunkRef, *funcRef;
-			HMODULE handle = MyLoadLibrary(codeBase + importDesc->Name,
-						       findproc, userdata);
-//			fprintf(stderr, "MEM: LoadLibrary(%s) -> %x\n", (LPCSTR)(codeBase + importDesc->Name), handle);
+			HMODULE handle;
+//			fprintf(stderr, "%s requires %s\n", module->name, (LPCSTR)(codeBase + importDesc->Name));
+			handle = MyLoadLibrary(codeBase + importDesc->Name,
+					       findproc, userdata);
 			if (handle == INVALID_HANDLE_VALUE)
 			{
 				//LastError should already be set
@@ -445,7 +447,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 	result->initialized = 0;
 	result->next = result->prev = NULL;
 	result->refcount = 1;
-	result->name = NULL;
+	result->name = strdup(name);
 	result->name_table = NULL;
 
 	// XXX: is it correct to commit the complete memory region at once?
@@ -515,6 +517,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 
 error:
 	// cleanup
+	free(result->name);
 	MemoryFreeLibrary(result);
 	return NULL;
 }
