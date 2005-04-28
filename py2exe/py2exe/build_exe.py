@@ -1117,27 +1117,37 @@ class py2exe(Command):
             # we prefer to believe that (imp_find_module doesn't seem to locate
             # sub-packages)
             if f in mf.modules:
-                path = mf.modules[f].__path__[0]
+                module = mf.modules[f]
+                if module.__path__ is None:
+                    # it's a module, not a package, so paths contains just the
+                    # file entry
+                    paths = [module.__file__]
+                else:
+                    # it is a package because __path__ is available.  __path__
+                    # is actually a list of paths that are searched to import
+                    # sub-modules and sub-packages
+                    paths = module.__path__
             else:
                 # Find path of package
                 try:
-                    path = imp_find_module(f)[1]
+                    paths = [imp_find_module(f)[1]]
                 except ImportError:
                     self.warn("No package named %s" % f)
                     continue
 
             packages = []
-            # walk the path to find subdirs containing __init__.py files
-            os.path.walk(path, visit, packages)
+            for path in paths:
+                # walk the path to find subdirs containing __init__.py files
+                os.path.walk(path, visit, packages)
 
-            # scan the results (directory of __init__.py files)
-            # first trim the path (of the head package),
-            # then convert directory name in package name,
-            # finally push into modulefinder.
-            for p in packages:
-                if p.startswith(path):
-                    package = f + '.' + p[len(path)+1:].replace('\\', '.')
-                    mf.import_hook(package, None, ["*"])
+                # scan the results (directory of __init__.py files)
+                # first trim the path (of the head package),
+                # then convert directory name in package name,
+                # finally push into modulefinder.
+                for p in packages:
+                    if p.startswith(path):
+                        package = f + '.' + p[len(path)+1:].replace('\\', '.')
+                        mf.import_hook(package, None, ["*"])
 
         return mf
 
