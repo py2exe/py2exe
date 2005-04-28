@@ -533,9 +533,6 @@ class py2exe(Command):
                     arcfile.write(struct.pack("i", len(bytes)))
                     arcfile.write(bytes) # python dll
                 
-                    # remove python dll from the exe_dir, since it is now bundled.
-                    os.remove(os.path.join(self.exe_dir, python_dll))
-
                 if self.compressed:
                     # prepend zlib.pyd also
                     print "Adding zlib.pyd to %s at %d" % (arcname, arcfile.tell())
@@ -546,6 +543,11 @@ class py2exe(Command):
                     arcfile.write(bytes) # zlib.pyd
 
                 arcfile.write(arcbytes)
+
+        if self.bundle_files < 2:
+            # remove python dll from the exe_dir, since it is now bundled.
+            os.remove(os.path.join(self.exe_dir, python_dll))
+
 
     # for user convenience, let subclasses override the templates to use
     def get_console_template(self):
@@ -1016,7 +1018,7 @@ class py2exe(Command):
             self.includes.append("codecs")
         if self.bundle_files < 3:
             self.includes.append("zipextimporter")
-            self.excludes.append("_memimporter")
+            self.excludes.append("_memimporter") # builtin in run_*.exe and run_*.dll
 ##        if self.compressed:
         if 1:
             self.includes.append("zlib")
