@@ -9,7 +9,11 @@ import win32serviceutil
 service_klasses = []
 try:
     for name in service_module_names:
-        mod = __import__(name)
+        # Use the documented fact that when a fromlist is present,
+        # __import__ returns the innermost module in 'name'.
+        # This makes it possible to have a dotted name work the
+        # way you'd expect.
+        mod = __import__(name, globals(), locals(), ['DUMMY'])
         for ob in mod.__dict__.values():
             if hasattr(ob, "_svc_name_"):
                 service_klasses.append(ob)
