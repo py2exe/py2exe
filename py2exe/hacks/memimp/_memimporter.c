@@ -1,6 +1,16 @@
-#include "../../source/Python-dynload.h"
+/*
+  Hm, for the _memimporter compiled into py2exe exe-stubs we need "Python-dynload.h".
+  For the standalone .pyd we need <Python.h>
+*/
+
+#ifdef AS_PY2EXE_BUILTIN
+#  include "../../source/Python-dynload.h"
+#  include <stdio.h>
+#else
+#  include <Python.h>
+#endif
+
 #include <windows.h>
-#include <stdio.h>
 
 static char module_doc[] =
 "Importer which can load extension modules from memory";
@@ -16,7 +26,10 @@ static void *memdup(void *ptr, int size)
 	return p;
 }
 
-/* Behaviour with errors is somewhat weird... */
+/*
+  Be sure to detect errors in FindLibrary - undetected errors lead to
+  very strange bahaviour.
+*/
 static void* FindLibrary(char *name, PyObject *callback)
 {
 	PyObject *result;
@@ -27,10 +40,11 @@ static void* FindLibrary(char *name, PyObject *callback)
 		return NULL;
 	result = PyObject_CallFunction(callback, "s", name);
 	if (result == NULL) {
-		PyErr_Print();
+		PyErr_Clear();
 		return NULL;
 	}
 	if (-1 == PyString_AsStringAndSize(result, &p, &size)) {
+		PyErr_Clear();
 		Py_DECREF(result);
 		return NULL;
 	}
