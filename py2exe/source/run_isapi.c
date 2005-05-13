@@ -115,10 +115,11 @@ BOOL check_init()
 					pPyISAPISetOptions = (__PROC__PyISAPISetOptions)GetProcAddress(hmodPyISAPI, "PyISAPISetOptions");
 				}
 			}
-			if (Py_IsInitialized())
+			if (Py_IsInitialized && Py_IsInitialized())
 				restore_state = PyGILState_Ensure();
 			// a little DLL magic.  Set sys.frozen='dll'
 			init_with_instance(gInstance, "dll");
+			init_memimporter();
 			frozen = PyInt_FromLong((LONG)gInstance);
 			if (frozen) {
 				PySys_SetObject("frozendllhandle", frozen);
