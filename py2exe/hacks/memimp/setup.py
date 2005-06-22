@@ -13,6 +13,12 @@ setup(name="memimporter",
       
       ext_modules = [Extension("_memimporter",
                                sources=["MemoryModule.c",
-                                        "_memimporter.c"])],
+                                        "_memimporter.c"],
+                               define_macros = [("DEBUG_OUTPUT", "1")],
+                               # for ctypes <grin>
+                               export_symbols=["MemoryLoadLibrary",
+                                               "MemoryFreeLibrary",
+                                               "MemoryGetProcAddress"],
+                               libraries=["user32"])],
       py_modules = ["zipextimporter"],
       )
