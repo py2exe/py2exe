@@ -1,3 +1,21 @@
+2005-04-28  Thomas Heller  <theller@python.net>
+
+	* py2exe can now bundle binary extensions and dlls into the zip
+	archive, and load them with a custom zipextimporter.  This uses
+	code originally written by Joachim Bauch and enhanced by me, which
+	simulates the LoadLibrary windows api call.  The exe stubs now use
+	runtime dynamic loading of the Python dll.
+
+	* py2exe does now by default include the codecs module and the
+	complete encodings package.
+
+	* py2exe\boot_service.py: Patch from Cory Dodt to allow building a
+	service from a module inside a package.
+
+	* py2exe\build_exe.py (py2exe.find_needed_modules): Another patch
+	from Shane Holloway to handle packages with multiple entries in a
+	package's __path__ list.
+
 2004-12-30  Thomas Heller  <theller@python.net>
 
 	* py2exe\build_exe.py (py2exe.find_needed_modules.visit): Patch
