@@ -29,6 +29,8 @@
 #include <assert.h>
 #include "Python-dynload.h"
 
+#include "../hacks/memimp/MemoryModule.h"
+
 // Function pointers we load from _ctypes.pyd
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 typedef HRESULT (__stdcall *__PROC__DllGetClassObject) (REFCLSID, REFIID, LPVOID *);
@@ -72,9 +74,13 @@ extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
 
+#define ODS OutputDebugString
+
 int load_ctypes(void)
 {
 	char dll_path[_MAX_PATH+_MAX_FNAME+1];
+
+	ODS("A");
 
 	// shouldn't do this twice
 	assert(g_ctypes == NULL);
@@ -83,7 +89,8 @@ int load_ctypes(void)
 #else
 	strcpy(dll_path, "_ctypes.pyd");
 #endif
-	g_ctypes = GetModuleHandle(dll_path);
+	g_ctypes = MyGetModuleHandle(dll_path);
+/*
 	if (g_ctypes == NULL) {
 		// not already loaded - try and load from the current dir
 		char *temp;
@@ -94,26 +101,30 @@ int load_ctypes(void)
 		// and printf directly in the buffer.
 		// temp points to '\\filename.ext'!
 #ifdef _DEBUG
-		snprintf(temp, sizeof(dll_path)-strlen(temp), "\\_ctypes_d.pyd");
+		g_ctypes = MyGetModuleHandle("_ctypes_d.pyd");
 #else
-		snprintf(temp, sizeof(dll_path)-strlen(temp), "\\_ctypes.pyd");
+		g_ctypes = MyGetModuleHandle("_ctypes.pyd");
 #endif
 		g_ctypes = LoadLibraryEx(dll_path, // points to name of executable module 
 					 NULL, // HANDLE hFile, // reserved, must be NULL 
 					 LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 			); 
 	}
-	if (g_ctypes == NULL)
+*/
+	if (g_ctypes == NULL) {
+		OutputDebugString("GetModuleHandle _ctypes?.pyd failed");
 		// give up in disgust
 		return -1;
+	}
 
-	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)GetProcAddress(g_ctypes, "DllCanUnloadNow");
-	Pyc_DllGetClassObject = (__PROC__DllGetClassObject)GetProcAddress(g_ctypes, "DllGetClassObject");
+	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)MyGetProcAddress(g_ctypes, "DllCanUnloadNow");
+	Pyc_DllGetClassObject = (__PROC__DllGetClassObject)MyGetProcAddress(g_ctypes, "DllGetClassObject");
 	return 0;
 }
 
 int check_init()
 {
+	ODS("check_init");
 	if (!have_init) {
 		EnterCriticalSection(&csInit);
 		// Check the flag again - another thread may have beat us to it!
@@ -125,10 +136,12 @@ int check_init()
 			   call in.
 			*/
 			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
-			if (Py_IsInitialized())
+			if (Py_IsInitialized && Py_IsInitialized()) {
 				restore_state = PyGILState_Ensure();
+			}
 			// a little DLL magic.  Set sys.frozen='dll'
 			init_with_instance(gInstance, "dll");
+			init_memimporter();
 			frozen = PyInt_FromLong((LONG)gInstance);
 			if (frozen) {
 				PySys_SetObject("frozendllhandle", frozen);
