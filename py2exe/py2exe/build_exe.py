@@ -353,6 +353,10 @@ class py2exe(Command):
         self.collect_dir = os.path.abspath(os.path.join(self.bdist_dir, collect_name))
         self.mkpath(self.collect_dir)
 
+        bundle_name = "bundle-%d.%d" % sys.version_info[:2]
+        self.bundle_dir = os.path.abspath(os.path.join(self.bdist_dir, bundle_name))
+        self.mkpath(self.bundle_dir)
+
         self.temp_dir = os.path.abspath(os.path.join(self.bdist_dir, "temp"))
         self.mkpath(self.temp_dir)
 
@@ -391,10 +395,13 @@ class py2exe(Command):
                 self.compiled_files.append(os.path.basename(dst))
 
     def copy_dlls(self, dlls):
+        # copy needed dlls where they belong.
         self.announce("*** copy dlls ***")
         if self.bundle_files < 3:
             self.copy_dlls_bundle_files(dlls)
             return
+        # dlls belong into the lib_dir, except those listed in dlls_in_exedir,
+        # which have to go into exe_dir (pythonxy.dll, w9xpopen.exe).
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
@@ -420,12 +427,21 @@ class py2exe(Command):
             self.lib_files.append(dst)
 
     def copy_dlls_bundle_files(self, dlls):
+        # If dlls have to be bundled, they are copied into the
+        # collect_dir and will be added to the list of files to
+        # include in the zip archive 'self.compiled_files'.
+        #
+        # dlls listed in dlls_in_exedir have to be treated differently:
+        # 
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
-                # These special dlls cannot be bundled in the normal way
-                # Currently, these are pythonxy.dll and w9xpopen.exe
-                dst = os.path.join(self.exe_dir, base)
+                # pythonXY.dll must be bundled as resource.
+                # w9xpopen.exe must be copied to self.exe_dir.
+                if base.lower() == python_dll.lower():
+                    dst = os.path.join(self.bundle_dir, base)
+                else:
+                    dst = os.path.join(self.exe_dir, base)
                 _, copied = self.copy_file(dll, dst)
                 if not self.dry_run and copied and base.lower() == python_dll.lower():
                     # If we actually copied pythonxy.dll, we have to
@@ -557,9 +573,9 @@ class py2exe(Command):
 
                 arcfile.write(arcbytes)
 
-        if self.bundle_files < 2:
-            # remove python dll from the exe_dir, since it is now bundled.
-            os.remove(os.path.join(self.exe_dir, python_dll))
+####        if self.bundle_files < 2:
+####            # remove python dll from the exe_dir, since it is now bundled.
+####            os.remove(os.path.join(self.exe_dir, python_dll))
 
 
     # for user convenience, let subclasses override the templates to use
@@ -738,7 +754,7 @@ class py2exe(Command):
             # add the pythondll as resource, and delete in self.exe_dir
             if self.bundle_files < 2 and self.distribution.zipfile is None:
                 # bundle pythonxy.dll
-                dll_path = os.path.join(self.exe_dir, python_dll)
+                dll_path = os.path.join(self.bundle_dir, python_dll)
                 bytes = open(dll_path, "rb").read()
                 # image, bytes, lpName, lpType
 
@@ -755,7 +771,7 @@ class py2exe(Command):
                              # for some reason, the 3. argument MUST BE UPPER CASE,
                              # otherwise the resource will not be found.
                              u"ZLIB.PYD", 1, False)
- 
+
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
         for bmp_id, bmp_filename in bitmap_resources:
@@ -1290,6 +1306,8 @@ EXCLUDED_DLLS = (
     "msvcr71.dll"
     )
 
+# XXX Perhaps it would be better to assume dlls from the systemdir are system dlls,
+# and make some exceptions for known dlls, like msvcr71, pythonXY.dll, and so on?
 def isSystemDLL(pathname):
     if os.path.basename(pathname).lower() in EXCLUDED_DLLS:
         return 1
