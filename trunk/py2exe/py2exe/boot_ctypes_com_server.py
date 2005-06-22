@@ -59,15 +59,15 @@ def get_classes(module):
 
 def DllRegisterServer():
     # Enumerate each module implementing an object
-    from ctypes.com.register import DllRegisterClasses
+    from ctypes.com.register import register
     for mod in com_modules:
         # register each class
-        DllRegisterClasses(*get_classes(mod))
+        register(*get_classes(mod))
 
 
 def DllUnregisterServer():
     # Enumerate each module implementing an object
-    from ctypes.com.register import DllUnregisterClasses
+    from ctypes.com.register import unregister
     for mod in com_modules:
         # register each class
-        DllUnregisterClasses(*get_classes(mod))
+        unregister(*get_classes(mod))
