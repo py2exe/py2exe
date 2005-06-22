@@ -1,6 +1,7 @@
 /* **************** Python-dynload.c **************** */
 #include "Python-dynload.h"
 #include "../hacks/memimp/MemoryModule.h"
+#include <stdio.h>
 
 struct IMPORT imports[] = {
 #include "import-tab.c"
@@ -32,7 +33,7 @@ int _load_python_FromFile(char *dllname)
 		p->proc = (void (*)())GetProcAddress(hmod, p->name);
 		if (p->proc == NULL) {
 			OutputDebugString("undef symbol");
-			printf("undefined symbol %s -> exit(-1)\n", p->name);
+			fprintf(stderr, "undefined symbol %s -> exit(-1)\n", p->name);
 			return 0;
 		}
 	}
@@ -56,7 +57,7 @@ int _load_python(char *dllname, char *bytes)
 		p->proc = (void (*)())MemoryGetProcAddress(hmod, p->name);
 		if (p->proc == NULL) {
 			OutputDebugString("undef symbol");
-			printf("undefined symbol %s -> exit(-1)\n", p->name);
+			fprintf(stderr, "undefined symbol %s -> exit(-1)\n", p->name);
 			return 0;
 		}
 	}
