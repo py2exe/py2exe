@@ -293,8 +293,21 @@ class deinstall(Command):
 
 ############################################################################
 
-macros = [("PYTHONDLL", '\\"PYTHON%d%d.DLL\\"' % sys.version_info[:2]),
-          ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2])]
+def _is_debug_build():
+    import imp
+    for ext, _, _ in imp.get_suffixes():
+        if ext == "_d.pyd":
+            return True
+    return False
+
+if _is_debug_build():
+    macros = [("PYTHONDLL", '\\"PYTHON%d%d_d.DLL\\"' % sys.version_info[:2]),
+              ("PYTHONCOM", '\\"pythoncom%d%d_d.dll\\"' % sys.version_info[:2])]
+else:
+    macros = [("PYTHONDLL", '\\"PYTHON%d%d.DLL\\"' % sys.version_info[:2]),
+              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2])]
+
+macros.append(("AS_PY2EXE_BUILTIN", "1")) # for runtime linking python.dll in _memimporter.c
 depends = ["source/import-tab.c", "source/import-tab.h"]
 
 run = Interpreter("py2exe.run",
@@ -392,6 +405,7 @@ setup(name="py2exe",
                                sources=["source/py2exe_util.c"],
                                libraries=["imagehlp"]),
                     ],
+      py_modules = ["zipextimporter"],
       scripts = ["py2exe_postinstall.py"],
       interpreters = interpreters,
       packages=['py2exe',
