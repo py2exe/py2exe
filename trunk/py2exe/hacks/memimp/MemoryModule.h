@@ -37,14 +37,17 @@ extern "C" {
 
 typedef void *(*FINDPROC)();
 
-HMEMORYMODULE MemoryLoadLibrary(char *, const void *, FINDPROC, void *);
+extern FINDPROC findproc;
+extern void *findproc_data;
+
+HMEMORYMODULE MemoryLoadLibrary(char *, const void *);
 
 FARPROC MemoryGetProcAddress(HMEMORYMODULE, const char *);
 
 void MemoryFreeLibrary(HMEMORYMODULE);
 
 BOOL MyFreeLibrary(HMODULE hModule);
-HMODULE MyLoadLibrary(char *lpFileName, FINDPROC, void *);
+HMODULE MyLoadLibrary(char *lpFileName);
 FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName);
 HMODULE MyGetModuleHandle(LPCTSTR lpModuleName);
 

@@ -53,6 +53,18 @@ static void* FindLibrary(char *name, PyObject *callback)
 	return p;
 }
 
+static PyObject *set_find_proc(PyObject *self, PyObject *args)
+{
+	PyObject *callback = NULL;
+	if (!PyArg_ParseTuple(args, "|O:set_find_proc", &callback))
+		return NULL;
+	Py_XDECREF((PyObject *)findproc_data);
+	Py_XINCREF(callback);
+	findproc_data = (void *)callback;
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 static PyObject *
 import_module(PyObject *self, PyObject *args)
 {
@@ -60,14 +72,13 @@ import_module(PyObject *self, PyObject *args)
 	int size;
 	char *initfuncname;
 	char *fullname;
-	PyObject *callback = NULL;
 	HMEMORYMODULE hmem;
 	FARPROC do_init;
 
-	if (!PyArg_ParseTuple(args, "s#ss|O:import_module", &data, &size,
-			      &initfuncname, &fullname, &callback))
+	if (!PyArg_ParseTuple(args, "s#ss:import_module", &data, &size,
+			      &initfuncname, &fullname))
 		return NULL;
-	hmem = MemoryLoadLibrary(fullname, data, FindLibrary, callback);
+	hmem = MemoryLoadLibrary(fullname, data);
 	if (!hmem) {
 		PyErr_Format(PyExc_ImportError,
 			     "MemoryLoadLibrary failed loading %s", fullname);
@@ -95,11 +106,13 @@ static PyMethodDef methods[] = {
 	  "import_module(code, initfunc, dllname[, finder]) -> module" },
 	{ "get_verbose_flag", get_verbose_flag, METH_NOARGS,
 	  "Return the Py_Verbose flag" },
+	{ "set_find_proc", set_find_proc, METH_VARARGS },
 	{ NULL, NULL },		/* Sentinel */
 };
 
 DL_EXPORT(void)
 init_memimporter(void)
 {
+	findproc = FindLibrary;
 	Py_InitModule3("_memimporter", methods, module_doc);
 }
