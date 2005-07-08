@@ -38,6 +38,8 @@
 #include "MemoryModule.h"
 
 /******************************************************************/
+FINDPROC findproc;
+void *findproc_data;
 
 struct NAME_TABLE {
 	char *name;
@@ -97,7 +99,7 @@ HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 	return GetModuleHandle(lpModuleName);
 }
 
-HMODULE MyLoadLibrary(char *lpFileName, FINDPROC findproc, void *userdata)
+HMODULE MyLoadLibrary(char *lpFileName)
 {
 	MEMORYMODULE *p = loaded;
 	HMODULE hMod;
@@ -105,25 +107,19 @@ HMODULE MyLoadLibrary(char *lpFileName, FINDPROC findproc, void *userdata)
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(lpFileName, p->name)) {
 			p->refcount++;
-//			fprintf(stderr, "MyLoadLibrary DID find %s as %s\n", lpFileName, p->name);
 			return (HMODULE)p;
 		}
 		p = p->next;
 	}
-//	fprintf(stderr, "MyLoadLibrary did not find %s loaded\n", lpFileName);
 	if (findproc) {
-		void *pdata = findproc(lpFileName, userdata);
-//		if (pdata)
-//			fprintf(stderr, "MyLoadLibrary.findproc found %s\n", lpFileName);
+		void *pdata = findproc(lpFileName, findproc_data);
 		if (pdata) {
-			hMod = MemoryLoadLibrary(lpFileName, pdata,
-						 findproc, userdata);
+			hMod = MemoryLoadLibrary(lpFileName, pdata);
 			free(p);
 			return hMod;
 		}
 	}
 	hMod = LoadLibrary(lpFileName);
-//	fprintf(stderr, "Loaded %s with LoadLibrary, handle %p\n", lpFileName, hMod);
 	return hMod;
 }
 
@@ -319,7 +315,7 @@ PerformBaseRelocation(PMEMORYMODULE module, DWORD delta)
 }
 
 static int
-BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
+BuildImportTable(PMEMORYMODULE module)
 {
 	int result=1;
 	unsigned char *codeBase = module->codeBase;
@@ -332,9 +328,8 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 		{
 			DWORD *thunkRef, *funcRef;
 			HMODULE handle;
-//			fprintf(stderr, "%s requires %s\n", module->name, (LPCSTR)(codeBase + importDesc->Name));
-			handle = MyLoadLibrary(codeBase + importDesc->Name,
-					       findproc, userdata);
+
+			handle = MyLoadLibrary(codeBase + importDesc->Name);
 			if (handle == INVALID_HANDLE_VALUE)
 			{
 				//LastError should already be set
@@ -387,7 +382,7 @@ BuildImportTable(PMEMORYMODULE module, FINDPROC findproc, void *userdata)
 	return result;
 }
 
-HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc, void *userdata)
+HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 {
 	PMEMORYMODULE result;
 	PIMAGE_DOS_HEADER dos_header;
@@ -397,7 +392,6 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 	DllEntryProc DllEntry;
 	BOOL successfull;
 
-//	fprintf(stderr, "MemoryLoadLibrary %s\n", name);
 	dos_header = (PIMAGE_DOS_HEADER)data;
 	if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
 	{
@@ -479,7 +473,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data, FINDPROC findproc,
 		PerformBaseRelocation(result, locationDelta);
 
 	// load required dlls and adjust function table of imports
-	if (!BuildImportTable(result, findproc, userdata))
+	if (!BuildImportTable(result))
 		goto error;
 
 	// mark memory pages depending on section headers and release

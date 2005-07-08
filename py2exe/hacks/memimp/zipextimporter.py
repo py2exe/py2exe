@@ -63,6 +63,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
         return None
 
     def load_module(self, fullname):
+        _memimporter.set_find_proc(self.locate_dll_image)
         try:
             return zipimport.zipimporter.load_module(self, fullname)
         except zipimport.ZipImportError:
@@ -77,8 +78,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
                 # XXX should check sys.modules first ? See PEP302 on reload
                 # XXX maybe in C code...
                 code = self.get_data(path)
-                mod = _memimporter.import_module(code, "init" + initname, path,
-                                                 self.locate_dll_image)
+                mod = _memimporter.import_module(code, "init" + initname, path)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
                 mod.__loader__ = self
                 if _memimporter.get_verbose_flag():
