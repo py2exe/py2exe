@@ -19,6 +19,12 @@ void Py_XDECREF(PyObject *ob)
 	PyTuple_SetItem(tup, 0, PyInt_FromLong(0));
 }
 
+void Py_XINCREF(PyObject *ob)
+{
+	if (ob)
+		Py_BuildValue("O", ob);
+}
+
 int _load_python_FromFile(char *dllname)
 {
 	int i;
@@ -49,7 +55,7 @@ int _load_python(char *dllname, char *bytes)
 	if (!bytes)
 		return _load_python_FromFile(dllname);
 
-	hmod = MemoryLoadLibrary(dllname, bytes, NULL, NULL);
+	hmod = MemoryLoadLibrary(dllname, bytes);
 	if (hmod == NULL) {
 		return 0;
 	}
