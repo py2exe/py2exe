@@ -198,7 +198,7 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 void _Import_Zlib(char *pdata)
 {
 	HMODULE hlib;
-	hlib = MemoryLoadLibrary("zlib.pyd", pdata, NULL, NULL);
+	hlib = MemoryLoadLibrary("zlib.pyd", pdata);
 	if (hlib) {
 		void (*proc)(void);
 		proc = (void(*)(void))MemoryGetProcAddress(hlib, "initzlib");
