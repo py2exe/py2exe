@@ -558,7 +558,7 @@ class py2exe(Command):
                 if self.bundle_files < 2: # bundle pythonxy.dll also
                     print "Adding %s to %s" % (python_dll, arcname)
                     arcfile.write("<pythondll>")
-                    bytes = open(os.path.join(self.exe_dir, python_dll), "rb").read()
+                    bytes = open(os.path.join(self.bundle_dir, python_dll), "rb").read()
                     arcfile.write(struct.pack("i", len(bytes)))
                     arcfile.write(bytes) # python dll
                 
