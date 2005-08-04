@@ -1,13 +1,13 @@
 /*
-  Hm, for the _memimporter compiled into py2exe exe-stubs we need "Python-dynload.h".
+  For the _memimporter compiled into py2exe exe-stubs we need "Python-dynload.h".
   For the standalone .pyd we need <Python.h>
 */
 
-#ifdef AS_PY2EXE_BUILTIN
+#ifdef STANDALONE
+#  include <Python.h>
+#else
 #  include "Python-dynload.h"
 #  include <stdio.h>
-#else
-#  include <Python.h>
 #endif
 
 #include <windows.h>
