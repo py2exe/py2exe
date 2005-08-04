@@ -74,13 +74,9 @@ extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
 
-#define ODS OutputDebugString
-
 int load_ctypes(void)
 {
 	char dll_path[_MAX_PATH+_MAX_FNAME+1];
-
-	ODS("A");
 
 	// shouldn't do this twice
 	assert(g_ctypes == NULL);
@@ -124,7 +120,6 @@ int load_ctypes(void)
 
 int check_init()
 {
-	ODS("check_init");
 	if (!have_init) {
 		EnterCriticalSection(&csInit);
 		// Check the flag again - another thread may have beat us to it!

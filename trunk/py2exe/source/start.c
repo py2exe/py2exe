@@ -63,6 +63,7 @@ char libfilename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // library filename
 struct scriptinfo *p_script_info;
 
 
+/*
 static int dprintf(char *fmt, ...)
 {
 	char Buffer[4096];
@@ -74,6 +75,7 @@ static int dprintf(char *fmt, ...)
 	OutputDebugString(Buffer);
 	return result;
 }
+*/
 
 static BOOL _LocateScript(HMODULE hmod)
 {
@@ -165,7 +167,7 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 			SystemError(GetLastError(), "Could not load python dll");
 			return FALSE;
 		}
-		dprintf("Loaded pythondll as RESOURCE\n");
+//		dprintf("Loaded pythondll as RESOURCE\n");
 		return TRUE;
 	}
 
@@ -177,7 +179,7 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 			res = _load_python(PYTHONDLL, pBaseAddress + 11 + sizeof(int));
 		UnmapViewOfFile(pBaseAddress);
 		if (res) {
-			dprintf("Loaded pythondll as <pythondll> from %s\n", libfilename);
+//			dprintf("Loaded pythondll as <pythondll> from %s\n", libfilename);
 			return TRUE;
 		}
 	}
@@ -190,7 +192,7 @@ static BOOL _LoadPythonDLL(HMODULE hmod)
 			SystemError(GetLastError(), "LoadLibrary(pythondll) failed");
 			return FALSE;
 		}
-		dprintf("Loaded pythondll from file %s\n", buffer);
+//		dprintf("Loaded pythondll from file %s\n", buffer);
 	}
 	return TRUE;
 }
