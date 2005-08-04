@@ -1,4 +1,6 @@
-"""zipextimporter - an importer which can import extension modules from zipfiles
+r"""zipextimporter - an importer which can import extension modules from zipfiles
+
+This file and also _memimporter.pyd is part of the py2exe package.
 
 Overview
 ========
@@ -18,22 +20,25 @@ function LoadLibrary.
 Sample usage
 ============
 
+You have to prepare a zip-archive 'lib.zip' containing
+your Python's _socket.pyd for this example to work.
+
 >>> import zipextimporter
 >>> zipextimporter.install()
 >>> import sys
->>> sys.path.append("lib.zip")
+>>> sys.path.insert(0, "lib.zip")
 >>> import _socket
+>>> print _socket
+<module '_socket' from 'lib.zip\_socket.pyd'>
 >>> _socket.__file__
-'c:\\sf\\py2exe\\hacks\\memimp\\lib.zip\\_socket.pyd'
+'lib.zip\\_socket.pyd'
 >>> _socket.__loader__
-<ZipExtensionImporter at a74480>
+<ZipExtensionImporter object 'lib.zip'>
+>>> # Reloading also works correctly:
+>>> _socket is reload(_socket)
+True
 >>>
 
-Bugs
-====
-
-reload() on already imported extension modules does not work
-correctly: It happily loads the extension a second time.
 """
 import imp, sys
 import zipimport
@@ -63,6 +68,11 @@ class ZipExtensionImporter(zipimport.zipimporter):
         return None
 
     def load_module(self, fullname):
+        if sys.modules.has_key(fullname):
+            mod = sys.modules[fullname]
+            if _memimporter.get_verbose_flag():
+                sys.stderr.write("import %s # previously loaded from zipfile %s\n" % (fullname, self.archive))
+            return mod
         _memimporter.set_find_proc(self.locate_dll_image)
         try:
             return zipimport.zipimporter.load_module(self, fullname)
@@ -75,8 +85,6 @@ class ZipExtensionImporter(zipimport.zipimporter):
         for s in self._suffixes:
             path = fullname + s
             if path in self._files:
-                # XXX should check sys.modules first ? See PEP302 on reload
-                # XXX maybe in C code...
                 code = self.get_data(path)
                 mod = _memimporter.import_module(code, "init" + initname, path)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
@@ -94,5 +102,6 @@ def install():
     sys.path_hooks.insert(0, ZipExtensionImporter)
     sys.path_importer_cache.clear()
 
-##if __name__ == "__main__":
-##    print ZipExtensionImporter("lib.zip")
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
