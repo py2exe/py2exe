@@ -71,9 +71,9 @@ class Distribution(distutils.dist.Distribution):
     def __init__(self, attrs):
         self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
         self.com_server = attrs.pop("com_server", [])
-        self.service = attrs.pop("com_server", [])
-        self.windows = attrs.pop("com_server", [])
-        self.console = attrs.pop("com_server", [])
+        self.service = attrs.pop("service", [])
+        self.windows = attrs.pop("windows", [])
+        self.console = attrs.pop("console", [])
         self.isapi = attrs.pop("isapi", [])
         self.zipfile = attrs.pop("zipfile", "library.zip")
 
