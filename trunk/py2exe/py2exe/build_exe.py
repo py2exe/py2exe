@@ -841,7 +841,7 @@ class py2exe(Command):
                           legal_trademarks = get("trademarks"),
                           original_filename = os.path.basename(exe_path),
                           product_name = get("name"),
-                          product_version = version)
+                          product_version = get("product_version") or version)
         try:
             bytes = version.resource_bytes()
         except VersionError, detail:
