@@ -102,6 +102,6 @@ def install():
     sys.path_hooks.insert(0, ZipExtensionImporter)
     sys.path_importer_cache.clear()
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+##if __name__ == "__main__":
+##    import doctest
+##    doctest.testmod()
