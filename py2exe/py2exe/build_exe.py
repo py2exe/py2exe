@@ -438,7 +438,7 @@ class py2exe(Command):
             if base.lower() in self.dlls_in_exedir:
                 # pythonXY.dll must be bundled as resource.
                 # w9xpopen.exe must be copied to self.exe_dir.
-                if base.lower() == python_dll.lower():
+                if base.lower() == python_dll.lower() and self.bundle_files < 2:
                     dst = os.path.join(self.bundle_dir, base)
                 else:
                     dst = os.path.join(self.exe_dir, base)
