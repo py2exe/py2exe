@@ -4,6 +4,12 @@
 # win32all build 161, for the COM samples, you need build 163.
 # Requires wxPython, and Tim Golden's WMI module.
 
+# Note: WMI is probably NOT a good example for demonstrating how to
+# include a pywin32 typelib wrapper into the exe: wmi uses different
+# typelib versions on win2k and winXP.  The resulting exe will only
+# run on the same windows version as the one used to build the exe.
+# So, the newest version of wmi.py doesn't use any typelib anymore.
+
 from distutils.core import setup
 import py2exe
 import sys
