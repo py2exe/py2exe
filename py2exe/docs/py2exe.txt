@@ -7,17 +7,17 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.5.4.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.4.win32-py2.3.exe?download
+.. _py2exe-0.6.1.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.1.win32-py2.3.exe?download
 
-.. _py2exe-0.5.4.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.5.4.win32-py2.4.exe?download
+.. _py2exe-0.6.1.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.1.win32-py2.4.exe?download
 
-.. _wiki: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
+.. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
-.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_5_4
+.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_6_1
 
-.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_5_4
+.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_6_1
 
 .. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
 
@@ -29,10 +29,14 @@
 
 .. _sample_xref: http://starship.python.net/crew/theller/py2exe/sample_xref.html
 
+.. _MPL: http://www.opensource.org/licenses/mozilla1.1.php
+.. _Mozilla Public License Version 1.1: http://www.mozilla.org/MPL/MPL-1.1.html
+
 py2exe - convert python scripts into standalone windows programs
 ================================================================
 
-Copyright (c) 2001, 2002, 2003, 2004 Thomas Heller, Mark Hammond.
+Copyright (c) 2001, 2002, 2003, 2004, 2005 Thomas Heller, Mark
+Hammond, Joachim Bauch, and contributors.
 
 Abstract
 --------
@@ -44,71 +48,62 @@ requiring a python installation.
 It has been used to create wxPython, Tkinter, Pmw, PyGTK, pygame,
 win32com client and server modules and other standalone programs.
 
-**py2exe** is distributed under an open-source license_.
+**py2exe** is distributed under an open-source license_.  It contains
+code originally written by Joachim Bauch, released under the `Mozilla
+Public License Version 1.1`_
 
 News
 ----
 
+**py2exe 0.6.1 released (2005/09/05)**
+
+Can now create single file executables.
+
+Documentation
+-------------
+
+You are reading it ;-).  A lot of other, user supplied documentation
+is in the WIKI_.
+
 Please don't mail me directly about py2exe, please use the `py2exe
 mailing list`_, which is also available on gmane_, via http_ and nntp_.
 
-**py2exe 0.5.4 released (2004/10/22)**
---------------------------------------
+What's new in py2exe 0.6
+------------------------
 
-The new ``--xref`` or ``-x`` command line switch instructs py2exe to
-create a python module cross reference and display it in the
-webbrowser.  This allows to answer question why a certain module has
-been included, or if you can exlude a certain module and it's
-dependencies.  This has *not* been extensively tested, but it's a
-start.  Also, the html page includes links which will even allow to
-view the source code of a module in the browser, for easy inspection.
+- The new ``--bundle <level>`` or ``-b <level>`` command line switch
+  instructs py2exe to bundle needed dlls and pyds into the library file
+  or the executable itself, instead of simply collecting them in the
+  dist directory. Not only does this create less files you have to
+  distribute, it also allows Python inprocess COM servers to run
+  completely isolated from other Python interpreters in the same
+  process.  See below for more details.
 
-A sample cross reference can be found here, note that the links to
-open the .py files will of course not work over the internet:
-sample_xref_
+- To prevent unicode encoding error, py2exe now by default includes the
+  ``codecs`` module and the ``encodings`` package.  If you are sure your
+  program never implicitely or explicitely has to convert between
+  unicode and ascii strings this can be prevented by the ``--ascii`` or
+  ``-a`` command line switch.
 
+- It is no longer required to clean the build directory from time to
+  time to prevent some strange errors.
 
-Mark Hammond fixed some thread state issues with dll com servers, and
-added support for standalone ISAPI dlls.
-
-py2exe now can handle modules with '.pyw' extension.
-
-It is now allowed to specify 'zipfile=None' in the setup script, in
-this case the zip archive containing the python modules will be
-appended to the exe file.
+- Several patches have been integrated (if you miss a patch you sent me,
+  please send it again.  It can be that I missed some mails).
 
 The announcement_, and the ChangeLog_.
 
-What's new in py2exe 0.5
-------------------------
+Some comments about py2exe 0.5, still valid for 0.6
+---------------------------------------------------
 
 The documentation is still to be written, but there is quite some info
-available in the included samples, and in the wiki_ pages.  Thanks to
+available in the included samples, and in the WIKI_ pages.  Thanks to
 everyone who contributed.
 
-Python 2.3 is required, because the new zipimport feature is used.
-The zipimport mechanism is able to handle the early imports of the
-warnings and also the encodings module which is done by Python.
+Python 2.3 or 2.4 is required, because the new zipimport feature is
+used.  The zipimport mechanism is able to handle the early imports of
+the warnings and also the encodings module which is done by Python.
 
-Creates a single directory, which must be deployed completely.
-
-Can create any number of console and gui executables in this
-directory, plus optionally windows service exes, plus optionally exe
-and dll com servers.  The com servers can expose one or more com
-object classes.
-
-All pure Python files are contained in a single zip archive, which is
-shared by all the executables.  The zip archive may also be used by
-programs embedding Python.  Since extension modules cannot be imported
-from zipfiles, simple pure Python loaders are included in the zipfile
-which load the extensions from the file system (without requiring that
-the directory is in sys.path).
-
-It is now simple to build py2exe from the sources, provided you have
-MSVC6 installed - there are no dependencies on win32all sources.
-
-The created executables are standard PE executable files now, no
-longer is something appended to the exe portion.
 
 Using py2exe
 ------------
@@ -139,7 +134,7 @@ Now you can call the setup script like in this way::
 and a subdirectory ``dist`` will be created, containing the files
 ``myscript.exe``, ``python23.dll``, and ``library.zip``.  If your script
 uses compiled C extension modules, they will be copied here as well,
-also all dlls needed at runtime.
+also all dlls needed at runtime (except the system dlls).
 
 These files include everything that is needed for your program, and
 you should distribute the whole directory contents.
@@ -217,14 +212,75 @@ names containing one or more COM server classes (identified by their
 By default both DLL and EXE servers are built, you should simply
 delete those you don't need.
 
-Advanced features
+The bundle option
 -----------------
 
-Still to be written.
-So far, you have to look into the supplied samples.
+By default py2exe creates these files in the ``dist`` directory which
+you must deploy:
 
-There is also a wiki_ now where you can look for information, or
-publish your tips.
+ 1. One (or more) .exe files
+
+ 2. The python##.dll
+
+ 3. A couple of .pyd files which are the compiled extensions that the
+    exe files need, plus any other .dll files that the extensions need.
+
+ 4. A ``library.zip`` file which contains the compiled pure python
+    modules as .pyc or .pyo files (if you have specified 'zipfile=None'
+    in the setup script this file is append to the .exe files and not
+    present in the dist-directory).
+
+
+The ``--bundle <level>`` or ``-b <level>`` command line switch will
+create less files because binary extensions, runtime dlls, and even
+the Python-dll itself is bundled into the executable itself, or inside
+the library-archive if you prefer that.
+
+The bundled pyds and dlls are *never* unpacked to the file system,
+instead they are transparently loaded at runtime from the bundle.  The
+resulting executable *appears* to be statically linked.
+
+Specifying a level of ``2`` includes the .pyd and .dll files into the
+zip-archive or the executable.  Thus, the dist directory will contain
+your exe file(s), the library.zip file (if you haven't specified
+'zipfile=None'), and the python dll.  The advantage of this scheme is
+that the application can still load extension modules from the file
+system if you extend ``sys.path`` at runtime.
+
+Using a level of ``1`` includes the .pyd and .dll files into the
+zip-archive or the executable itself, and does the same for
+pythonXY.dll.  The advantage is that you only need to distribute one
+file per exe, which will however be quite large.  Another advantage is
+that inproc COM servers will run completely isolated from other Python
+interpreters in the same exe.  The disadvantage of this scheme is that
+it is impossible to load other extensions from the file system, the
+application will crash with a fatal Python error if you try this. I
+have still to find a way to prevent this and raise an ImportError
+instead - any suggestions how this can be implemented would be very
+welcome.
+
+The bundle-option has been tested with some popular extensions, but of
+course there's no guarantee that any extension will work in bundled
+form - be sure to test the executable (which you should do anyway).
+
+The bundle option achieves its magic by code which emulates the
+Windows LoadLibrary api, it is compiled into the exe-stubs that py2exe
+uses.  For experimentation, it is also installed as a normal Python
+extension ``_memimporter.pyd`` in the ``lib\site-packages`` directory.
+The Python module ``zipextimported.py`` in the same directory
+demonstrates how it can be used to load binary extensions from
+zip-files.
+
+Samples
+-------
+
+The ``py2exe``-installer installs some examples into the
+``lib\site-packages\py2exe\samples`` directory, demonstrating several
+simple and advances features.
+
+The ``singlefile`` subdirectory contains two samples which are built
+as single-file executables: a trivial wxPython gui program, and a
+pywin32 dll COM server module.
 
 How does it work?
 -----------------
@@ -247,7 +303,7 @@ zip-archive, so they are needed as separate files (and are copied into
 the ``dist`` directory).
 
 *Attention*: **py2exe** tries to track down all binary dependencies
-for all pyd's and dll's copied to the dist directory recursively, and
+for all pyds and dlls copied to the dist directory recursively, and
 copies all these dependend files into the dist directory. **py2exe**
 has a builtin list of some system dlls which are not copied, but this
 list can never be complete.
@@ -255,9 +311,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.5.4.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.5.4.win32-py2.4.exe_ (for Python 2.4,
-currently in beta).
+Download and run the installer py2exe-0.6.1.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.6.1.win32-py2.4.exe_ (for Python 2.4).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
@@ -281,4 +336,12 @@ for frozen executables.
 Project information
 -------------------
 
-The project is hosted at SourceForge_
+The project is hosted at |SourceForge|_.
+
+.. |SourceForge| image::
+   http://sourceforge.net/sflogo.php?group_id=15583&;type=1
+   :alt: SourceForge Logo
+   :align: middle
+   :class: borderless
+   :width: 88
+   :height: 31
