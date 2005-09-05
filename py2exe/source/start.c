@@ -33,7 +33,6 @@
 #include <eval.h>
 */
 #include "Python-dynload.h"
-#include "../hacks/memimp/MemoryModule.h"
 #include <stdio.h>
 #include <windows.h>
 
