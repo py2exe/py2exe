@@ -28,8 +28,6 @@
 #include <olectl.h>
 //#include <Python.h> // XXX
 
-#include "../hacks/memimp/MemoryModule.h"
-
 // Function pointers we load from pythoncom
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 typedef HRESULT (__stdcall *__PROC__DllGetClassObject) (REFCLSID, REFIID, LPVOID *);

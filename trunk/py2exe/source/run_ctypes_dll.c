@@ -29,8 +29,6 @@
 #include <assert.h>
 #include "Python-dynload.h"
 
-#include "../hacks/memimp/MemoryModule.h"
-
 // Function pointers we load from _ctypes.pyd
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 typedef HRESULT (__stdcall *__PROC__DllGetClassObject) (REFCLSID, REFIID, LPVOID *);
