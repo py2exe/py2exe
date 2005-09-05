@@ -418,9 +418,12 @@ setup(name="py2exe",
       interpreters = interpreters,
       packages=['py2exe',
                 'py2exe.resources',
-                'py2exe.samples.simple', # not really a package!
-                'py2exe.samples.extending', # not really a package!
-                'py2exe.samples.advanced'], # not really a package!
+                # the following are NOT really packages:
+                'py2exe.samples.simple',
+                'py2exe.samples.extending',
+                'py2exe.samples.advanced',
+                'py2exe.samples.singlefile.gui',
+                'py2exe.samples.singlefile.comserver'],
       options = options,
       )
 
