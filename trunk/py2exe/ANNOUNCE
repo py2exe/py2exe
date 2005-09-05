@@ -1,5 +1,5 @@
-**py2exe 0.5.4** released
-===================================
+py2exe 0.6.1 released
+=====================
 
 py2exe is a Python distutils extension which converts python scripts
 into executable windows programs, able to run without requiring a
@@ -8,29 +8,18 @@ NT services, exe and dll COM servers are supported.
 
 Changes in this release:
 
-    * The new ``--xref`` or ``-x`` command line switch instructs
-      py2exe to create a python module cross reference and display it
-      in the webbrowser.  This allows to answer question why a certain
-      module has been included, or if you can exlude a certain module
-      and it's dependencies.  This has *not* been extensively tested,
-      but it's a start.  Also, the html page includes links which will
-      even allow to view the source code of a module in the browser,
-      for easy inspection.
+    * py2exe can now bundle binary extensions and dlls into the
+      library-archive or the executable itself.  This allows to
+      finally build real single-file executables.
 
-      A sample cross reference can be found here, note that the links
-      to open the .py files will of course not work over the internet:
-      http://starship.python.net/crew/theller/py2exe/sample_xref.html
-
-    * Mark Hammond fixed some thread state issues with dll com
-      servers.
-
-    * Mark Hammond added support for standalone ISAPI dlls.
-
-    * py2exe now can handle python modules with the '.pyw' extension.
-
-    * It is now allowed to specify 'zipfile=None' in the setup script,
-      in this case the zip archive containing the python modules will
-      be appended to the exe file.
+      The bundled dlls and pyds are loaded at runtime by some special
+      code that emulates the Windows LoadLibrary function - they are
+      never unpacked to the file system.
+      
+    * By default py2exe now includes the codecs module and the
+      encodings package.
+      
+    * Several other fixes.
 
 Homepage:
 
