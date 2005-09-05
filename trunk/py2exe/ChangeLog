@@ -1,3 +1,9 @@
+2005-09-05  Thomas Heller  <theller@python.net>
+
+	* py2exe 0.6.1 released.
+
+	* docs\py2exe.txt: Updated the html-pages.
+
 2005-04-28  Thomas Heller  <theller@python.net>
 
 	* py2exe can now bundle binary extensions and dlls into the zip
