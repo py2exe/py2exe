@@ -1,6 +1,6 @@
 /* **************** Python-dynload.c **************** */
 #include "Python-dynload.h"
-#include "../hacks/memimp/MemoryModule.h"
+#include "MemoryModule.h"
 #include <stdio.h>
 
 struct IMPORT imports[] = {
