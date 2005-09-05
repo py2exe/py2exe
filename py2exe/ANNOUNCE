@@ -15,6 +15,9 @@ Changes in this release:
       The bundled dlls and pyds are loaded at runtime by some special
       code that emulates the Windows LoadLibrary function - they are
       never unpacked to the file system.
+
+      This part of the code is distributed under the MPL 1.1, so this
+      license is now pulled in by py2exe.
       
     * By default py2exe now includes the codecs module and the
       encodings package.
