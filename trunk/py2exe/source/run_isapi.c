@@ -55,6 +55,7 @@ __PROC__PyISAPISetOptions pPyISAPISetOptions = NULL;
 extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
+extern void init_memimporter(void);
 
 void SystemError(int error, char *msg)
 {
