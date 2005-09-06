@@ -30,6 +30,7 @@
 	{ "PyInt_Type", NULL },
 	{ "_Py_NoneStruct", NULL },
 	{ "PyExc_ImportError", NULL },
+	{ "_Py_PackageContext", NULL },
 	{ "PyGILState_Ensure", NULL },
 	{ "PyGILState_Release", NULL },
 	{ "PySys_SetObject", NULL },
