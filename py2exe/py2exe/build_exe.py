@@ -375,24 +375,21 @@ class py2exe(Command):
         # copy the extensions to the target directory
         for item in extensions:
             src = item.__file__
-            # XXX It seems the following comment is no longer true...
-            # have to check
-            #
-            # It would be nice if we could change the extensions
-            # filename to include the full package.module name, for
-            # example 'wxPython.wxc.pyd'
-            # But this won't work, because this would also rename
-            # pythoncom23.dll into pythoncom.dll, and win32com contains
-            # magic which relies on this exact filename.
-            # So we do it via a custom loader - see create_loader()
             if self.bundle_files > 2: # don't bundle pyds and dlls
+                # XXX all dlls are copied into the same directory - a flat name space.
+                # sooner or later that will give conflicts.
                 dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
                 self.copy_file(src, dst)
                 self.lib_files.append(dst)
             else:
-                dst = os.path.join(self.collect_dir, os.path.basename(src))
-                self.copy_file(src, dst)
-                self.compiled_files.append(os.path.basename(dst))
+                # we have to preserve the packages
+                package = ".".join(item.__name__.split(".")[:-1])
+                if package:
+                    dst = os.path.join(package, os.path.basename(src))
+                else:
+                    dst = os.path.basename(src)
+                self.copy_file(src, os.path.join(self.collect_dir, dst))
+                self.compiled_files.append(dst)
 
     def copy_dlls(self, dlls):
         # copy needed dlls where they belong.
