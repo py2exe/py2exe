@@ -78,15 +78,17 @@ class ZipExtensionImporter(zipimport.zipimporter):
             return zipimport.zipimporter.load_module(self, fullname)
         except zipimport.ZipImportError:
             pass
-        initname = fullname.split(".")[-1]
-        fullname = fullname.replace(".", "\\")
-        if fullname in ("pywintypes", "pythoncom"):
-            fullname = fullname + "%d%d" % sys.version_info[:2]
+        initname = "init" + fullname.split(".")[-1] # name of initfunction
+        filename = fullname.replace(".", "\\")
+        if filename in ("pywintypes", "pythoncom"):
+            filename = filename + "%d%d" % sys.version_info[:2]
         for s in self._suffixes:
-            path = fullname + s
+            path = filename + s
             if path in self._files:
+                if _memimporter.get_verbose_flag():
+                    sys.stderr.write("# found %s in zipfile %s\n" % (path, self.archive))
                 code = self.get_data(path)
-                mod = _memimporter.import_module(code, "init" + initname, path)
+                mod = _memimporter.import_module(code, initname, fullname, path)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
                 mod.__loader__ = self
                 if _memimporter.get_verbose_flag():

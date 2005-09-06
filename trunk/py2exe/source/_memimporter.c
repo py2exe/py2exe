@@ -9,7 +9,6 @@
 #  include "Python-dynload.h"
 #  include <stdio.h>
 #endif
-
 #include <windows.h>
 
 static char module_doc[] =
@@ -71,17 +70,22 @@ import_module(PyObject *self, PyObject *args)
 	char *data;
 	int size;
 	char *initfuncname;
-	char *fullname;
+	char *modname;
+	char *pathname;
 	HMEMORYMODULE hmem;
 	FARPROC do_init;
 
-	if (!PyArg_ParseTuple(args, "s#ss:import_module", &data, &size,
-			      &initfuncname, &fullname))
+	char *oldcontext;
+
+	/* code, initfuncname, fqmodulename, path */
+	if (!PyArg_ParseTuple(args, "s#sss:import_module",
+			      &data, &size,
+			      &initfuncname, &modname, &pathname))
 		return NULL;
-	hmem = MemoryLoadLibrary(fullname, data);
+	hmem = MemoryLoadLibrary(pathname, data);
 	if (!hmem) {
 		PyErr_Format(PyExc_ImportError,
-			     "MemoryLoadLibrary failed loading %s", fullname);
+			     "MemoryLoadLibrary failed loading %s", pathname);
 		return NULL;
 	}
 	do_init = MemoryGetProcAddress(hmem, initfuncname);
@@ -89,10 +93,17 @@ import_module(PyObject *self, PyObject *args)
 		MemoryFreeLibrary(hmem);
 		PyErr_Format(PyExc_ImportError,
 			     "Could not find function %s", initfuncname);
+		return NULL;
 	}
+
+        oldcontext = _Py_PackageContext;
+	_Py_PackageContext = modname;
 	do_init();
+	_Py_PackageContext = oldcontext;
+	if (PyErr_Occurred())
+		return NULL;
 	/* Retrieve from sys.modules */
-	return PyImport_ImportModule(initfuncname + 4);
+	return PyImport_ImportModule(modname);
 }
 
 static PyObject *

@@ -1,3 +1,8 @@
+2005-09-06  Thomas Heller  <theller@python.net>
+
+	* Fix the import from extensions in packages.  This made newer
+	versions of wxPython (for example) fail.
+
 2005-09-05  Thomas Heller  <theller@python.net>
 
 	* py2exe 0.6.1 released.
