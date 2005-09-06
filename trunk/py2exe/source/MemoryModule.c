@@ -37,6 +37,10 @@
 
 #include "MemoryModule.h"
 
+/*
+  XXX We need to protect at least walking the 'loaded' linked list with a lock!
+*/
+
 /******************************************************************/
 FINDPROC findproc;
 void *findproc_data;
@@ -103,6 +107,11 @@ HMODULE MyLoadLibrary(char *lpFileName)
 {
 	MEMORYMODULE *p = loaded;
 	HMODULE hMod;
+
+	/* If already loaded, increment refcount (that's what LoadLibrary does) */
+	if (GetModuleHandle(lpFileName))
+		return LoadLibrary(lpFileName);
+
 	while (p) {
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(lpFileName, p->name)) {
