@@ -35,6 +35,7 @@
 #include "Python-dynload.h"
 #include <stdio.h>
 #include <windows.h>
+#include "MemoryModule.h"
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <fcntl.h>

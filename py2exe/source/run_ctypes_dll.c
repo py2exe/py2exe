@@ -28,6 +28,7 @@
 
 #include <assert.h>
 #include "Python-dynload.h"
+#include "MemoryModule.h"
 
 // Function pointers we load from _ctypes.pyd
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
@@ -37,6 +38,8 @@ CRITICAL_SECTION csInit; // protecting our init code
 
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
 __PROC__DllGetClassObject Pyc_DllGetClassObject = NULL;
+
+extern void init_memimporter(void);
 
 void SystemError(int error, char *msg)
 {
