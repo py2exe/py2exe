@@ -34,6 +34,7 @@ int, PyObject_IsInstance, (PyObject *, PyObject *)
 PyObject, PyInt_Type
 PyObject, _Py_NoneStruct
 PyObject *, PyExc_ImportError
+char *, _Py_PackageContext
 
 PyGILState_STATE, PyGILState_Ensure, (void)
 void, PyGILState_Release, (PyGILState_STATE)
