@@ -14,7 +14,11 @@
 	{ "PyInt_FromLong", NULL },
 	{ "PyInt_AsLong", NULL },
 	{ "PyLong_FromVoidPtr", NULL },
+#ifdef _DEBUG
+	{ "Py_InitModule4TraceRefs", NULL },
+#else
 	{ "Py_InitModule4", NULL },
+#endif
 	{ "PyTuple_New", NULL },
 	{ "PyTuple_SetItem", NULL },
 	{ "Py_IsInitialized", NULL },
