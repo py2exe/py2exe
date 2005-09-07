@@ -1,5 +1,9 @@
 2005-09-07  Thomas Heller  <theller@python.net>
 
+	* py2exe 0.6.2 released.
+
+	* MANIFEST.in: The source archive was not complete.
+
 	* MemoryModule.c: Fixed a bug which loaded dlls more than once,
 	with very strange effects.
 
