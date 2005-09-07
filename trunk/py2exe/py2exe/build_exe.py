@@ -393,7 +393,7 @@ class py2exe(Command):
 
     def copy_dlls(self, dlls):
         # copy needed dlls where they belong.
-        self.announce("*** copy dlls ***")
+        print "*** copy dlls ***"
         if self.bundle_files < 3:
             self.copy_dlls_bundle_files(dlls)
             return
@@ -1109,7 +1109,9 @@ class py2exe(Command):
                              'termios',
                              'vms_lib']
             # special dlls which must be copied to the exe_dir, not the lib_dir
-            self.dlls_in_exedir = [python_dll, "w9xpopen.exe"]
+            self.dlls_in_exedir = [python_dll,
+                                   "w9xpopen%s.exe" % (is_debug_build and "_d" or ""),
+                                   "msvcr71%s.dll" % (is_debug_build and "d" or "")]
         else:
             raise DistutilsError, "Platform %s not yet implemented" % sys.platform
 
@@ -1303,13 +1305,13 @@ EXCLUDED_DLLS = (
     "ws2help.dll",
     "wsock32.dll",
     "netapi32.dll",
-    "msvcr71.dll"
-    "msvcr71d.dll"
     )
 
 # XXX Perhaps it would be better to assume dlls from the systemdir are system dlls,
 # and make some exceptions for known dlls, like msvcr71, pythonXY.dll, and so on?
 def isSystemDLL(pathname):
+    if os.path.basename(pathname).lower() in ("msvcr71.dll", "msvcr71d.dll"):
+        return 0
     if os.path.basename(pathname).lower() in EXCLUDED_DLLS:
         return 1
     # How can we determine whether a dll is a 'SYSTEM DLL'?
