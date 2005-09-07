@@ -1,5 +1,10 @@
 2005-09-07  Thomas Heller  <theller@python.net>
 
+	* Special handling of MSVCR71.dll and MSVCR71D.dll - they are now
+	copied into the dist directory if needed.  Note that Microsoft
+	explicitely states that MSVCR71D.dll - the debug version - is NOT
+	REDISTRIBUTABLE!
+
 	* Use w9xpopen_d.exe in a debug build.  Handle the release and the
 	debug version of MSVCR71 in the same way.
 
