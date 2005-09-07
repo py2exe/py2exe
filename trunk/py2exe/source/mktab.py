@@ -69,15 +69,23 @@ for decl in decls:
         continue
     items = decl.split(',', 2)
     if len(items) == 3:
-        # function
+        # exported function with argument list
         restype, name, argtypes = map(string.strip, items)
         print >> hfile, '#define %(name)s ((%(restype)s(*)%(argtypes)s)imports[%(index)d].proc)' % locals()
     elif len(items) == 2:
+        # exported data
         typ, name = map(string.strip, items)
         print >> hfile, '#define %(name)s (*(%(typ)s(*))imports[%(index)s].proc)' % locals()
     else:
         raise ValueError, "could not parse %r" % decl
-    print >> cfile, '\t{ "%(name)s", NULL },' % locals()
+    if name == "Py_InitModule4":
+        print >> cfile, '#ifdef _DEBUG'
+        print >> cfile, '\t{ "Py_InitModule4TraceRefs", NULL },' % locals()
+        print >> cfile, '#else'
+        print >> cfile, '\t{ "Py_InitModule4", NULL },' % locals()
+        print >> cfile, '#endif'
+    else:
+        print >> cfile, '\t{ "%(name)s", NULL },' % locals()
 
     index += 1
 

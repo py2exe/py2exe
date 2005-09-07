@@ -1,3 +1,8 @@
+2005-09-07  Thomas Heller  <theller@python.net>
+
+	* Fix the definition of Py_InitModule4 in the import table.  This
+	allows to build a debug version of py2exe.
+
 2005-09-06  Thomas Heller  <theller@python.net>
 
 	* Fix the import from extensions in packages.  This made newer
