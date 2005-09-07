@@ -31,7 +31,7 @@
 
 #include <Windows.h>
 #include <winnt.h>
-#ifdef DEBUG_OUTPUT
+#if DEBUG_OUTPUT
 #include <stdio.h>
 #endif
 
@@ -159,7 +159,7 @@ BOOL MyFreeLibrary(HMODULE hModule)
 	return FreeLibrary(hModule);
 }
 
-#ifdef DEBUG_OUTPUT
+#if DEBUG_OUTPUT
 static void
 OutputLastError(const char *msg)
 {
@@ -174,6 +174,20 @@ OutputLastError(const char *msg)
 	LocalFree(tmp);
 }
 #endif
+
+/*
+static int dprintf(char *fmt, ...)
+{
+	char Buffer[4096];
+	va_list marker;
+	int result;
+	
+	va_start(marker, fmt);
+	result = vsprintf(Buffer, fmt, marker);
+	OutputDebugString(Buffer);
+	return result;
+}
+*/
 
 static void
 CopySections(const unsigned char *data, PIMAGE_NT_HEADERS old_headers, PMEMORYMODULE module)
@@ -267,7 +281,7 @@ FinalizeSections(PMEMORYMODULE module)
 		{
 			// change memory access flags
 			if (VirtualProtect((LPVOID)section->Misc.PhysicalAddress, section->SizeOfRawData, protect, &oldProtect) == 0)
-#ifdef DEBUG_OUTPUT
+#if DEBUG_OUTPUT
 				OutputLastError("Error protecting memory page")
 #endif
 			;
@@ -400,6 +414,19 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 	DWORD locationDelta;
 	DllEntryProc DllEntry;
 	BOOL successfull;
+	MEMORYMODULE *p = loaded;
+
+	/* If already loaded, increment refcount (that's what LoadLibrary does) */
+	if (GetModuleHandle(name))
+		return LoadLibrary(name);
+	while (p) {
+		// If already loaded, only increment the reference count
+		if (0 == stricmp(name, p->name)) {
+			p->refcount++;
+			return (HMODULE)p;
+		}
+		p = p->next;
+	}
 
 	dos_header = (PIMAGE_DOS_HEADER)data;
 	if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
