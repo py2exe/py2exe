@@ -1,5 +1,8 @@
 2005-09-07  Thomas Heller  <theller@python.net>
 
+	* MemoryModule.c: Fixed a bug which loaded dlls more than once,
+	with very strange effects.
+
 	* Special handling of MSVCR71.dll and MSVCR71D.dll - they are now
 	copied into the dist directory if needed.  Note that Microsoft
 	explicitely states that MSVCR71D.dll - the debug version - is NOT
