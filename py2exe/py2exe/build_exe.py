@@ -561,7 +561,7 @@ class py2exe(Command):
                 
                 if self.compressed:
                     # prepend zlib.pyd also
-                    print "Adding zlib.pyd to %s" % (arcname,)
+                    print "Adding zlib%s.pyd to %s" % (is_debug_build and "_d" or "", arcname)
                     arcfile.write("<zlib.pyd>")
                     zlib_file = imp.find_module("zlib")[0]
                     bytes = zlib_file.read()
@@ -1025,7 +1025,10 @@ class py2exe(Command):
     def copy_w9xpopen(self, modules, dlls):
         # Using popen requires (on Win9X) the w9xpopen.exe helper executable.
         if "os" in modules.keys() or "popen2" in modules.keys():
-            dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
+            if is_debug_build:
+                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen_d.exe"))
+            else:
+                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
 
     def create_loader(self, item):
         # Hm, how to avoid needless recreation of this file?
@@ -1301,6 +1304,7 @@ EXCLUDED_DLLS = (
     "wsock32.dll",
     "netapi32.dll",
     "msvcr71.dll"
+    "msvcr71d.dll"
     )
 
 # XXX Perhaps it would be better to assume dlls from the systemdir are system dlls,

@@ -1,5 +1,8 @@
 2005-09-07  Thomas Heller  <theller@python.net>
 
+	* Use w9xpopen_d.exe in a debug build.  Handle the release and the
+	debug version of MSVCR71 in the same way.
+
 	* Fix the definition of Py_InitModule4 in the import table.  This
 	allows to build a debug version of py2exe.
 
