@@ -7,17 +7,17 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.6.1.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.1.win32-py2.3.exe?download
+.. _py2exe-0.6.2.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.2.win32-py2.3.exe?download
 
-.. _py2exe-0.6.1.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.1.win32-py2.4.exe?download
+.. _py2exe-0.6.2.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.2.win32-py2.4.exe?download
 
 .. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
-.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_6_1
+.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_6_2
 
-.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_6_1
+.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_6_2
 
 .. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
 
@@ -54,6 +54,13 @@ Public License Version 1.1`_
 
 News
 ----
+
+**py2exe 0.6.2 released (2005/09/07)**
+
+Several important bugfixes.
+
+For Python 2.4, MSVCR71.dll is now copied into the dist directory.
+This dll cannot be bundled into the executable, sorry.
 
 **py2exe 0.6.1 released (2005/09/05)**
 
@@ -311,8 +318,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.6.1.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.6.1.win32-py2.4.exe_ (for Python 2.4).
+Download and run the installer py2exe-0.6.2.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.6.2.win32-py2.4.exe_ (for Python 2.4).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
