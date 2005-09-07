@@ -70,7 +70,8 @@ typedef BOOL (WINAPI *DllEntryProc)(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID 
 
 MEMORYMODULE *loaded; /* linked list of loaded memory modules */
 
-void Register(char *name, MEMORYMODULE *module)
+/* private - insert a loaded library in a linked list */
+static void _Register(char *name, MEMORYMODULE *module)
 {
 	module->next = loaded;
 	if (loaded)
@@ -79,7 +80,8 @@ void Register(char *name, MEMORYMODULE *module)
 	loaded = module;
 }
 
-void Unregister(MEMORYMODULE *module)
+/* private - remove a loaded library from a linked list */
+static void _Unregister(MEMORYMODULE *module)
 {
 	free(module->name);
 	if (module->prev)
@@ -90,6 +92,7 @@ void Unregister(MEMORYMODULE *module)
 		loaded = module->next;
 }
 
+/* public - replacement for GetModuleHandle() */
 HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 {
 	MEMORYMODULE *p = loaded;
@@ -103,14 +106,14 @@ HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 	return GetModuleHandle(lpModuleName);
 }
 
+/* public - replacement for LoadLibrary, but searches FIRST for memory
+   libraries, then for normal libraries.  So, it will load libraries AS memory
+   module if they are found by findproc().
+*/
 HMODULE MyLoadLibrary(char *lpFileName)
 {
 	MEMORYMODULE *p = loaded;
 	HMODULE hMod;
-
-	/* If already loaded, increment refcount (that's what LoadLibrary does) */
-	if (GetModuleHandle(lpFileName))
-		return LoadLibrary(lpFileName);
 
 	while (p) {
 		// If already loaded, only increment the reference count
@@ -132,6 +135,7 @@ HMODULE MyLoadLibrary(char *lpFileName)
 	return hMod;
 }
 
+/* public - replacement for GetProcAddress() */
 FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
 {
 	MEMORYMODULE *p = loaded;
@@ -143,13 +147,14 @@ FARPROC MyGetProcAddress(HMODULE hModule, LPCSTR lpProcName)
 	return GetProcAddress(hModule, lpProcName);
 }
 
+/* public - replacement for FreeLibrary() */
 BOOL MyFreeLibrary(HMODULE hModule)
 {
 	MEMORYMODULE *p = loaded;
 	while (p) {
 		if ((HMODULE)p == hModule) {
 			if (--p->refcount == 0) {
-				Unregister(p);
+				_Unregister(p);
 				MemoryFreeLibrary(p);
 			}
 			return TRUE;
@@ -405,6 +410,14 @@ BuildImportTable(PMEMORYMODULE module)
 	return result;
 }
 
+/*
+  MemoryLoadLibrary - load a library AS MEMORY MODULE, or return
+  existing MEMORY MODULE with increased refcount.
+
+  This allows to load a library AGAIN as memory module which is
+  already loaded as HMODULE!
+
+*/
 HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 {
 	PMEMORYMODULE result;
@@ -416,9 +429,6 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 	BOOL successfull;
 	MEMORYMODULE *p = loaded;
 
-	/* If already loaded, increment refcount (that's what LoadLibrary does) */
-	if (GetModuleHandle(name))
-		return LoadLibrary(name);
 	while (p) {
 		// If already loaded, only increment the reference count
 		if (0 == stricmp(name, p->name)) {
@@ -427,6 +437,8 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 		}
 		p = p->next;
 	}
+
+	/* Do NOT check for GetModuleHandle here! */
 
 	dos_header = (PIMAGE_DOS_HEADER)data;
 	if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
@@ -541,7 +553,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 		result->initialized = 1;
 	}
 
-	Register(name, result);
+	_Register(name, result);
 
 	return (HMEMORYMODULE)result;
 
