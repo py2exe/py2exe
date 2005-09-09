@@ -128,6 +128,8 @@ class py2exe(Command):
 
         ("excludes=", 'e',
          "comma-separated list of modules to exclude"),
+        ("dll-excludes=", None,
+         "comma-separated list of DLLs to exclude"),
         ("ignores=", None,
          "comma-separated list of modules to ignore if they are not found"),
         ("includes=", 'i',
@@ -254,6 +256,9 @@ class py2exe(Command):
         print "*** finding dlls needed ***"
         dlls = self.find_dlls(extensions)
         self.plat_finalize(mf.modules, py_files, extensions, dlls)
+        dlls = [item for item in dlls
+                if os.path.basename(item).lower() not in self.dll_excludes]
+        # should we filter self.other_depends in the same way?
 
         print "*** create binaries ***"
         self.create_binaries(py_files, extensions, dlls)
@@ -1007,8 +1012,8 @@ class py2exe(Command):
         return py_files, extensions, builtins
 
     def plat_finalize(self, modules, py_files, extensions, dlls):
-        # platform specific code for final adjustments to the
-        # file lists
+        # platform specific code for final adjustments to the file
+        # lists
         if sys.platform == "win32":
             # pythoncom and pywintypes are imported via LoadLibrary calls,
             # help py2exe to include the dlls:
