@@ -279,14 +279,12 @@ class py2exe(Command):
             print "make sure you don't distribute files belonging to the operating system."
             print
             for fnm in self.other_depends:
-                print "\t%s - %s" % (os.path.basename(fnm), fnm)
+                print "  ", os.path.basename(fnm), "-", fnm.strip()
 
     def create_modulefinder(self):
-        from modulefinder import ModuleFinder, ReplacePackage
-        ReplacePackage("_xmlplus", "xml")
-
+        from modulefinder import ReplacePackage
         from py2exe.mf import ModuleFinder
-
+        ReplacePackage("_xmlplus", "xml")
         return ModuleFinder(excludes=self.excludes)
 
     def fix_badmodules(self, mf):
@@ -388,7 +386,7 @@ class py2exe(Command):
                 self.lib_files.append(dst)
             else:
                 # we have to preserve the packages
-                package = ".".join(item.__name__.split(".")[:-1])
+                package = "\\".join(item.__name__.split(".")[:-1])
                 if package:
                     dst = os.path.join(package, os.path.basename(src))
                 else:
