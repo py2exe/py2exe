@@ -1,3 +1,12 @@
+2005-10-06  Jimmy Retzlaff  <jimmy@retzlaff.com>
+
+	* py2exe 0.6.3 released.
+
+    * Added build.cmd that builds files for release.
+
+    * Added Jimmy Retzlaff as maintainer and changed website pointers
+      to http://www.py2exe.org/.
+
 2005-09-09  Thomas Heller  <theller@python.net>
 
 	* py2exe\build_exe.py (py2exe.copy_extensions): Make the
@@ -10,7 +19,7 @@
 	(py2exe.copy_extensions): Fix from Gordon Scott, py2exe crashed
 	copying extension modules in packages.
 
-	
+
 2005-09-07  Thomas Heller  <theller@python.net>
 
 	* py2exe 0.6.2 released.
@@ -175,7 +184,7 @@
 
 
 2004-04-18  Mark Hammond
-	
+
 	* (build_exe.py): Patch sys.winver in the distributed
 	pythonxx.dll, so that there is no possibility of conflicts with
 	existing distributions and the registry keys found there.  Of
@@ -206,7 +215,7 @@
 
 	* py2exe\build_exe.py: makepy code generation with bForDemand=True is buggy.
 	Use bForDemand=False instead.
-	
+
 
 2004-02-17  Thomas Heller  <theller@python.net>
 
