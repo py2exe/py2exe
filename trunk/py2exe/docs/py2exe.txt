@@ -7,9 +7,9 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.6.2.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.2.win32-py2.3.exe?download
+.. _py2exe-0.6.3.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.3.win32-py2.3.exe?download
 
-.. _py2exe-0.6.2.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.2.win32-py2.4.exe?download
+.. _py2exe-0.6.3.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.3.win32-py2.4.exe?download
 
 .. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
@@ -27,7 +27,7 @@
 
 .. _nntp: nntp://news.gmane.org/gmane.comp.python.py2exe
 
-.. _sample_xref: http://starship.python.net/crew/theller/py2exe/sample_xref.html
+.. _sample_xref: http://www.py2exe.org/sample_xref.html
 
 .. _MPL: http://www.opensource.org/licenses/mozilla1.1.php
 .. _Mozilla Public License Version 1.1: http://www.mozilla.org/MPL/MPL-1.1.html
@@ -35,8 +35,8 @@
 py2exe - convert python scripts into standalone windows programs
 ================================================================
 
-Copyright (c) 2001, 2002, 2003, 2004, 2005 Thomas Heller, Mark
-Hammond, Joachim Bauch, and contributors.
+Copyright (c) 2001-2005 Thomas Heller, Mark Hammond, Joachim Bauch,
+Jimmy Retzlaff, and contributors.
 
 Abstract
 --------
@@ -54,6 +54,14 @@ Public License Version 1.1`_
 
 News
 ----
+
+**py2exe 0.6.3 released (2005/10/06)**
+
+dll-excludes is now available on the command line and can be used to
+exclude msvcr71.dll and w9xpopen.exe.
+
+A bug that caused py2exe to crash when copying extension modules in
+packages was fixed.
 
 **py2exe 0.6.2 released (2005/09/07)**
 
@@ -124,7 +132,7 @@ statement ``import py2exe`` before the call to the setup function::
   # setup.py
   from distutils.core import setup
   import py2exe
-	
+
   setup(console=["myscript.py"])
 
 Running ::
@@ -195,7 +203,7 @@ attribute)::
   # setup.py
   from distutils.core import setup
   import py2exe
-	
+
   setup(service=["MyService"])
 
 The built service executables are able to install and remove
@@ -213,7 +221,7 @@ names containing one or more COM server classes (identified by their
   # setup.py
   from distutils.core import setup
   import py2exe
-	
+
   setup(com_server=["win32com.server.interp"])
 
 By default both DLL and EXE servers are built, you should simply
@@ -318,8 +326,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.6.2.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.6.2.win32-py2.4.exe_ (for Python 2.4).
+Download and run the installer py2exe-0.6.3.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.6.3.win32-py2.4.exe_ (for Python 2.4).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
