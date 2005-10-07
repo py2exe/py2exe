@@ -21,7 +21,7 @@ New keywords for distutils' setup function specify what to build:
     zipfile
         name of shared zipfile to generate, may specify a subdirectory,
         defaults to 'library.zip'
-    
+
 
 py2exe options, to be specified in the options keyword to the setup function:
 
@@ -62,7 +62,7 @@ keys in the dictionary are recognized, most are optional:
 # special one contained in this module.
 #
 
-__version__ = "0.6.2"
+__version__ = "0.6.3"
 
 import distutils.dist, distutils.core, distutils.command, build_exe, sys
 
