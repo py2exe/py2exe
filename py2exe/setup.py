@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ##
-##	   Copyright (c) 2000, 2001, 2002, 2003 Thomas Heller
+##	   Copyright (c) 2000-2005 Thomas Heller, Jimmy Retzlaff
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
@@ -23,8 +23,8 @@
 ##
 
 """This package is a distutils extension to build
-standalone windows executable programs from
-python scripts.
+standalone Windows executable programs from
+Python scripts.
 """
 
 from py2exe import __version__
@@ -153,7 +153,7 @@ class BuildInterpreters(build_ext.build_ext):
             # XXX - is msvccompiler.link broken?  From what I can see, the
             # following should work, instead of us checking the param:
             self.compiler.link(inter.target_desc,
-                               objects, exe_filename, 
+                               objects, exe_filename,
                                libraries=self.get_libraries(inter),
                                library_dirs=inter.library_dirs,
                                runtime_library_dirs=inter.runtime_library_dirs,
@@ -240,7 +240,7 @@ class deinstall(Command):
 
     def finalize_options(self):
         pass
-        
+
     def run(self):
         self.run_command('build')
         build = self.get_finalized_command('build')
@@ -395,15 +395,17 @@ options = {"bdist_wininst": {"install_script": "py2exe_postinstall.py"}}
 
 setup(name="py2exe",
       version=__version__,
-      description="Build standalone executables for windows",
+      description="Build standalone executables for Windows",
       long_description=__doc__,
       author="Thomas Heller",
       author_email="theller@python.net",
-      url="http://starship.python.net/crew/theller/py2exe/",
-      license="MIT/X11",
+      maintainer="Jimmy Retzlaff",
+      maintainer_email="jimmy@retzlaff.com",
+      url="http://www.py2exe.org/",
+      license="MIT/X11, MPL 1.1",
       platforms="Windows",
       download_url="http://sourceforge.net/project/showfiles.php?group_id=15583",
-      
+      classifiers=["Development Status :: 5 - Production/Stable"],
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
                   'deinstall': deinstall},
