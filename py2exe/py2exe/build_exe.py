@@ -419,7 +419,7 @@ class py2exe(Command):
                 # dist directory.  Patching an UPX'd dll seems to work
                 # (no error is detected when patching), but the
                 # resulting dll does not work anymore.
-                # 
+                #
                 # The function restores the file times so
                 # dependencies still work correctly.
                 self.patch_python_dll_winver(dst)
@@ -432,7 +432,7 @@ class py2exe(Command):
         # include in the zip archive 'self.compiled_files'.
         #
         # dlls listed in dlls_in_exedir have to be treated differently:
-        # 
+        #
         for dll in dlls:
             base = os.path.basename(dll)
             if base.lower() in self.dlls_in_exedir:
@@ -459,7 +459,7 @@ class py2exe(Command):
 
     def create_binaries(self, py_files, extensions, dlls):
         dist = self.distribution
-        
+
         # byte compile the python modules into the target directory
         print "*** byte compile python files ***"
         self.compiled_files = byte_compile(py_files,
@@ -561,7 +561,7 @@ class py2exe(Command):
                     bytes = open(os.path.join(self.bundle_dir, python_dll), "rb").read()
                     arcfile.write(struct.pack("i", len(bytes)))
                     arcfile.write(bytes) # python dll
-                
+
                 if self.compressed:
                     # prepend zlib.pyd also
                     print "Adding zlib%s.pyd to %s" % (is_debug_build and "_d" or "", arcname)
@@ -602,7 +602,7 @@ class py2exe(Command):
 
     def fixup_distribution(self):
         dist = self.distribution
-        
+
         # Convert our args into target objects.
         dist.com_server = FixupTargets(dist.com_server, "modules")
         dist.ctypes_com_server = FixupTargets(dist.ctypes_com_server, "modules")
@@ -847,7 +847,7 @@ class py2exe(Command):
         except VersionError, detail:
             self.warn("Version Info will not be included:\n  %s" % detail)
             return
-            
+
         from py2exe_util import add_resource
         add_resource(unicode(exe_path), bytes, RT_VERSION, 1, False)
 
@@ -878,7 +878,7 @@ class py2exe(Command):
         delete = True
         for id, data in s.binary():
             add_resource(unicode(dll_name), data, RT_STRING, id, delete)
-            delete = False        
+            delete = False
 
         # restore the time.
         os.utime(dll_name, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
@@ -917,7 +917,7 @@ class py2exe(Command):
         images = dlls + templates
 
         self.announce("Resolving binary dependencies:")
-        
+
         # we add python.exe (aka sys.executable) to the list of images
         # to scan for dependencies, but remove it later again from the
         # results list.  In this way pythonXY.dll is collected, and
@@ -941,7 +941,7 @@ class py2exe(Command):
                 "cPickle": ["copy_reg"],
                 "parser": ["copy_reg"],
                 "codecs": ["encodings"],
-                
+
                 "cStringIO": ["copy_reg"],
                 "_sre": ["copy", "string", "sre"],
                 }
@@ -972,7 +972,7 @@ class py2exe(Command):
         py_files = []
         extensions = []
         builtins = []
-        
+
         for item in mf.modules.values():
             # There may be __main__ modules (from mf.run_script), but
             # we don't need them in the zipfile we build.
@@ -1265,17 +1265,16 @@ def bin_depends(path, images, excluded_dlls):
                 loadpath = os.path.dirname(abs_image) + ';' + path
                 for result in py2exe_util.depends(image, loadpath).items():
                     dll, uses_import_module = result
-                    if isSystemDLL(dll):
-                        others.add(dll)
-                        continue
-                    if not dll in images \
-                       and not dll in dependents \
-                       and not os.path.basename(dll).lower() in excluded_dlls:
-                        images.add(dll)
-                        if uses_import_module:
-                            warnings.add(dll)
+                    if os.path.basename(dll).lower() not in excluded_dlls:
+                        if isSystemDLL(dll):
+                            others.add(dll)
+                            continue
+                        if dll not in images and dll not in dependents:
+                            images.add(dll)
+                            if uses_import_module:
+                                warnings.add(dll)
     return dependents, warnings, others
-    
+
 # DLLs to be excluded
 # XXX This list is NOT complete (it cannot be)
 # Note: ALL ENTRIES MUST BE IN LOWER CASE!
@@ -1427,7 +1426,7 @@ byte_compile(files, optimize=%s, force=%s,
             dfile = cfile + '.py' + (optimize and 'o' or 'c')
         compiled_files.append(dfile)
     return compiled_files
-        
+
 # byte_compile()
 
 # win32com makepy helper.
