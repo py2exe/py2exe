@@ -34,6 +34,9 @@ typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
 typedef HRESULT (__stdcall *__PROC__DllGetClassObject) (REFCLSID, REFIID, LPVOID *);
 typedef void (__cdecl *__PROC__PyCom_CoUninitialize) (void);
 
+extern BOOL _LoadPythonDLL(HMODULE hmod);
+extern BOOL _LocateScript(HMODULE hmod);
+
 CRITICAL_SECTION csInit; // protecting our init code
 
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
@@ -152,10 +155,27 @@ int check_init()
 		// Check the flag again - another thread may have beat us to it!
 		if (!have_init) {
 			PyObject *frozen;
-			/* If Python had previously been initialized, we must use
-			   PyGILState_Ensure normally.  If Python has not been initialized,
-			   we must leave the thread state unlocked, so other threads can
-			   call in.
+			/* Consider a py2exe generated COM DLL, and a py2exe
+			   generated .EXE that makes use of the COM object (both
+			   in the same distribution)
+
+			   When VB, for example, creates the COM object, this
+			   code has not previously loaded Python. Python is
+			   therefore not initialized, so a normal Python init
+			   routine works fine.
+
+			   However - consider when our .exe attempts to create
+			   the COM object. Python has already been initialized
+			   in this process (as the .exe started up), but the
+			   function pointers (eg, Py_IsInitialized) are yet to
+			   be loaded in this DLLs private data. Worse, in this
+			   case the GIL is not held, so calling
+			   init_with_instance in this state will do things like
+			   call PySys_SetObject, which will abort() as there is
+			   no thread-state.
+
+			   In all cases, we must exit this function with the GIL
+			   released.
 			*/
 			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
 			/* Before we call Python functions, we must make sure
@@ -164,6 +184,17 @@ int check_init()
 			   but we can aso check if the functions are
 			   available.
 			 */
+			if (!Py_IsInitialized) {
+				// Python function pointers are yet to be loaded
+				// - force that now. See above for why we *must*
+				// know about the initialized state of Python so
+				// we can setup the thread-state correctly
+				// before calling init_with_instance(); This is
+				// wasteful, but fixing it would involve a
+				// restructure of init_with_instance()
+				_LocateScript(gInstance);
+				_LoadPythonDLL(gInstance);
+			}
 			if (Py_IsInitialized && Py_IsInitialized()) {
 				restore_state = PyGILState_Ensure();
 			}

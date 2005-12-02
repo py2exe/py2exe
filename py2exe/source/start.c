@@ -77,7 +77,7 @@ static int dprintf(char *fmt, ...)
 }
 */
 
-static BOOL _LocateScript(HMODULE hmod)
+BOOL _LocateScript(HMODULE hmod)
 {
 	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
 	HGLOBAL hgbl;
@@ -153,7 +153,7 @@ static char *MapExistingFile(char *pathname, DWORD *psize)
 	return data;
 }
 
-static BOOL _LoadPythonDLL(HMODULE hmod)
+BOOL _LoadPythonDLL(HMODULE hmod)
 {
 	HRSRC hrsrc;
 	char *pBaseAddress;
