@@ -2,7 +2,7 @@
 
 # When we are a windows_exe we have no console, and writing to
 # sys.stderr or sys.stdout will sooner or later raise an exception,
-# and tracebacks will be lost anyway.
+# and tracebacks will be lost anyway (see explanation below).
 #
 # We assume that output to sys.stdout can go to the bitsink, but we
 # *want* to see tracebacks.  So we redirect sys.stdout into an object
@@ -16,6 +16,29 @@
 #
 # It remains to be seen if the 'a' flag for opening the logfile is a
 # good choice, or 'w' would be better.
+#
+# More elaborate explanation on why this is needed:
+#
+# The sys.stdout and sys.stderr that GUI programs get (from Windows) are
+# more than useless.  This is not a py2exe problem, pythonw.exe behaves
+# in the same way.
+#
+# To demonstrate, run this program with pythonw.exe:
+#
+# import sys
+# sys.stderr = open("out.log", "w")
+# for i in range(10000):
+#     print i
+#
+# and open the 'out.log' file.  It contains this:
+#
+# Traceback (most recent call last):
+#   File "out.py", line 6, in ?
+#     print i
+# IOError: [Errno 9] Bad file descriptor
+#
+# In other words, after printing a certain number of bytes to the
+# system-supplied sys.stdout (or sys.stderr) an exception will be raised.
 #
 
 import sys
