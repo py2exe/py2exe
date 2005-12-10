@@ -1,4 +1,12 @@
-import modulefinder, sys, imp, os, urllib, tempfile
+import dis
+import imp
+import modulefinder
+import os
+import struct
+import sys
+import tempfile
+import urllib
+
 try:
     set
 except NameError:
@@ -178,6 +186,68 @@ class ModuleFinder(Base):
         # how long does it take to start the browser?
         import threading
         threading.Timer(5, os.remove, args=[htmlfile])
+
+    def scan_code(self, co, m,
+                  HAVE_ARGUMENT = chr(dis.HAVE_ARGUMENT),
+                  LOAD_CONST = chr(dis.opname.index('LOAD_CONST')),
+                  IMPORT_NAME = chr(dis.opname.index('IMPORT_NAME')),
+                  STORE_OPS = [chr(dis.opname.index('STORE_NAME')),
+                               chr(dis.opname.index('STORE_GLOBAL'))],
+                  unpack = struct.unpack
+                  ):
+        code = co.co_code
+        constants = co.co_consts
+        n = len(code)
+        i = 0
+        fromlist = None
+        while i < n:
+            c = code[i]
+            i = i+1
+            if c >= HAVE_ARGUMENT:
+                i = i+2
+            if c == LOAD_CONST:
+                # An IMPORT_NAME is always preceded by a LOAD_CONST, it's
+                # a tuple of "from" names, or None for a regular import.
+                # The tuple may contain "*" for "from <mod> import *"
+                oparg = unpack('<H', code[i-2:i])[0]
+                fromlist = constants[oparg]
+            elif c == IMPORT_NAME:
+                assert fromlist is None or type(fromlist) is tuple
+                oparg = unpack('<H', code[i-2:i])[0]
+                name = co.co_names[oparg]
+                have_star = 0
+                if fromlist is not None:
+                    if "*" in fromlist:
+                        have_star = 1
+                    fromlist = [f for f in fromlist if f != "*"]
+                self._safe_import_hook(name, m, fromlist)
+                if have_star:
+                    # We've encountered an "import *". If it is a Python module,
+                    # the code has already been parsed and we can suck out the
+                    # global names.
+                    mm = None
+                    if m.__path__:
+                        # At this point we don't know whether 'name' is a
+                        # submodule of 'm' or a global module. Let's just try
+                        # the full name first.
+                        mm = self.modules.get(m.__name__ + "." + name)
+                    if mm is None:
+                        mm = self.modules.get(name)
+                    if mm is not None:
+                        m.globalnames.update(mm.globalnames)
+                        m.starimports.update(mm.starimports)
+                        if mm.__code__ is None:
+                            m.starimports[name] = 1
+                    else:
+                        m.starimports[name] = 1
+            elif c in STORE_OPS:
+                # keep track of all global names that are assigned to
+                oparg = unpack('<H', code[i-2:i])[0]
+                name = co.co_names[oparg]
+                m.globalnames[name] = 1
+        for c in constants:
+            if isinstance(c, type(co)):
+                self.scan_code(c, m)
 
 
 TYPES = {imp.C_BUILTIN: "(builtin module)",
