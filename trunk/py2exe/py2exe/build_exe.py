@@ -173,9 +173,12 @@ class py2exe(Command):
         self.includes = fancy_split(self.includes)
         self.ignores = fancy_split(self.ignores)
         self.bundle_files = int(self.bundle_files)
-        if self.bundle_files < 1 or self.bundle_files > 3:
+        if self.bundle_files < 1 or self.bundle_files > 4:
             raise DistutilsOptionError, \
-                  "single-file must be 1, 2, or 3, not %s" % self.bundle_files
+                  "bundle-files must be 1, 2, 3, or 4, not %s" % self.bundle_files
+        if self.compressed and self.bundle_files > 3:
+            raise DistutilsOptionError, \
+                  "when compressing, bundle-files must be 1, 2, or 3, not %s" % self.bundle_files
         # includes is stronger than excludes
         for m in self.includes:
             if m in self.excludes:
@@ -1192,26 +1195,44 @@ class py2exe(Command):
 
     def make_lib_archive(self, zip_filename, base_dir, files,
                          verbose=0, dry_run=0):
-        # Like distutils "make_archive", but we can specify the files
-        # to include, and the compression to use - default is
-        # ZIP_STORED to keep the runtime performance up.  Also, we
-        # don't append '.zip' to the filename.
         from distutils.dir_util import mkpath
-        mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
+        if self.bundle_files < 4:
+            # Like distutils "make_archive", but we can specify the files
+            # to include, and the compression to use - default is
+            # ZIP_STORED to keep the runtime performance up.  Also, we
+            # don't append '.zip' to the filename.
+            mkpath(os.path.dirname(zip_filename), dry_run=dry_run)
 
-        if self.compressed:
-            compression = zipfile.ZIP_DEFLATED
+            if self.compressed:
+                compression = zipfile.ZIP_DEFLATED
+            else:
+                compression = zipfile.ZIP_STORED
+
+            if not dry_run:
+                z = zipfile.ZipFile(zip_filename, "w",
+                                    compression=compression)
+                for f in files:
+                    z.write(os.path.join(base_dir, f), f)
+                z.close()
+
+            return zip_filename
         else:
-            compression = zipfile.ZIP_STORED
+            # Don't really produce an archive, just copy the files.
+            from distutils.file_util import copy_file
 
-        if not dry_run:
-            z = zipfile.ZipFile(zip_filename, "w",
-                                compression=compression)
+            destFolder = os.path.dirname(zip_filename)
+
             for f in files:
-                z.write(os.path.join(base_dir, f), f)
-            z.close()
-
-        return zip_filename
+                d = os.path.dirname(f)
+                if d:
+                    mkpath(os.path.join(destFolder, d), verbose=verbose, dry_run=dry_run)
+                copy_file(
+                          os.path.join(base_dir, f),
+                          os.path.join(destFolder, f),
+                          verbose=verbose,
+                          dry_run=dry_run
+                         )
+            return '.'
 
 
 ################################################################
