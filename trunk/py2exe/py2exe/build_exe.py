@@ -57,10 +57,16 @@ def fancy_split(str, sep=","):
         return [item.strip() for item in str.split(sep)]
     return str
 
+# This loader locates extension modules relative to the library.zip
+# file when an archive is used (bundle_files < 4), otherwise it
+# locates extension modules relative to sys.prefix.
 LOADER = """
 def __load():
     import imp, os, sys
-    dirname = sys.prefix
+    try:
+        dirname = os.path.dirname(__loader__.archive)
+    except NameError:
+        dirname = sys.prefix
     path = os.path.join(dirname, '%s')
     #print "py2exe extension module", __name__, "->", path
     mod = imp.load_dynamic(__name__, path)
@@ -179,6 +185,9 @@ class py2exe(Command):
         if self.compressed and self.bundle_files > 3:
             raise DistutilsOptionError, \
                   "when compressing, bundle-files must be 1, 2, or 3, not %s" % self.bundle_files
+        if self.distribution.zipfile is None and self.bundle_files > 3:
+            raise DistutilsOptionError, \
+                  "zipfile cannot be None when bundle-files is %s" % self.bundle_files
         # includes is stronger than excludes
         for m in self.includes:
             if m in self.excludes:
