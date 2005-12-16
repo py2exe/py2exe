@@ -19,6 +19,7 @@ options = {
     "bundle_files": 1, # create singlefile exe
     "compressed": 1, # compress the library archive
     "excludes": excludes,
+    "dll_excludes": ["w9xpopen.exe"] # we don't need this
     }
 
 setup(
