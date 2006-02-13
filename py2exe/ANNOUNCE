@@ -1,10 +1,29 @@
-py2exe 0.6.3 released
+py2exe 0.6.4 released
 =====================
 
 py2exe is a Python distutils extension which converts Python scripts
 into executable Windows programs, able to run without requiring a
 Python installation. Console and Windows (GUI) applications, Windows
 NT services, exe and dll COM servers are supported.
+
+Changes in 0.6.4:
+
+    * New skip-archive option which copies the Python bytecode files
+      directly into the dist directory and subdirectories - no
+      archive is used.
+
+    * An experimental new custom-boot-script option which allows a
+      boot script to be specified (e.g., --custom-boot-script=cbs.py)
+      which can do things like installing a customized stdout
+      blackhole. See py2exe's boot_common.py for examples of what can
+      be done. The custom boot script is executed during startup of
+      the executable immediately after boot_common.py is executed.
+
+    * Thomas Heller's performance improvements for finding needed
+      modules.
+
+    * Mark Hammond's fix for thread-state errors when a py2exe
+      created executable tries to use a py2exe created COM DLL.
 
 Changes in 0.6.3:
 
