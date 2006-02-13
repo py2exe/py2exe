@@ -56,6 +56,7 @@ PyObject *, PyBool_FromLong, (long)
 int, Py_VerboseFlag
 int, Py_NoSiteFlag
 int, Py_OptimizeFlag
+int, Py_IgnoreEnvironmentFlag
 '''.strip().splitlines()
 
 import string

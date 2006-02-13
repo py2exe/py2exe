@@ -49,3 +49,4 @@
 #define Py_VerboseFlag (*(int(*))imports[48].proc)
 #define Py_NoSiteFlag (*(int(*))imports[49].proc)
 #define Py_OptimizeFlag (*(int(*))imports[50].proc)
+#define Py_IgnoreEnvironmentFlag (*(int(*))imports[51].proc)

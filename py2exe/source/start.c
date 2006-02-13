@@ -240,70 +240,68 @@ void _TryLoadZlib(HMODULE hmod)
 	}
 }
 
+static int set_path()
+{
+	/* If the zip path has any path component, then build our Python
+	   home directory from that.
+	*/ 
+	char *fname;
+	int lib_dir_len;
+	char *ppath;
+	pZipBaseName = pScript - 1;
+	/* let pZipBaseName point to the basename of the zippath */
+	while (pZipBaseName > p_script_info->zippath && \
+	       *(pZipBaseName-1) != '\\')
+		pZipBaseName--;
+	/* dirname is the directory of the executable */
+	strcpy(libdirname, dirname);
+	/* length of lib director name */
+	lib_dir_len = pZipBaseName-p_script_info->zippath; /* incl. tail slash */
+	if (lib_dir_len) {
+		char *p = libdirname+strlen(libdirname);
+		*p++ = '\\';
+		strncpy(p, p_script_info->zippath, lib_dir_len-1);
+		p += lib_dir_len-1;
+		*p++ = '\0';
+	}
+	/* Fully-qualify it */
+	GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
+
+	Py_SetPythonHome(libdirname);
+	/* Let Python calculate its initial path, according to the
+	   builtin rules */
+	ppath = Py_GetPath();
+//	printf("Initial path: %s\n", ppath);
+
+	/* HACK: We don't like so rules.
+	   We know that Py_GetPath points to writeable memory,
+	   so we copy our own path into it.
+	*/
+	if (strlen(ppath) <= strlen(libdirname) + strlen(pZipBaseName) + 1) {
+		/* Um. Not enough space. What now? */
+		fprintf(stderr, "NOT ENOUGH SPACE for PATH\n");
+		return -1;
+	}
+
+	strcpy(ppath, libdirname);
+	strcat(ppath, "\\");
+	strcat(ppath, pZipBaseName);
+	return 0;
+}
+
+
+
 /*
  * returns an error code if initialization fails
  */
 int init_with_instance(HMODULE hmod, char *frozen)
 {
+	int rc;
 	if (!_LocateScript(hmod))
 		return 255;
 
 	if (!_LoadPythonDLL(hmod))
 		return 255;
-	if (getenv("PY2EXE_VERBOSE")) {
-		Py_VerboseFlag = atoi(getenv("PY2EXE_VERBOSE"));
-	} else
-		Py_VerboseFlag = 0;
-
-	{
-		/* If the zip path has any path component, then build our Python
-		   home directory from that.
-		*/
-		char *fname;
-		int lib_dir_len;
-		pZipBaseName = pScript - 1;
-		/* let pZipBaseName point to the basename of the zippath */
-		while (pZipBaseName > p_script_info->zippath && \
-		       *(pZipBaseName-1) != '\\')
-			pZipBaseName--;
-		/* dirname is the directory of the executable */
-		strcpy(libdirname, dirname);
-		/* length of lib director name */
-		lib_dir_len = pZipBaseName-p_script_info->zippath; /* incl. tail slash */
-		if (lib_dir_len) {
-			char *p = libdirname+strlen(libdirname);
-			*p++ = '\\';
-			strncpy(p, p_script_info->zippath, lib_dir_len-1);
-			p += lib_dir_len-1;
-			*p++ = '\0';
-		}
-		/* Fully-qualify it */
-		GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
-	}
-	/* From Barry Scott */
-	/* Must not set the PYTHONHOME env var as this prevents
-	   python being used in os.system or os.popen */
-	Py_SetPythonHome(libdirname);
-
-/*
- * PYTHONPATH entries will be inserted in front of the
- * standard python path.
- */
-/*
- * We need the module's directory, because zipimport needs zlib.pyd.
- * And, of course, the zipfile itself.
- */
-	{
-		char buffer[_MAX_PATH * 3 + 256];
-		sprintf(buffer, "PYTHONPATH=%s;%s\\%s",
-			libdirname, libdirname, pZipBaseName);
-		_putenv (buffer);
-	}
-	_putenv ("PYTHONSTARTUP=");
-	_putenv ("PYTHONOPTIMIZE=");
-	_putenv ("PYTHONDEBUG=");
-	_putenv("PYTHONINSPECT=");
-
 	if (p_script_info->unbuffered) {
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 		_setmode(fileno(stdin), O_BINARY);
@@ -320,20 +318,25 @@ int init_with_instance(HMODULE hmod, char *frozen)
 #endif /* !HAVE_SETVBUF */
 	}
  
+	if (getenv("PY2EXE_VERBOSE"))
+		Py_VerboseFlag = atoi(getenv("PY2EXE_VERBOSE"));
+	else
+		Py_VerboseFlag = 0;
 
+	Py_IgnoreEnvironmentFlag = 1;
 	Py_NoSiteFlag = 1;
 	Py_OptimizeFlag = p_script_info->optimize;
 
-	/* XXX Is this correct? For the dll server code? */
-	/* And we should probably change all the above code if Python is already
-	 * initialized */
 	Py_SetProgramName(modulename);
 
-	Py_Initialize();
+	rc = set_path();
+	if (rc != 0)
+		return rc;
 
-	/* From Barry Scott */
-	/* cause python to calculate the path */
-	Py_GetPath();
+//	printf("Path before Py_Initialize(): %s\n", Py_GetPath());
+
+	Py_Initialize();
+//	printf("Path after  Py_Initialize(): %s\n", Py_GetPath());
 	/* Set sys.frozen so apps that care can tell.
 	   If the caller did pass NULL, sys.frozen will be set zo True.
 	   If a string is passed this is used as the frozen attribute.
@@ -352,12 +355,6 @@ int init_with_instance(HMODULE hmod, char *frozen)
 
 	_TryLoadZlib(hmod);
 
-	/* clean up the environment so that os.system
-	   and os.popen processes can run python the normal way */
-	/* Hm, actually it would be better to set them to values saved before
-	   changing them ;-) */
-	_putenv("PYTHONPATH=");
-	_putenv("PYTHONVERBOSE=");
 	return 0;
 }
 
@@ -388,35 +385,30 @@ int start (int argc, char **argv)
 
 int run_script(void)
 {
-	int rc;
+	int rc = 0;
 	char buffer[_MAX_PATH * 3];
-	snprintf(buffer, sizeof(buffer),
-		 "import sys; sys.path=[r\"\"\"%s\\%s\"\"\"]; del sys",
-		 libdirname, pZipBaseName);
-	rc = PyRun_SimpleString(buffer);
-	if (rc == 0) {
-		/* load the code objects to execute */
-		PyObject *m=NULL, *d=NULL, *seq=NULL;
-		/* We execute then in the context of '__main__' */
-		m = PyImport_AddModule("__main__");
-		if (m) d = PyModule_GetDict(m);
-		if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
-		if (seq) {
-			int i, max = PySequence_Length(seq);
-			for (i=0;i<max;i++) {
-				PyObject *sub = PySequence_GetItem(seq, i);
-				if (sub /*&& PyCode_Check(sub) */) {
-					PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
-									    d, d);
-					if (!discard) {
-						PyErr_Print();
-						rc = 255;
-					}
-					Py_XDECREF(discard);
-					/* keep going even if we fail */
+
+	/* load the code objects to execute */
+	PyObject *m=NULL, *d=NULL, *seq=NULL;
+	/* We execute then in the context of '__main__' */
+	m = PyImport_AddModule("__main__");
+	if (m) d = PyModule_GetDict(m);
+	if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
+	if (seq) {
+		int i, max = PySequence_Length(seq);
+		for (i=0;i<max;i++) {
+			PyObject *sub = PySequence_GetItem(seq, i);
+			if (sub /*&& PyCode_Check(sub) */) {
+				PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
+								    d, d);
+				if (!discard) {
+					PyErr_Print();
+					rc = 255;
 				}
-				Py_XDECREF(sub);
+				Py_XDECREF(discard);
+				/* keep going even if we fail */
 			}
+			Py_XDECREF(sub);
 		}
 	}
 	return rc;

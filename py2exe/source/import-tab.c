@@ -53,3 +53,4 @@
 	{ "Py_VerboseFlag", NULL },
 	{ "Py_NoSiteFlag", NULL },
 	{ "Py_OptimizeFlag", NULL },
+	{ "Py_IgnoreEnvironmentFlag", NULL },
