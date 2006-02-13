@@ -1,3 +1,30 @@
+2006-02-13  Jimmy Retzlaff  <jimmy@retzlaff.com>
+
+	* py2exe 0.6.4 released.
+
+    * Changed bundle-files=4 option to be the skip-archive option.
+    bundle-files is really about DLLs, not bytecode files.
+
+    * Added experimental new custom-boot-script option which allows a
+    boot script to be specified which can do things like installing
+    a customized stdout blackhole. The custom boot script is executed
+    during startup of the executable immediately after boot_common.py
+    is executed.
+
+2005-12-10  Jimmy Retzlaff  <jimmy@retzlaff.com>
+
+	* Apply a patch from Antony Kummel adding a more elaborate
+    explanation for the motivation behind the special handling of
+    stdout/stderr in windows (as opposed to console) applications.
+
+    * Locate extension modules relative to the archive's location
+    when an archive is used.
+
+    * Add bundle-files=4 option which copies the .pyo files directly
+    into the dist directory and subdirectories - no archive is used.
+
+    * Performance improvements for mf.py from Thomas Heller.
+
 2005-10-06  Jimmy Retzlaff  <jimmy@retzlaff.com>
 
 	* py2exe 0.6.3 released.
@@ -5,7 +32,7 @@
     * Added build.cmd that builds files for release.
 
     * Added Jimmy Retzlaff as maintainer and changed website pointers
-      to http://www.py2exe.org/.
+    to http://www.py2exe.org/.
 
 2005-09-09  Thomas Heller  <theller@python.net>
 
