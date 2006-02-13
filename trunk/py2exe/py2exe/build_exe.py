@@ -58,8 +58,8 @@ def fancy_split(str, sep=","):
     return str
 
 # This loader locates extension modules relative to the library.zip
-# file when an archive is used (bundle_files < 4), otherwise it
-# locates extension modules relative to sys.prefix.
+# file when an archive is used (i.e., skip_archive is not used), otherwise
+# it locates extension modules relative to sys.prefix.
 LOADER = """
 def __load():
     import imp, os, sys
@@ -152,11 +152,17 @@ class py2exe(Command):
         ("bundle-files=", 'b',
          "bundle dlls in the zipfile or the exe. Valid levels are 1, 2, or 3 (default)"),
 
+        ("skip-archive", None,
+         "do not place Python bytecode files in an archive, put them directly in the file system"),
+
         ("ascii", 'a',
          "do not automatically include encodings and codecs"),
+
+        ('custom-boot-script=', None,
+         "Python file that will be run when setting up the runtime environment"),
         ]
 
-    boolean_options = ["compressed", "xref", "ascii"]
+    boolean_options = ["compressed", "xref", "ascii", "skip-archive"]
 
     def initialize_options (self):
         self.xref =0
@@ -171,7 +177,9 @@ class py2exe(Command):
         self.dll_excludes = None
         self.typelibs = None
         self.bundle_files = 3
+        self.skip_archive = 0
         self.ascii = 0
+        self.custom_boot_script = None
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -179,15 +187,16 @@ class py2exe(Command):
         self.includes = fancy_split(self.includes)
         self.ignores = fancy_split(self.ignores)
         self.bundle_files = int(self.bundle_files)
-        if self.bundle_files < 1 or self.bundle_files > 4:
+        if self.bundle_files < 1 or self.bundle_files > 3:
             raise DistutilsOptionError, \
-                  "bundle-files must be 1, 2, 3, or 4, not %s" % self.bundle_files
-        if self.compressed and self.bundle_files > 3:
-            raise DistutilsOptionError, \
-                  "when compressing, bundle-files must be 1, 2, or 3, not %s" % self.bundle_files
-        if self.distribution.zipfile is None and self.bundle_files > 3:
-            raise DistutilsOptionError, \
-                  "zipfile cannot be None when bundle-files is %s" % self.bundle_files
+                  "bundle-files must be 1, 2, or 3, not %s" % self.bundle_files
+        if self.skip_archive:
+            if self.compressed:
+                raise DistutilsOptionError, \
+                      "can't compress when skipping archive"
+            if self.distribution.zipfile is None:
+                raise DistutilsOptionError, \
+                      "zipfile cannot be None when skipping archive"
         # includes is stronger than excludes
         for m in self.includes:
             if m in self.excludes:
@@ -742,6 +751,10 @@ class py2exe(Command):
             code_objects.append(
                     compile("%s=%r\n" % (var_name, var_val), var_name, "exec")
             )
+        if self.custom_boot_script:
+            code_object = compile(file(self.custom_boot_script, "U").read() + "\n",
+                                  os.path.abspath(self.custom_boot_script), "exec")
+            code_objects.append(code_object)
         if script:
             code_object = compile(open(script, "U").read() + "\n",
                                   os.path.basename(script), "exec")
@@ -1149,6 +1162,9 @@ class py2exe(Command):
         if self.distribution.service:
             mf.run_script(self.get_boot_script("service"))
 
+        if self.custom_boot_script:
+            mf.run_script(self.custom_boot_script)
+
         for mod in self.includes:
             if mod[-2:] == '.*':
                 mf.import_hook(mod[:-2], None, ['*'])
@@ -1205,7 +1221,7 @@ class py2exe(Command):
     def make_lib_archive(self, zip_filename, base_dir, files,
                          verbose=0, dry_run=0):
         from distutils.dir_util import mkpath
-        if self.bundle_files < 4:
+        if not self.skip_archive:
             # Like distutils "make_archive", but we can specify the files
             # to include, and the compression to use - default is
             # ZIP_STORED to keep the runtime performance up.  Also, we
