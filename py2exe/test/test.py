@@ -16,13 +16,24 @@ import subprocess
 import sys
 
 
-py2exeTemplate = "from distutils.core import setup; import py2exe; setup(script_args=['py2exe', '%s'], console = ['%s'])"
+# This is the default setup script. A custom script will be used for
+# a test file called test_xyz.py if a corresponding setup_xyz.py is
+# present.
+py2exeTemplate = """
+from distutils.core import setup
+import py2exe
+setup(script_args=['py2exe', '%s'], console = ['%s'])
+"""
+
+generatedSetup = 'generated_setup.py'
 
 
 def clean():
     for path in ['build', 'dist']:
         if os.path.exists(path):
             shutil.rmtree(path)
+    if os.path.exists(generatedSetup):
+        os.remove(generatedSetup)
 
 
 def run(*args):
@@ -48,7 +59,11 @@ def main():
             # Build exe
             clean()
             print option
-            run(sys.executable, '-c', py2exeTemplate % (option, test))
+            if os.path.exists(test.replace('test_', 'setup_')):
+                open(generatedSetup, 'wt').write(open(test.replace('test_', 'setup_'), 'rt').read() % (option, test))
+            else:
+                open(generatedSetup, 'wt').write(py2exeTemplate % (option, test))
+            run(sys.executable, generatedSetup)
 
             # Run exe and test against baseline
             assert run(exe) == baseline
