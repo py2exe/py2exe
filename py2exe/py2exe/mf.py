@@ -617,6 +617,11 @@ if __name__ == '__main__':
 import tempfile
 import urllib
 
+try:
+    set
+except NameError:
+    from sets import Set as set
+
 Base = ModuleFinder
 del ModuleFinder
 
