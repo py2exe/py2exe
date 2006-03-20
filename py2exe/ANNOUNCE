@@ -12,6 +12,9 @@ Changes in 0.6.5:
       will be most evident when working with things like
       win32com.shell and xml.xpath.
 
+    * Files no longer keep read-only attributes when they are copied
+      as this was causing problems with the copying of some MS DLLs.
+
 Changes in 0.6.4:
 
     * New skip-archive option which copies the Python bytecode files

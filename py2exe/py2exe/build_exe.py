@@ -403,7 +403,7 @@ class py2exe(Command):
                 # XXX all dlls are copied into the same directory - a flat name space.
                 # sooner or later that will give conflicts.
                 dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
-                self.copy_file(src, dst)
+                self.copy_file(src, dst, preserve_mode=0)
                 self.lib_files.append(dst)
             else:
                 # we have to preserve the packages
@@ -412,7 +412,7 @@ class py2exe(Command):
                     dst = os.path.join(package, os.path.basename(src))
                 else:
                     dst = os.path.basename(src)
-                self.copy_file(src, os.path.join(self.collect_dir, dst))
+                self.copy_file(src, os.path.join(self.collect_dir, dst), preserve_mode=0)
                 self.compiled_files.append(dst)
 
     def copy_dlls(self, dlls):
@@ -431,7 +431,7 @@ class py2exe(Command):
                 dst = os.path.join(self.exe_dir, base)
             else:
                 dst = os.path.join(self.lib_dir, base)
-            _, copied = self.copy_file(dll, dst)
+            _, copied = self.copy_file(dll, dst, preserve_mode=0)
             if not self.dry_run and copied and base.lower() == python_dll.lower():
                 # If we actually copied pythonxy.dll, we have to patch it.
                 #
@@ -463,7 +463,7 @@ class py2exe(Command):
                     dst = os.path.join(self.bundle_dir, base)
                 else:
                     dst = os.path.join(self.exe_dir, base)
-                _, copied = self.copy_file(dll, dst)
+                _, copied = self.copy_file(dll, dst, preserve_mode=0)
                 if not self.dry_run and copied and base.lower() == python_dll.lower():
                     # If we actually copied pythonxy.dll, we have to
                     # patch it.  Well, since it's impossible to load
@@ -474,7 +474,7 @@ class py2exe(Command):
                 continue
 
             dst = os.path.join(self.collect_dir, os.path.basename(dll))
-            self.copy_file(dll, dst)
+            self.copy_file(dll, dst, preserve_mode=0)
             # Make sure they will be included into the zipfile.
             self.compiled_files.append(os.path.basename(dst))
 
@@ -526,7 +526,7 @@ class py2exe(Command):
             # destination name is "_{module_name}.dll" just like pyisapi does.
             script_base = os.path.splitext(os.path.basename(target.script))[0]
             dst = os.path.join(self.exe_dir, "_" + script_base + ".dll")
-            self.copy_file(src, dst)
+            self.copy_file(src, dst, preserve_mode=0)
 
         if self.distribution.has_data_files():
             print "*** copy data files ***"
@@ -725,7 +725,7 @@ class py2exe(Command):
         # time of our modified template file, and consider our old file OK.
         old_force = self.force
         self.force = True
-        self.copy_file(src, exe_path)
+        self.copy_file(src, exe_path, preserve_mode=0)
         self.force = old_force
 
         # Make sure the file is writeable...
@@ -1254,6 +1254,7 @@ class py2exe(Command):
                 copy_file(
                           os.path.join(base_dir, f),
                           os.path.join(destFolder, f),
+                          preserve_mode=0,
                           verbose=verbose,
                           dry_run=dry_run
                          )
@@ -1454,7 +1455,7 @@ byte_compile(files, optimize=%s, force=%s,
                         # Minor problem: This will happily copy a file
                         # <mod>.pyo to <mod>.pyc or <mod>.pyc to
                         # <mod>.pyo, but it does seem to work.
-                        copy_file(file.__file__, cfile)
+                        copy_file(file.__file__, cfile, preserve_mode=0)
                     else:
                         raise RuntimeError \
                               ("Don't know how to handle %r" % file.__file__)
