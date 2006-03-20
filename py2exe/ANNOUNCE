@@ -1,10 +1,16 @@
-py2exe 0.6.4 released
+py2exe 0.6.5 released
 =====================
 
 py2exe is a Python distutils extension which converts Python scripts
 into executable Windows programs, able to run without requiring a
 Python installation. Console and Windows (GUI) applications, Windows
 NT services, exe and dll COM servers are supported.
+
+Changes in 0.6.5:
+
+    * Fixed modulefinder / mf related bugs introduced in 0.6.4. This
+      will be most evident when working with things like
+      win32com.shell and xml.xpath.
 
 Changes in 0.6.4:
 

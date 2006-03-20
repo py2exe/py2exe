@@ -7,9 +7,9 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.6.4.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.4.win32-py2.3.exe?download
+.. _py2exe-0.6.5.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.5.win32-py2.3.exe?download
 
-.. _py2exe-0.6.4.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.4.win32-py2.4.exe?download
+.. _py2exe-0.6.5.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.5.win32-py2.4.exe?download
 
 .. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
@@ -54,6 +54,12 @@ Public License Version 1.1`_
 
 News
 ----
+
+**py2exe 0.6.5 released (2006/03/20)**
+
+Fixed modulefinder / mf related bugs introduced in 0.6.4. This
+will be most evident when working with things like
+win32com.shell and xml.xpath.
 
 **py2exe 0.6.4 released (2006/02/13)**
 
@@ -345,8 +351,8 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.6.4.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.6.4.win32-py2.4.exe_ (for Python 2.4).
+Download and run the installer py2exe-0.6.5.win32-py2.3.exe_ (for
+Python 2.3), or py2exe-0.6.5.win32-py2.4.exe_ (for Python 2.4).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
