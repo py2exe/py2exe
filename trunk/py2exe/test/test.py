@@ -7,6 +7,7 @@ Running all tests requires the following packages:
 
 ctypes
 EasyDialogs for Windows
+pywin32
 """
 
 import glob

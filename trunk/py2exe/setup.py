@@ -192,6 +192,10 @@ class BuildInterpreters(build_ext.build_ext):
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
+        try:
+            self.compiler.initialize()
+        except AttributeError:
+            pass # initialize doesn't exist before 2.5
         customize_compiler(self.compiler)
 
         # And make sure that any compile/link-related options (which might

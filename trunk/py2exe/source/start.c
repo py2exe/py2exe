@@ -69,7 +69,7 @@ static int dprintf(char *fmt, ...)
 	char Buffer[4096];
 	va_list marker;
 	int result;
-	
+
 	va_start(marker, fmt);
 	result = vsprintf(Buffer, fmt, marker);
 	OutputDebugString(Buffer);
@@ -204,7 +204,7 @@ void _Import_Zlib(char *pdata)
 	if (hlib) {
 		void (*proc)(void);
 		proc = (void(*)(void))MemoryGetProcAddress(hlib, "initzlib");
-		if (proc) 
+		if (proc)
 			proc();
 	}
 }
@@ -244,7 +244,7 @@ static int set_path()
 {
 	/* If the zip path has any path component, then build our Python
 	   home directory from that.
-	*/ 
+	*/
 	char *fname;
 	int lib_dir_len;
 	char *ppath;
@@ -317,7 +317,7 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		setbuf(stderr, (char *)NULL);
 #endif /* !HAVE_SETVBUF */
 	}
- 
+
 	if (getenv("PY2EXE_VERBOSE"))
 		Py_VerboseFlag = atoi(getenv("PY2EXE_VERBOSE"));
 	else
@@ -386,7 +386,6 @@ int start (int argc, char **argv)
 int run_script(void)
 {
 	int rc = 0;
-	char buffer[_MAX_PATH * 3];
 
 	/* load the code objects to execute */
 	PyObject *m=NULL, *d=NULL, *seq=NULL;
@@ -395,7 +394,7 @@ int run_script(void)
 	if (m) d = PyModule_GetDict(m);
 	if (d) seq = PyMarshal_ReadObjectFromString(pScript, numScriptBytes);
 	if (seq) {
-		int i, max = PySequence_Length(seq);
+		Py_ssize_t i, max = PySequence_Length(seq);
 		for (i=0;i<max;i++) {
 			PyObject *sub = PySequence_GetItem(seq, i);
 			if (sub /*&& PyCode_Check(sub) */) {
