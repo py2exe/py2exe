@@ -688,12 +688,17 @@ class py2exe(Command):
         return klass.__name__, klass._svc_name_, klass._svc_display_name_, deps
 
     def build_service(self, target, template, arcname):
-        # services still need a little thought.  It should be possible
-        # to host many modules in a single service - but pythonservice.exe
-        # isn't really there yet.
+        # It should be possible to host many modules in a single service - 
+        # but this is yet to be tested.
         assert len(target.modules)==1, "We only support one service module"
 
-        vars = {"service_module_names" : target.modules}
+        cmdline_style = getattr(target, "cmdline_style", "py2exe")
+        if cmdline_style not in ["py2exe", "pywin32", "custom"]:
+            raise RuntimeError, "cmdline_handler invalid"
+
+        vars = {"service_module_names" : target.modules,
+                "cmdline_style": cmdline_style,
+            }
         boot = self.get_boot_script("service")
         return self.build_executable(target, template, arcname, boot, vars)
 
