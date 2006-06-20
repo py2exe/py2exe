@@ -1,4 +1,6 @@
 /* **************** Python-dynload.h **************** */
+#include "Python-version.h"
+
 typedef void *PyObject;
 typedef void *PyCodeObject;
 
@@ -50,9 +52,6 @@ extern void Py_XDECREF(PyObject *ob);
 #define Py_None (&_Py_NoneStruct)
 
 #define DL_EXPORT(x) x
-
-/* XXX KEEP THIS UP TO DATE! */
-#define PYTHON_API_VERSION 1012
 
 #define Py_InitModule3(name, methods, doc) \
 	Py_InitModule4(name, methods, doc, (PyObject *)NULL, \

@@ -5,6 +5,7 @@
 
 #ifdef STANDALONE
 #  include <Python.h>
+#  include "Python-version.h"
 #else
 #  include "Python-dynload.h"
 #  include <stdio.h>
@@ -16,7 +17,7 @@ static char module_doc[] =
 
 #include "MemoryModule.h"
 
-static void *memdup(void *ptr, int size)
+static void *memdup(void *ptr, Py_ssize_t size)
 {
 	void *p = malloc(size);
 	if (p == NULL)
@@ -33,7 +34,7 @@ static void* FindLibrary(char *name, PyObject *callback)
 {
 	PyObject *result;
 	char *p;
-	int size;
+	Py_ssize_t size;
 
 	if (callback == NULL)
 		return NULL;
