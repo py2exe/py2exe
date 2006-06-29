@@ -30,8 +30,21 @@ int _load_python_FromFile(char *dllname)
 	int i;
 	struct IMPORT *p = imports;
 	HMODULE hmod;
-	
-	hmod = LoadLibrary(dllname);
+
+	// In some cases (eg, ISAPI filters), Python may already be
+	// in our process.  If so, we don't want it to try and
+	// load a new one!  (Actually, we probably should not even attempt
+	// to load an 'embedded' Python should GetModuleHandle work - but
+	// that is less clear than this straight-forward case)
+	// Get the basename of the DLL.
+	char *dllbase = dllname + strlen(dllname);
+	while (dllbase != dllname && *dllbase != '\\')
+		dllbase--;
+	if (*dllbase=='\\')
+		++dllbase;
+	hmod = GetModuleHandle(dllbase);
+	if (hmod == NULL)
+		hmod = LoadLibrary(dllname);
 	if (hmod == NULL) {
 		return 0;
 	}
