@@ -50,3 +50,6 @@
 #define Py_NoSiteFlag (*(int(*))imports[49].proc)
 #define Py_OptimizeFlag (*(int(*))imports[50].proc)
 #define Py_IgnoreEnvironmentFlag (*(int(*))imports[51].proc)
+#define PyObject_Str ((PyObject *(*)(PyObject *))imports[52].proc)
+#define PyList_New ((PyObject *(*)(Py_ssize_t))imports[53].proc)
+#define PyList_SetItem ((int (*)(PyObject *, Py_ssize_t, PyObject *))imports[54].proc)

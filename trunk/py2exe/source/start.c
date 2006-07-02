@@ -336,7 +336,7 @@ int init_with_instance(HMODULE hmod, char *frozen)
 //	printf("Path before Py_Initialize(): %s\n", Py_GetPath());
 
 	Py_Initialize();
-//	printf("Path after  Py_Initialize(): %s\n", Py_GetPath());
+//	printf("Path after Py_Initialize(): %s\n", PyString_AsString(PyObject_Str(PySys_GetObject("path"))));
 	/* Set sys.frozen so apps that care can tell.
 	   If the caller did pass NULL, sys.frozen will be set zo True.
 	   If a string is passed this is used as the frozen attribute.
@@ -377,7 +377,22 @@ void fini(void)
 int start (int argc, char **argv)
 {
 	int rc;
+	PyObject *new_path;
 	PySys_SetArgv(argc, argv);
+	// PySys_SetArgv munged the path - specifically, it added the
+	// directory of argv[0] at the start of sys.path.
+	// Create a new list object for the path, and rely on our
+	// implementation knowledge of set_path above, which writes into
+	// the static Py_GetPath() buffer (Note: Py_GetPath() does *not*
+	// return the current sys.path value - its just a static buffer
+	// holding the initial Python paths)
+	new_path = PyList_New(1);
+	if (new_path) {
+		PyObject *entry = PyString_FromString(Py_GetPath());
+		if (entry && (0==PyList_SetItem(new_path, 0, entry)))
+			PySys_SetObject("path", new_path);
+		Py_DECREF(new_path);
+	}
 	rc = run_script();
 	fini();
 	return rc;
