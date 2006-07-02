@@ -54,3 +54,6 @@
 	{ "Py_NoSiteFlag", NULL },
 	{ "Py_OptimizeFlag", NULL },
 	{ "Py_IgnoreEnvironmentFlag", NULL },
+	{ "PyObject_Str", NULL },
+	{ "PyList_New", NULL },
+	{ "PyList_SetItem", NULL },
