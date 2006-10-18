@@ -53,3 +53,4 @@
 #define PyObject_Str ((PyObject *(*)(PyObject *))imports[52].proc)
 #define PyList_New ((PyObject *(*)(Py_ssize_t))imports[53].proc)
 #define PyList_SetItem ((int (*)(PyObject *, Py_ssize_t, PyObject *))imports[54].proc)
+#define PyList_Append ((int (*)(PyObject *, PyObject *))imports[55].proc)

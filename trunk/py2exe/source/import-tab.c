@@ -57,3 +57,4 @@
 	{ "PyObject_Str", NULL },
 	{ "PyList_New", NULL },
 	{ "PyList_SetItem", NULL },
+	{ "PyList_Append", NULL },
