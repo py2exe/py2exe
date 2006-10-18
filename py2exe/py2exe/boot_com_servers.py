@@ -115,5 +115,7 @@ if sys.frozen != "dll":
     else:
         # You could do something else useful here.
         win32api.MessageBox(0,
-                            "This program hosts a COM Object and\r\nis started automatically",
+                            "This program hosts a COM Object and\r\n"
+                            "is started automatically\r\n"
+                            "(or maybe you want /register or /unregister?)",
                             "COM Object")
