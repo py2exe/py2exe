@@ -53,10 +53,14 @@ class ZipExtensionImporter(zipimport.zipimporter):
             return result
         if fullname in ("pywintypes", "pythoncom"):
             fullname = fullname + "%d%d" % sys.version_info[:2]
-        fullname = fullname.replace(".", "\\")
-        for s in self._suffixes:
-            if (fullname + s) in self._files:
+            fullname = fullname.replace(".", "\\") + ".dll"
+            if fullname in self._files:
                 return self
+        else:
+            fullname = fullname.replace(".", "\\")
+            for s in self._suffixes:
+                if (fullname + s) in self._files:
+                    return self
         return None
 
     def locate_dll_image(self, name):
@@ -82,7 +86,10 @@ class ZipExtensionImporter(zipimport.zipimporter):
         filename = fullname.replace(".", "\\")
         if filename in ("pywintypes", "pythoncom"):
             filename = filename + "%d%d" % sys.version_info[:2]
-        for s in self._suffixes:
+            suffixes = ('.dll',)
+        else:
+            suffixes = self._suffixes
+        for s in suffixes:
             path = filename + s
             if path in self._files:
                 if _memimporter.get_verbose_flag():
