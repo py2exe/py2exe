@@ -53,6 +53,8 @@ __PROC__TerminateFilter pTerminateFilter = NULL;
 __PROC__PyISAPISetOptions pPyISAPISetOptions = NULL;
 
 extern int init_with_instance(HMODULE, char *);
+extern BOOL _LoadPythonDLL(HMODULE);
+
 extern void fini();
 extern int run_script(void);
 extern void init_memimporter(void);
@@ -61,6 +63,7 @@ void SystemError(int error, char *msg)
 {
 	char Buffer[1024];
 	int n;
+	HANDLE hEventSource;
 
 	if (error) {
 		LPVOID lpMsgBuf;
@@ -80,8 +83,23 @@ void SystemError(int error, char *msg)
 		Buffer[0] = '\0';
 	n = lstrlen(Buffer);
 	_snprintf(Buffer+n, sizeof(Buffer)-n, msg);
-	// Can't display messages in a service.  Should write to the event log
-	MessageBox(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
+	// Can't display messages in a service.  Write to the event log.
+	// We have no message resources, so the message will be somewhat
+	// ugly - but so long as the info is there, that's ok.
+	hEventSource = RegisterEventSource(NULL, "ISAPI Filter or Extension");
+	if (hEventSource) {
+		TCHAR * inserts[] = {Buffer};
+		ReportEvent(hEventSource, // handle of event source
+		            EVENTLOG_ERROR_TYPE,  // event type
+		            0,                    // event category
+		            1,                 // event ID
+		            NULL,                 // current user's SID
+		            1,           // strings in lpszStrings
+		            0,                    // no bytes of raw data
+		            inserts,          // array of error strings
+		            NULL);                // no raw data
+		DeregisterEventSource(hEventSource);
+	}
 }
 
 BOOL check_init()
@@ -116,10 +134,18 @@ BOOL check_init()
 					pPyISAPISetOptions = (__PROC__PyISAPISetOptions)GetProcAddress(hmodPyISAPI, "PyISAPISetOptions");
 				}
 			}
+
+			// We must ensure Python is loaded, and therefore the
+			// function pointers are non-NULL, or this check is
+			// pointless
+			if (!_LoadPythonDLL(gInstance))
+				return FALSE;
+
 			if (Py_IsInitialized && Py_IsInitialized())
 				restore_state = PyGILState_Ensure();
 			// a little DLL magic.  Set sys.frozen='dll'
-			init_with_instance(gInstance, "dll");
+			if (init_with_instance(gInstance, "dll") != 0)
+				return FALSE;
 			init_memimporter();
 			frozen = PyInt_FromLong((LONG)gInstance);
 			if (frozen) {
