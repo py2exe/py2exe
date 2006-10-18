@@ -188,6 +188,7 @@ BOOL _LoadPythonDLL(HMODULE hmod)
 	{
 		char buffer[_MAX_PATH + _MAX_FNAME + _MAX_EXT];
 		snprintf(buffer, sizeof(buffer), "%s\\%s", dirname, PYTHONDLL);
+
 		if (!_load_python(buffer, NULL)) {
 			SystemError(GetLastError(), "LoadLibrary(pythondll) failed");
 			return FALSE;
@@ -240,14 +241,13 @@ void _TryLoadZlib(HMODULE hmod)
 	}
 }
 
-static int set_path()
+static void calc_path()
 {
 	/* If the zip path has any path component, then build our Python
 	   home directory from that.
 	*/
 	char *fname;
 	int lib_dir_len;
-	char *ppath;
 	pZipBaseName = pScript - 1;
 	/* let pZipBaseName point to the basename of the zippath */
 	while (pZipBaseName > p_script_info->zippath && \
@@ -266,20 +266,24 @@ static int set_path()
 	}
 	/* Fully-qualify it */
 	GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
+}
 
+// Set the Python path before initialization
+static int set_path_early()
+{
+	char *ppath;
 	Py_SetPythonHome(libdirname);
 	/* Let Python calculate its initial path, according to the
 	   builtin rules */
 	ppath = Py_GetPath();
 //	printf("Initial path: %s\n", ppath);
 
-	/* HACK: We don't like so rules.
-	   We know that Py_GetPath points to writeable memory,
+	/* We know that Py_GetPath points to writeable memory,
 	   so we copy our own path into it.
 	*/
 	if (strlen(ppath) <= strlen(libdirname) + strlen(pZipBaseName) + 1) {
 		/* Um. Not enough space. What now? */
-		fprintf(stderr, "NOT ENOUGH SPACE for PATH\n");
+		SystemError(0, "Not enough space for new sys.path");
 		return -1;
 	}
 
@@ -289,6 +293,28 @@ static int set_path()
 	return 0;
 }
 
+// Set the Python path after initialization
+static int set_path_late()
+{
+	int buflen = strlen(libdirname) + strlen(pZipBaseName) + 2;
+	char *ppath = (char *)malloc(buflen);
+	PyObject *syspath, *newEntry;
+	if (!ppath) {
+		SystemError(ERROR_NOT_ENOUGH_MEMORY, "no mem for late sys.path");
+		return -1;
+	}
+	strcpy(ppath, libdirname);
+	strcat(ppath, "\\");
+	strcat(ppath, pZipBaseName);
+	syspath = PySys_GetObject("path");
+	newEntry = PyString_FromString(ppath);
+	if (newEntry) {
+		PyList_Append(syspath, newEntry);
+		Py_DECREF(newEntry);
+	}
+	free(ppath);
+	return 0;
+}
 
 
 /*
@@ -329,28 +355,42 @@ int init_with_instance(HMODULE hmod, char *frozen)
 
 	Py_SetProgramName(modulename);
 
-	rc = set_path();
-	if (rc != 0)
-		return rc;
+	calc_path();
 
-//	printf("Path before Py_Initialize(): %s\n", Py_GetPath());
-
-	Py_Initialize();
-//	printf("Path after Py_Initialize(): %s\n", PyString_AsString(PyObject_Str(PySys_GetObject("path"))));
-	/* Set sys.frozen so apps that care can tell.
-	   If the caller did pass NULL, sys.frozen will be set zo True.
-	   If a string is passed this is used as the frozen attribute.
-	   run.c passes "console_exe", run_w.c passes "windows_exe",
-	   run_dll.c passes "dll"
-	*/
-	if (frozen == NULL)
-		PySys_SetObject("frozen", PyBool_FromLong(1));
-	else {
-		PyObject *o = PyString_FromString(frozen);
-		if (o) {
-			PySys_SetObject("frozen", o);
-			Py_DECREF(o);
+	if (!Py_IsInitialized()) {
+		// First time round and the usual case - set sys.path
+		// statically.
+		rc = set_path_early();
+		if (rc != 0)
+			return rc;
+	
+	//	printf("Path before Py_Initialize(): %s\n", Py_GetPath());
+	
+		Py_Initialize();
+	//	printf("Path after Py_Initialize(): %s\n", PyString_AsString(PyObject_Str(PySys_GetObject("path"))));
+		/* Set sys.frozen so apps that care can tell.
+		   If the caller did pass NULL, sys.frozen will be set zo True.
+		   If a string is passed this is used as the frozen attribute.
+		   run.c passes "console_exe", run_w.c passes "windows_exe",
+		   run_dll.c passes "dll"
+		*/
+		if (frozen == NULL)
+			PySys_SetObject("frozen", PyBool_FromLong(1));
+		else {
+			PyObject *o = PyString_FromString(frozen);
+			if (o) {
+				PySys_SetObject("frozen", o);
+				Py_DECREF(o);
+			}
 		}
+	} else {
+		// Python already initialized.  This likely means there are
+		// 2 py2exe based apps in the same process (eg, 2 COM objects
+		// in a single host, 2 ISAPI filters in the same site, ...)
+		// Until we get a better answer, add what we need to sys.path
+		rc = set_path_late();
+		if (rc != 0)
+			return rc;
 	}
 
 	_TryLoadZlib(hmod);
