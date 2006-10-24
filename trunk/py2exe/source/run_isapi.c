@@ -108,10 +108,21 @@ BOOL check_init()
 		EnterCriticalSection(&csInit);
 		// Check the flag again - another thread may have beat us to it!
 		if (!have_init) {
+
 			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
 			PyObject *frozen;
 			char dll_path[1024];
 			char *slash;
+
+			// We must ensure Python is loaded, and therefore the
+			// function pointers are non-NULL, before we can check
+			// if Python is initialized!  Further, as our
+			// ISAPI dll depends on python, we must load Python
+			// before loading our module.
+			if (!_LoadPythonDLL(gInstance))
+				return FALSE;
+
+
 			// Find and load the pyisapi DLL.
 			GetModuleFileName(gInstance, dll_path, sizeof(dll_path)/sizeof(dll_path[0]));
 			slash = strrchr(dll_path, '\\');
@@ -132,14 +143,10 @@ BOOL check_init()
 					pHttpFilterProc = (__PROC__HttpFilterProc)GetProcAddress(hmodPyISAPI, "HttpFilterProc");
 					pTerminateFilter = (__PROC__TerminateFilter)GetProcAddress(hmodPyISAPI, "TerminateFilter");
 					pPyISAPISetOptions = (__PROC__PyISAPISetOptions)GetProcAddress(hmodPyISAPI, "PyISAPISetOptions");
+				} else {
+					SystemError(GetLastError(), "Failed to load the extension DLL");
 				}
 			}
-
-			// We must ensure Python is loaded, and therefore the
-			// function pointers are non-NULL, or this check is
-			// pointless
-			if (!_LoadPythonDLL(gInstance))
-				return FALSE;
 
 			if (Py_IsInitialized && Py_IsInitialized())
 				restore_state = PyGILState_Ensure();
