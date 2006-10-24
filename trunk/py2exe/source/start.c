@@ -77,12 +77,9 @@ static int dprintf(char *fmt, ...)
 }
 */
 
-BOOL _LocateScript(HMODULE hmod)
+BOOL calc_dirname(HMODULE hmod)
 {
-	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
-	HGLOBAL hgbl;
 	char *cp;
-
 	// get module filename
 	if (!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
 		SystemError(GetLastError(), "Retrieving module name");
@@ -92,6 +89,15 @@ BOOL _LocateScript(HMODULE hmod)
 	strcpy(dirname, modulename);
 	cp = strrchr(dirname, '\\');
 	*cp = '\0';
+}
+
+BOOL _LocateScript(HMODULE hmod)
+{
+	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
+	HGLOBAL hgbl;
+
+	if (!dirname[0])
+		calc_dirname(hmod);
 
 	// load the script resource
 	if (!hrsrc) {
@@ -159,6 +165,9 @@ BOOL _LoadPythonDLL(HMODULE hmod)
 	char *pBaseAddress;
 	int size;
 
+	if (!dirname[0])
+		calc_dirname(hmod);
+
 	// Try to locate pythonxy.dll as resource in the exe
 	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), PYTHONDLL);
 	if (hrsrc) {
@@ -191,6 +200,7 @@ BOOL _LoadPythonDLL(HMODULE hmod)
 
 		if (!_load_python(buffer, NULL)) {
 			SystemError(GetLastError(), "LoadLibrary(pythondll) failed");
+			SystemError(0, buffer);
 			return FALSE;
 		}
 //		dprintf("Loaded pythondll from file %s\n", buffer);
@@ -253,6 +263,7 @@ static void calc_path()
 	while (pZipBaseName > p_script_info->zippath && \
 	       *(pZipBaseName-1) != '\\')
 		pZipBaseName--;
+
 	/* dirname is the directory of the executable */
 	strcpy(libdirname, dirname);
 	/* length of lib director name */
@@ -368,21 +379,6 @@ int init_with_instance(HMODULE hmod, char *frozen)
 	
 		Py_Initialize();
 	//	printf("Path after Py_Initialize(): %s\n", PyString_AsString(PyObject_Str(PySys_GetObject("path"))));
-		/* Set sys.frozen so apps that care can tell.
-		   If the caller did pass NULL, sys.frozen will be set zo True.
-		   If a string is passed this is used as the frozen attribute.
-		   run.c passes "console_exe", run_w.c passes "windows_exe",
-		   run_dll.c passes "dll"
-		*/
-		if (frozen == NULL)
-			PySys_SetObject("frozen", PyBool_FromLong(1));
-		else {
-			PyObject *o = PyString_FromString(frozen);
-			if (o) {
-				PySys_SetObject("frozen", o);
-				Py_DECREF(o);
-			}
-		}
 	} else {
 		// Python already initialized.  This likely means there are
 		// 2 py2exe based apps in the same process (eg, 2 COM objects
@@ -391,6 +387,25 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		rc = set_path_late();
 		if (rc != 0)
 			return rc;
+	}
+	/* Set sys.frozen so apps that care can tell.
+	   If the caller did pass NULL, sys.frozen will be set zo True.
+	   If a string is passed this is used as the frozen attribute.
+	   run.c passes "console_exe", run_w.c passes "windows_exe",
+	   run_dll.c passes "dll"
+	   This falls apart when you consider that in some cases, a single
+	   process may end up with two py2exe generated apps - but still, we
+	   reset frozen to the correct 'current' value for the newly
+	   initializing app.
+	*/
+	if (frozen == NULL)
+		PySys_SetObject("frozen", PyBool_FromLong(1));
+	else {
+		PyObject *o = PyString_FromString(frozen);
+		if (o) {
+			PySys_SetObject("frozen", o);
+			Py_DECREF(o);
+		}
 	}
 
 	_TryLoadZlib(hmod);
