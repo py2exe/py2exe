@@ -56,7 +56,7 @@ def main():
         baseline = run(sys.executable, test)
         exe = os.path.join('dist', os.path.splitext(test)[0] + '.exe')
 
-        for option in ['--quiet', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']:
+        for option in ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']:
             # Build exe
             clean()
             print option
