@@ -585,12 +585,13 @@ class py2exe(Command):
 
                 if self.compressed:
                     # prepend zlib.pyd also
-                    print "Adding zlib%s.pyd to %s" % (is_debug_build and "_d" or "", arcname)
-                    arcfile.write("<zlib.pyd>")
                     zlib_file = imp.find_module("zlib")[0]
-                    bytes = zlib_file.read()
-                    arcfile.write(struct.pack("i", len(bytes)))
-                    arcfile.write(bytes) # zlib.pyd
+                    if zlib_file:
+                        print "Adding zlib%s.pyd to %s" % (is_debug_build and "_d" or "", arcname)
+                        arcfile.write("<zlib.pyd>")
+                        bytes = zlib_file.read()
+                        arcfile.write(struct.pack("i", len(bytes)))
+                        arcfile.write(bytes) # zlib.pyd
 
                 arcfile.write(arcbytes)
 
@@ -688,7 +689,7 @@ class py2exe(Command):
         return klass.__name__, klass._svc_name_, klass._svc_display_name_, deps
 
     def build_service(self, target, template, arcname):
-        # It should be possible to host many modules in a single service - 
+        # It should be possible to host many modules in a single service -
         # but this is yet to be tested.
         assert len(target.modules)==1, "We only support one service module"
 
@@ -795,12 +796,14 @@ class py2exe(Command):
                              unicode(python_dll).upper(), 1, False)
 
             if self.compressed and self.bundle_files < 3 and self.distribution.zipfile is None:
-                print "Adding zlib.pyd as resource to %s" % exe_path
-                zlib_bytes = imp.find_module("zlib")[0].read()
-                add_resource(unicode(exe_path), zlib_bytes,
-                             # for some reason, the 3. argument MUST BE UPPER CASE,
-                             # otherwise the resource will not be found.
-                             u"ZLIB.PYD", 1, False)
+                zlib_file = imp.find_module("zlib")[0]
+                if zlib_file:
+                    print "Adding zlib.pyd as resource to %s" % exe_path
+                    zlib_bytes = zlib_file.read()
+                    add_resource(unicode(exe_path), zlib_bytes,
+                                 # for some reason, the 3. argument MUST BE UPPER CASE,
+                                 # otherwise the resource will not be found.
+                                 u"ZLIB.PYD", 1, False)
 
         # Handle all resources specified by the target
         bitmap_resources = getattr(target, "bitmap_resources", [])
