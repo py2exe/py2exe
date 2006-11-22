@@ -1062,9 +1062,13 @@ class py2exe(Command):
         # Using popen requires (on Win9X) the w9xpopen.exe helper executable.
         if "os" in modules.keys() or "popen2" in modules.keys():
             if is_debug_build:
-                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen_d.exe"))
+                fname = os.path.join(os.path.dirname(sys.executable), "w9xpopen_d.exe")
             else:
-                dlls.add(os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe"))
+                fname = os.path.join(os.path.dirname(sys.executable), "w9xpopen.exe")
+            # Don't copy w9xpopen.exe if it doesn't exist (64-bit
+            # Python build, for example)
+            if os.path.exists(fname):
+                dlls.add(fname)
 
     def create_loader(self, item):
         # Hm, how to avoid needless recreation of this file?
@@ -1362,6 +1366,8 @@ EXCLUDED_DLLS = (
     "ws2help.dll",
     "wsock32.dll",
     "netapi32.dll",
+
+    "gdiplus.dll",
     )
 
 # XXX Perhaps it would be better to assume dlls from the systemdir are system dlls,
