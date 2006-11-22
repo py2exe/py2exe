@@ -89,6 +89,7 @@ BOOL calc_dirname(HMODULE hmod)
 	strcpy(dirname, modulename);
 	cp = strrchr(dirname, '\\');
 	*cp = '\0';
+	return TRUE;
 }
 
 BOOL _LocateScript(HMODULE hmod)
