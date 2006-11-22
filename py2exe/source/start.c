@@ -257,7 +257,7 @@ static void calc_path()
 	   home directory from that.
 	*/
 	char *fname;
-	int lib_dir_len;
+	size_t lib_dir_len;
 	pZipBaseName = pScript - 1;
 	/* let pZipBaseName point to the basename of the zippath */
 	while (pZipBaseName > p_script_info->zippath && \
@@ -307,7 +307,7 @@ static int set_path_early()
 // Set the Python path after initialization
 static int set_path_late()
 {
-	int buflen = strlen(libdirname) + strlen(pZipBaseName) + 2;
+	size_t buflen = strlen(libdirname) + strlen(pZipBaseName) + 2;
 	char *ppath = (char *)malloc(buflen);
 	PyObject *syspath, *newEntry;
 	if (!ppath) {
