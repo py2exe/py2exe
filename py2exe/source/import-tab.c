@@ -17,7 +17,11 @@
 #ifdef _DEBUG
 	{ "Py_InitModule4TraceRefs", NULL },
 #else
+#  if defined (_WIN64)
+	{ "Py_InitModule4_64", NULL },
+#  else
 	{ "Py_InitModule4", NULL },
+#  endif
 #endif
 	{ "PyTuple_New", NULL },
 	{ "PyTuple_SetItem", NULL },
