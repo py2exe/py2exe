@@ -1,5 +1,16 @@
 2006-11-22  Thomas Heller  <theller@python.net>
 
+	* py2exe does now work sort-of on win64, with a 64-bit build of
+	Python.
+	
+	* On win64, complain if bundle_files > 3.  This is not yet
+	supported since the code in source\MemoryModule.c does not work on
+	win64.
+
+	* Updated the mktab.py script (which generates import-tab.c and
+	import-tab.h) for Py_ssize_t and the definition of PyInit_Module4
+	on win64.  Regenerated import-tab.c and import-tab.h.
+
 	* build_exe.py: Don't copy w9xpopen.exe if it does not exist (on a
 	64-bit Python installation, for example).
 
