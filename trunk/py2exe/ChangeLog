@@ -1,3 +1,10 @@
+2006-11-22  Thomas Heller  <theller@python.net>
+
+	* build_exe.py: Don't copy w9xpopen.exe if it does not exist (on a
+	64-bit Python installation, for example).
+
+	* build_exe.py: Add gdiplus.dll to the list of excluded dlls.
+
 2006-02-13  Jimmy Retzlaff  <jimmy@retzlaff.com>
 
 	* py2exe 0.6.4 released.
