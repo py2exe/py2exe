@@ -7,9 +7,9 @@ void, Py_Finalize, (void)
 char *, Py_GetPath, (void)
 void, Py_SetPythonHome, (char *)
 void, Py_SetProgramName, (char *)
-PyObject *, PyMarshal_ReadObjectFromString, (char *, int)
+PyObject *, PyMarshal_ReadObjectFromString, (char *, Py_ssize_t)
 PyObject *, PyObject_CallFunction, (PyObject *, char *, ...)
-int, PyString_AsStringAndSize, (PyObject *, char **, int *)
+int, PyString_AsStringAndSize, (PyObject *, char **, Py_ssize_t *)
 char *, PyString_AsString, (PyObject *)
 int, PyArg_ParseTuple, (PyObject *, char *, ...)
 PyObject *, PyErr_Format, (PyObject *, const char *, ...)
@@ -18,8 +18,8 @@ PyObject *, PyInt_FromLong, (long)
 long, PyInt_AsLong, (PyObject *)
 PyObject *, PyLong_FromVoidPtr, (void *)
 PyObject *, Py_InitModule4, (char *, PyMethodDef *, char *, PyObject *, int)
-PyObject *, PyTuple_New, (int)
-int, PyTuple_SetItem, (PyObject*, int, PyObject *)
+PyObject *, PyTuple_New, (Py_ssize_t)
+int, PyTuple_SetItem, (PyObject*, Py_ssize_t, PyObject *)
 int, Py_IsInitialized, (void)
 int, PyObject_SetAttrString, (PyObject *, char *, PyObject *)
 PyObject *, PyCFunction_NewEx, (PyMethodDef *, PyObject *, PyObject *)
@@ -47,8 +47,8 @@ int, PyRun_InteractiveLoop, (FILE *, char *)
 void, PySys_SetArgv, (int, char **)
 PyObject *, PyImport_AddModule, (char *)
 PyObject *, PyModule_GetDict, (PyObject *)
-int, PySequence_Length, (PyObject *)
-PyObject *, PySequence_GetItem, (PyObject *, int)
+Py_ssize_t, PySequence_Length, (PyObject *)
+PyObject *, PySequence_GetItem, (PyObject *, Py_ssize_t)
 //int, PyCode_Check, (PyObject *)
 PyObject *, PyEval_EvalCode, (PyCodeObject *, PyObject *, PyObject *)
 void, PyErr_Print, (void)
@@ -57,6 +57,10 @@ int, Py_VerboseFlag
 int, Py_NoSiteFlag
 int, Py_OptimizeFlag
 int, Py_IgnoreEnvironmentFlag
+PyObject *, PyObject_Str, (PyObject *)
+PyObject *, PyList_New, (Py_ssize_t)
+int, PyList_SetItem, (PyObject *, Py_ssize_t, PyObject *)
+int, PyList_Append, (PyObject *, PyObject *)
 '''.strip().splitlines()
 
 import string
@@ -83,7 +87,11 @@ for decl in decls:
         print >> cfile, '#ifdef _DEBUG'
         print >> cfile, '\t{ "Py_InitModule4TraceRefs", NULL },' % locals()
         print >> cfile, '#else'
+        print >> cfile, '#  if defined (_WIN64)'
+        print >> cfile, '\t{ "Py_InitModule4_64", NULL },' % locals()
+        print >> cfile, '#  else'
         print >> cfile, '\t{ "Py_InitModule4", NULL },' % locals()
+        print >> cfile, '#  endif'
         print >> cfile, '#endif'
     else:
         print >> cfile, '\t{ "%(name)s", NULL },' % locals()
