@@ -17,6 +17,8 @@ import sets
 import tempfile
 import struct
 
+is_win64 = struct.calcsize("P") == 8
+
 def _is_debug_build():
     for ext, _, _ in imp.get_suffixes():
         if ext == "_d.pyd":
@@ -190,6 +192,9 @@ class py2exe(Command):
         if self.bundle_files < 1 or self.bundle_files > 3:
             raise DistutilsOptionError, \
                   "bundle-files must be 1, 2, or 3, not %s" % self.bundle_files
+        if is_win64 and self.bundle_files < 3:
+            raise DistutilsOptionError, \
+                  "bundle-files %d not yet supported on win64" % self.bundle_files
         if self.skip_archive:
             if self.compressed:
                 raise DistutilsOptionError, \
