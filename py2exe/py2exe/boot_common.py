@@ -90,7 +90,7 @@ del sys
 # someone elses removable or network drive so the getline() call
 # causes it to ask them to insert a disk in that drive.
 import linecache
-def fake_getline(filename, lineno):
+def fake_getline(filename, lineno, module_globals=None):
     return ''
 linecache.orig_getline = linecache.getline
 linecache.getline = fake_getline
