@@ -35,6 +35,7 @@ import sys, os, string
 from distutils.core import setup, Extension, Command
 from distutils.dist import Distribution
 from distutils.command import build_ext, build
+from distutils.command.install_data import install_data
 from distutils.sysconfig import customize_compiler
 from distutils.dep_util import newer_group
 from distutils.errors import *
@@ -297,6 +298,31 @@ class deinstall(Command):
 
 ############################################################################
 
+# This ensures that data files are copied into site_packages rather than
+# the main Python directory.
+class smart_install_data(install_data):
+    def run(self):
+        #need to change self.install_dir to the library dir
+        install_cmd = self.get_finalized_command('install')
+        self.install_dir = getattr(install_cmd, 'install_lib')
+        return install_data.run(self)
+
+def iter_samples():
+    excludedDirs = ['CVS']
+    for dirpath, dirnames, filenames in os.walk(r'py2exe\samples'):
+        for dir in dirnames:
+            if dir.startswith('.') and dir not in excludedDirs:
+                excludedDirs.append(dir)
+        for dir in excludedDirs:
+            if dir in dirnames:
+                dirnames.remove(dir)
+        qualifiedFiles = []
+        for filename in filenames:
+            if not filename.startswith('.'):
+                qualifiedFiles.append(os.path.join(dirpath, filename))
+        if qualifiedFiles:
+            yield (dirpath, qualifiedFiles)
+
 def _is_debug_build():
     import imp
     for ext, _, _ in imp.get_suffixes():
@@ -412,8 +438,11 @@ setup(name="py2exe",
       classifiers=["Development Status :: 5 - Production/Stable"],
       distclass = Dist,
       cmdclass = {'build_interpreters': BuildInterpreters,
-                  'deinstall': deinstall},
+                  'deinstall': deinstall,
+                  'install_data': smart_install_data,
+                 },
 
+      data_files = list(iter_samples()),
       ext_modules = [_memimporter,
                      Extension("py2exe.py2exe_util",
                                sources=["source/py2exe_util.c"],
@@ -424,12 +453,7 @@ setup(name="py2exe",
       interpreters = interpreters,
       packages=['py2exe',
                 'py2exe.resources',
-                # the following are NOT really packages:
-                'py2exe.samples.simple',
-                'py2exe.samples.extending',
-                'py2exe.samples.advanced',
-                'py2exe.samples.singlefile.gui',
-                'py2exe.samples.singlefile.comserver'],
+               ],
       options = options,
       )
 
