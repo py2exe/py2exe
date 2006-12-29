@@ -50,6 +50,7 @@ def run(*args):
 
 def main():
     for test in glob.glob('test_*.py'):
+        print 'Python', sys.version
         print test
 
         # Execute script to get baseline
