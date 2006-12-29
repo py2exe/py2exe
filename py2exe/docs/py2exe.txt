@@ -55,6 +55,18 @@ Public License Version 1.1`_
 News
 ----
 
+**py2exe 0.6.6 released (2006/12/30)**
+
+Better support for Python 2.5.
+
+Experimental support for 64-bit builds of Python on win64.
+
+Better ISAPI support.
+
+New samples for ISAPI and COM servers.
+
+Support for new "command-line styles" when building Windows services.
+
 **py2exe 0.6.5 released (2006/03/20)**
 
 Fixed modulefinder / mf related bugs introduced in 0.6.4. This
@@ -237,7 +249,7 @@ attribute)::
 Optionally, you can specify a 'cmdline-style' attribute to py2exe, with
 valid values being 'py2exe' (the default), 'pywin32' or 'custom'.  'py2exe'
 specifies the traditional command-line always supported by py2exe.  'pywin32'
-supports the exact same command-line arguments as pywin32 supports (ie, the 
+supports the exact same command-line arguments as pywin32 supports (ie, the
 same arguments supported when running the service from the .py file.)
 'custom' means that your module is expected to provide a 'HandleCommandLine'
 function which is responsible for all command-line handling.
