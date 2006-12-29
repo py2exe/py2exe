@@ -1,3 +1,4 @@
 include MANIFEST.in ANNOUNCE
+recursive-include py2exe *.h *.c *.ico *.rc *.py *.txt *.vbs
 recursive-include source *.h *.c *.ico *.rc *.py *.txt
 recursive-include docs *.txt *.css *.html *.py
