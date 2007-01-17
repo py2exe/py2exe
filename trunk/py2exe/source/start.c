@@ -79,14 +79,24 @@ static int dprintf(char *fmt, ...)
 
 BOOL calc_dirname(HMODULE hmod)
 {
+	int is_special;
+	char *modulename_start;
 	char *cp;
 	// get module filename
 	if (!GetModuleFileName(hmod, modulename, sizeof(modulename))) {
 		SystemError(GetLastError(), "Retrieving module name");
 		return FALSE;
 	}
-	// get directory of modulename
-	strcpy(dirname, modulename);
+	// get directory of modulename.  Note that in some cases
+	// (eg, ISAPI), GetModuleFileName may return a leading "\\?\"
+	// (which is a special format you can pass to the Unicode API
+	// to avoid MAX_PATH limitations).  Python currently can't understand
+	// such names, and as it uses the ANSI API, neither does Windows!
+	// So fix that up here.
+	is_special = strlen(modulename) > 4 &&
+	             strncmp(modulename, "\\\\?\\", 4)==0;
+	modulename_start = is_special ? modulename + 4 : modulename;
+	strcpy(dirname, modulename_start);
 	cp = strrchr(dirname, '\\');
 	*cp = '\0';
 	return TRUE;
