@@ -129,7 +129,7 @@ void SystemError(int error, char *msg)
 
 BOOL check_init()
 {
-	BOOL ok = FALSE;
+	BOOL ok = TRUE; // if already initialized all is good.
 	if (!have_init) {
 		EnterCriticalSection(&csInit);
 		// Check the flag again - another thread may have beat us to it!
@@ -140,6 +140,7 @@ BOOL check_init()
 			char dll_path[1024];
 			char *slash;
 
+			ok = FALSE; // must be reset after good init.
 			// We must ensure Python is loaded, and therefore the
 			// function pointers are non-NULL, before we can check
 			// if Python is initialized!  Further, as our
@@ -179,8 +180,10 @@ BOOL check_init()
 			if (Py_IsInitialized && Py_IsInitialized())
 				restore_state = PyGILState_Ensure();
 			// a little DLL magic.  Set sys.frozen='dll'
-			if (init_with_instance(gInstance, "dll") != 0)
+			if (init_with_instance(gInstance, "dll") != 0) {
+				PyGILState_Release(restore_state);
 				goto done;
+			}
 			init_memimporter();
 			frozen = PyInt_FromLong((LONG)gInstance);
 			if (frozen) {
@@ -208,8 +211,8 @@ BOOL check_init()
 			}
 			have_init = TRUE;
 			PyGILState_Release(restore_state);
+			ok = TRUE;
 		}
-		ok = TRUE;
 done:
 		LeaveCriticalSection(&csInit);
 	}
