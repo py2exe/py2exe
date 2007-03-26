@@ -251,7 +251,9 @@ class py2exe(Command):
             genpy_temp = os.path.join(self.temp_dir, "win32com", "gen_py")
             mkpath(genpy_temp)
             num_stubs = collect_win32com_genpy(genpy_temp,
-                                               self.typelibs)
+                                               self.typelibs,
+                                               verbose=self.verbose,
+                                               dry_run=self.dry_run)
             print "collected %d stubs from %d type libraries" \
                   % (num_stubs, len(self.typelibs))
             mf.load_package("win32com.gen_py", genpy_temp)
@@ -1496,9 +1498,11 @@ byte_compile(files, optimize=%s, force=%s,
 # byte_compile()
 
 # win32com makepy helper.
-def collect_win32com_genpy(path, typelibs):
+def collect_win32com_genpy(path, typelibs, verbose=0, dry_run=0):
     import win32com
     from win32com.client import gencache, makepy
+    from distutils.file_util import copy_file
+    
     old_gen_path = win32com.__gen_path__
     num = 0
     try:
@@ -1506,14 +1510,41 @@ def collect_win32com_genpy(path, typelibs):
         win32com.gen_py.__path__ = [path]
         gencache.__init__()
         for info in typelibs:
+            guid, lcid, major, minor = info[:4]
+            # They may provide an input filename in the tuple - in which case
+            # they will have pre-generated it on a machine with the typelibs
+            # installed, and just want us to include it.
+            fname_in = None
+            if len(info) > 4:
+                fname_in = info[4]
+            if fname_in is not None:
+                base = gencache.GetGeneratedFileName(guid, lcid, major, minor)
+                fname_out = os.path.join(path, base) + ".py"
+                copy_file(fname_in, fname_out, verbose=verbose, dry_run=dry_run)
+                num += 1
+                # That's all we gotta do!
+                continue
+
             # It seems bForDemand=True generates code which is missing
             # at least sometimes an import of DispatchBaseClass.
             # Until this is resolved, set it to false.
             # What's the purpose of bForDemand=True? Thomas
+            # bForDemand is supposed to only generate stubs when each
+            # individual object is referenced.  A side-effect of that is
+            # that each object gets its own source file.  The intent of
+            # this code was to set bForDemand=True, meaning we get the
+            # 'file per object' behaviour, but then explicitly walk all
+            # children forcing them to be built - so the entire object model
+            # is included, but not in a huge .pyc.
+            # I'm not sure why its not working :) I'll debug later.
+            # bForDemand=False isn't really important here - the overhead for
+            # monolithic typelib stubs is in the compilation, not the loading
+            # of an existing .pyc. Mark.
 ##            makepy.GenerateFromTypeLibSpec(info, bForDemand = True)
-            makepy.GenerateFromTypeLibSpec(info, bForDemand = False)
+            tlb_info = (guid, lcid, major, minor)
+            makepy.GenerateFromTypeLibSpec(tlb_info, bForDemand = False)
             # Now get the module, and build all sub-modules.
-            mod = gencache.GetModuleForTypelib(*info)
+            mod = gencache.GetModuleForTypelib(*tlb_info)
             for clsid, name in mod.CLSIDToPackageMap.items():
                 try:
                     gencache.GetModuleForCLSID(clsid)
