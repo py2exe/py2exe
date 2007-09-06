@@ -59,6 +59,11 @@ def fancy_split(str, sep=","):
         return [item.strip() for item in str.split(sep)]
     return str
 
+def ensure_unicode(text):
+    if isinstance(text, unicode):
+        return text
+    return text.decode("mbcs")
+
 # This loader locates extension modules relative to the library.zip
 # file when an archive is used (i.e., skip_archive is not used), otherwise
 # it locates extension modules relative to sys.prefix.
@@ -787,7 +792,7 @@ class py2exe(Command):
         script_bytes = si + code_bytes + '\000\000'
         self.announce("add script resource, %d bytes" % len(script_bytes))
         if not self.dry_run:
-            add_resource(unicode(exe_path), script_bytes, u"PYTHONSCRIPT", 1, True)
+            add_resource(ensure_unicode(exe_path), script_bytes, u"PYTHONSCRIPT", 1, True)
 
             # add the pythondll as resource, and delete in self.exe_dir
             if self.bundle_files < 2 and self.distribution.zipfile is None:
@@ -797,17 +802,17 @@ class py2exe(Command):
                 # image, bytes, lpName, lpType
 
                 print "Adding %s as resource to %s" % (python_dll, exe_path)
-                add_resource(unicode(exe_path), bytes,
+                add_resource(ensure_unicode(exe_path), bytes,
                              # for some reason, the 3. argument MUST BE UPPER CASE,
                              # otherwise the resource will not be found.
-                             unicode(python_dll).upper(), 1, False)
+                             ensure_unicode(python_dll).upper(), 1, False)
 
             if self.compressed and self.bundle_files < 3 and self.distribution.zipfile is None:
                 zlib_file = imp.find_module("zlib")[0]
                 if zlib_file:
                     print "Adding zlib.pyd as resource to %s" % exe_path
                     zlib_bytes = zlib_file.read()
-                    add_resource(unicode(exe_path), zlib_bytes,
+                    add_resource(ensure_unicode(exe_path), zlib_bytes,
                                  # for some reason, the 3. argument MUST BE UPPER CASE,
                                  # otherwise the resource will not be found.
                                  u"ZLIB.PYD", 1, False)
@@ -818,22 +823,22 @@ class py2exe(Command):
             bmp_data = open(bmp_filename, "rb").read()
             # skip the 14 byte bitmap header.
             if not self.dry_run:
-                add_resource(unicode(exe_path), bmp_data[14:], RT_BITMAP, bmp_id, False)
+                add_resource(ensure_unicode(exe_path), bmp_data[14:], RT_BITMAP, bmp_id, False)
         icon_resources = getattr(target, "icon_resources", [])
         for ico_id, ico_filename in icon_resources:
             if not self.dry_run:
-                add_icon(unicode(exe_path), unicode(ico_filename), ico_id)
+                add_icon(ensure_unicode(exe_path), ensure_unicode(ico_filename), ico_id)
 
         for res_type, res_id, data in getattr(target, "other_resources", []):
             if not self.dry_run:
-                if isinstance(res_type, str):
-                    res_type = unicode(res_type)
-                add_resource(unicode(exe_path), data, res_type, res_id, False)
+                if isinstance(res_type, basestring):
+                    res_type = ensure_unicode(res_type)
+                add_resource(ensure_unicode(exe_path), data, res_type, res_id, False)
 
         typelib = getattr(target, "typelib", None)
         if typelib is not None:
             data = open(typelib, "rb").read()
-            add_resource(unicode(exe_path), data, u"TYPELIB", 1, False)
+            add_resource(ensure_unicode(exe_path), data, u"TYPELIB", 1, False)
 
         self.add_versioninfo(target, exe_path)
 
@@ -889,7 +894,7 @@ class py2exe(Command):
             return
 
         from py2exe_util import add_resource
-        add_resource(unicode(exe_path), bytes, RT_VERSION, 1, False)
+        add_resource(ensure_unicode(exe_path), bytes, RT_VERSION, 1, False)
 
     def patch_python_dll_winver(self, dll_name, new_winver = None):
         from py2exe.resources.StringTables import StringTable, RT_STRING
@@ -917,7 +922,7 @@ class py2exe(Command):
         s.add_string(1000, new_winver)
         delete = True
         for id, data in s.binary():
-            add_resource(unicode(dll_name), data, RT_STRING, id, delete)
+            add_resource(ensure_unicode(dll_name), data, RT_STRING, id, delete)
             delete = False
 
         # restore the time.
