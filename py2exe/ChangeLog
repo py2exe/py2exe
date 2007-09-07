@@ -1,3 +1,10 @@
+2007-09-07  Thomas Heller  <theller@python.net>
+
+	* build_exe.py: Patch from Grant Edwards, slightly adjusted:
+	py2exe now renames the pyd files that it copies into the dist
+	directory so that they include the package name.  This prevents
+	name conflicts.
+
 2006-12-27  Jimmy Retzlaff  <jimmy@retzlaff.com>
 
 	* boot_common.py: Handle new parameter to fake_getline in Python 2.5

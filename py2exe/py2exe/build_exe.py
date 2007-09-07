@@ -412,9 +412,7 @@ class py2exe(Command):
         for item in extensions:
             src = item.__file__
             if self.bundle_files > 2: # don't bundle pyds and dlls
-                # XXX all dlls are copied into the same directory - a flat name space.
-                # sooner or later that will give conflicts.
-                dst = os.path.join(self.lib_dir, os.path.basename(item.__file__))
+                dst = os.path.join(self.lib_dir, (item.__pydfile__))
                 self.copy_file(src, dst, preserve_mode=0)
                 self.lib_files.append(dst)
             else:
@@ -1085,11 +1083,19 @@ class py2exe(Command):
     def create_loader(self, item):
         # Hm, how to avoid needless recreation of this file?
         pathname = os.path.join(self.temp_dir, "%s.py" % item.__name__)
+        if self.bundle_files > 2: # don't bundle pyds and dlls
+            # all dlls are copied into the same directory, so modify
+            # names to include the package name to avoid name
+            # conflicts and tuck it away for future reference
+            fname = item.__name__ + os.path.splitext(item.__file__)[1]
+            item.__pydfile__ = fname
+        else:
+            fname = os.path.basename(item.__file__)
+            
         # and what about dry_run?
         if self.verbose:
-            print "creating python loader for extension '%s'" % item.__name__
+            print "creating python loader for extension '%s' (%s -> %s)" % (item.__name__,item.__file__,fname)
 
-        fname = os.path.basename(item.__file__)
         source = LOADER % fname
         if not self.dry_run:
             open(pathname, "w").write(source)
