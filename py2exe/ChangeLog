@@ -1,3 +1,9 @@
+2008-02-29  Thomas Heller  <theller@python.net>
+
+	* source\py2exe_util.c: Embedding icon resources into the image
+	does now work correctly even for ico files containing multiple
+	images.
+
 2007-09-07  Thomas Heller  <theller@python.net>
 
 	* build_exe.py: Patch from Grant Edwards, slightly adjusted:
