@@ -1,5 +1,7 @@
 2008-02-29  Thomas Heller  <theller@python.net>
 
+	* py2exe\__init__.py: Bump version number to 0.6.7.
+
 	* source\py2exe_util.c: Embedding icon resources into the image
 	does now work correctly even for ico files containing multiple
 	images.
