@@ -183,6 +183,8 @@ static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh, int icoid)
 
 static PyObject* do_add_icon(Py_UNICODE *exename, Py_UNICODE *iconame, int icoid, BOOL bDelete)
 {
+    static rt_icon_id = 0;
+
     /* from the .ico file */
     ICONDIRHEADER *pidh;
     WORD idh_size;
@@ -217,7 +219,20 @@ static PyObject* do_add_icon(Py_UNICODE *exename, Py_UNICODE *iconame, int icoid
 	SystemError(GetLastError(), "BeginUpdateResource");
 	goto failed;
     }
+    
+    /* Each RT_ICON resource in an image file (containing the icon for one
+       specific resolution and number of colors) must have a unique id, and
+       the id must be in the GRPICONDIRHEADER's nID member.
 
+       So, we use a *static* variable rt_icon_id which is incremented for each
+       RT_ICON resource and written into the GRPICONDIRHEADER's nID member.
+
+       XXX Do we need a way to reset the rt_icon_id variable to zero?  If we
+       are building a lot of images in one setup script? 
+    */
+    for (i = 0; i < pidh->idCount; ++i) {
+	    pgidh->idEntries[i].nID = rt_icon_id++;
+    }
     if (!pfn_UpdateResource(hUpdate,
 			    (Py_UNICODE *)MAKEINTRESOURCE(RT_GROUP_ICON),
 			    (Py_UNICODE *)MAKEINTRESOURCE(icoid),
@@ -232,7 +247,7 @@ static PyObject* do_add_icon(Py_UNICODE *exename, Py_UNICODE *iconame, int icoid
         int cBytes = pidh->idEntries[i].dwBytesInRes;
         if (!pfn_UpdateResource(hUpdate,
 				(Py_UNICODE *)MAKEINTRESOURCE(RT_ICON),
-				(Py_UNICODE *)MAKEINTRESOURCE(i+icoid),
+				(Py_UNICODE *)MAKEINTRESOURCE(pgidh->idEntries[i].nID),
 				MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL),
 				cp,
 				cBytes)) {
