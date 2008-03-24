@@ -1,2 +1,9 @@
 @echo off
-C:\Python23\python.exe test.py && C:\Python24\python.exe test.py && C:\Python25\python.exe test.py && echo Success!!!
+
+for /D %%f in (C:\Python*) do (
+    "%%f\python.exe" test.py
+    if errorlevel 1 goto fail
+)
+echo Success!!!
+
+:fail

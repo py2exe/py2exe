@@ -8,6 +8,8 @@ Running all tests requires the following packages:
 ctypes
 EasyDialogs for Windows
 pywin32
+subprocess
+http://sourceforge.net/project/showfiles.php?group_id=6473
 """
 
 import glob
@@ -15,6 +17,17 @@ import os
 import shutil
 import subprocess
 import sys
+
+
+excludedTestFiles = dict(
+        AMD64=['test_win32com.shell.py'],
+        Intel=[],
+    )
+
+excludedTestOptions = dict(
+        AMD64=['--bundle=1', '--bundle=2'],
+        Intel=[],
+    )
 
 
 # This is the default setup script. A custom script will be used for
@@ -27,6 +40,13 @@ setup(script_args=['py2exe', '%s'], console = ['%s'])
 """
 
 generatedSetup = 'generated_setup.py'
+
+
+def getPlatform():
+    for platform in 'AMD64', 'Intel':
+        if '(' + platform + ')' in sys.version:
+            return platform
+    raise RuntimeError("Can't determine Intel vs. AMD64 from: " + sys.version)
 
 
 def clean():
@@ -49,28 +69,28 @@ def run(*args):
 
 
 def main():
+    print 'Python', sys.version
     for test in glob.glob('test_*.py'):
-        print 'Python', sys.version
-        print test
+        if test not in excludedTestFiles[getPlatform()]:
+            print '   ', test
 
-        # Execute script to get baseline
-        baseline = run(sys.executable, test)
-        exe = os.path.join('dist', os.path.splitext(test)[0] + '.exe')
+            # Execute script to get baseline
+            baseline = run(sys.executable, test)
+            exe = os.path.join('dist', os.path.splitext(test)[0] + '.exe')
 
-        for option in ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']:
-            # Build exe
-            clean()
-            print option
-            if os.path.exists(test.replace('test_', 'setup_')):
-                open(generatedSetup, 'wt').write(open(test.replace('test_', 'setup_'), 'rt').read() % (option, test))
-            else:
-                open(generatedSetup, 'wt').write(py2exeTemplate % (option, test))
-            run(sys.executable, generatedSetup)
+            for option in ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']:
+                if option not in excludedTestOptions[getPlatform()]:
+                    # Build exe
+                    clean()
+                    print '       ', option
+                    if os.path.exists(test.replace('test_', 'setup_')):
+                        open(generatedSetup, 'wt').write(open(test.replace('test_', 'setup_'), 'rt').read() % (option, test))
+                    else:
+                        open(generatedSetup, 'wt').write(py2exeTemplate % (option, test))
+                    run(sys.executable, generatedSetup)
 
-            # Run exe and test against baseline
-            assert run(exe) == baseline
-
-        print
+                    # Run exe and test against baseline
+                    assert run(exe) == baseline
 
     clean()
 
