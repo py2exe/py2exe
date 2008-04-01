@@ -1,3 +1,8 @@
+2008-04-01  Thomas Heller  <theller@python.net>
+
+	* Allow renaming of single-execuatble files; patch from
+	http://snaury.googlepages.com/py2exe-0.6.6-libname-fix.patch.
+
 2008-02-29  Thomas Heller  <theller@python.net>
 
 	* py2exe\__init__.py: Bump version number to 0.6.7.

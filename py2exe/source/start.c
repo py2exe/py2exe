@@ -136,8 +136,12 @@ BOOL _LocateScript(HMODULE hmod)
 	pScript += strlen(p_script_info->zippath) + 1;
 
 	// get full pathname of the 'library.zip' file
-	snprintf(libfilename, sizeof(libfilename),
-		 "%s\\%s", dirname, p_script_info->zippath);
+	if(p_script_info->zippath[0]) {
+		snprintf(libfilename, sizeof(libfilename),
+			 "%s\\%s", dirname, p_script_info->zippath);
+	} else {
+		GetModuleFileName(hmod, libfilename, sizeof(libfilename));
+	}
 	return TRUE; // success
 }
 
@@ -269,23 +273,22 @@ static void calc_path()
 	*/
 	char *fname;
 	size_t lib_dir_len;
-	pZipBaseName = pScript - 1;
+	pZipBaseName = libfilename + strlen(libfilename);
 	/* let pZipBaseName point to the basename of the zippath */
-	while (pZipBaseName > p_script_info->zippath && \
+	while (pZipBaseName > libfilename && \
 	       *(pZipBaseName-1) != '\\')
 		pZipBaseName--;
 
-	/* dirname is the directory of the executable */
-	strcpy(libdirname, dirname);
-	/* length of lib director name */
-	lib_dir_len = pZipBaseName-p_script_info->zippath; /* incl. tail slash */
-	if (lib_dir_len) {
-		char *p = libdirname+strlen(libdirname);
-		*p++ = '\\';
-		strncpy(p, p_script_info->zippath, lib_dir_len-1);
-		p += lib_dir_len-1;
-		*p++ = '\0';
-	}
+ 	/* length of lib director name */
+	lib_dir_len = pZipBaseName-libfilename; /* incl. tail slash */
+ 	if (lib_dir_len) {
+		char *p = libdirname;
+		strncpy(p, libfilename, lib_dir_len-1);
+ 		p += lib_dir_len-1;
+ 		*p++ = '\0';
+	} else {
+		libdirname[0] = '\0';
+ 	}
 	/* Fully-qualify it */
 	GetFullPathName(libdirname, sizeof(libdirname), libdirname, &fname);
 }
