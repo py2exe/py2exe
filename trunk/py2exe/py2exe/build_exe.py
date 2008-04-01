@@ -778,7 +778,7 @@ class py2exe(Command):
         code_bytes = marshal.dumps(code_objects)
 
         if self.distribution.zipfile is None:
-            relative_arcname = os.path.basename(exe_path)
+            relative_arcname = ""
 
         si = struct.pack("iiii",
                          0x78563412, # a magic value,
