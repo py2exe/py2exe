@@ -12,7 +12,10 @@ if 1:
         def __init__(self):
             self.softspace = None
         def write(self, text):
-            ctypes.windll.kernel32.OutputDebugStringA(text)
+            if isinstance(text, unicode):
+                ctypes.windll.kernel32.OutputDebugStringW(text)
+            else:
+                ctypes.windll.kernel32.OutputDebugStringA(text)
     sys.stderr = sys.stdout = LOGGER()
 ##    sys.stderr.write("PATH is %s\n" % sys.path)
 
@@ -30,11 +33,7 @@ else:
 # Add some extra imports here, just to avoid putting them as "hidden imports"
 # anywhere else - this script has the best idea about what it needs.
 # (and hidden imports are currently disabled :)
-#...none so far
-
-# Patchup sys.argv for our DLL
-#if sys.frozen=="dll" and not hasattr(sys, "argv"):
-#    sys.argv = [win32api.GetModuleFileName(sys.frozendllhandle)]
+#...
 
 # We assume that py2exe has magically set com_module_names
 # to the module names that expose the COM objects we host.
@@ -57,17 +56,34 @@ def get_classes(module):
             if hasattr(ob, "_reg_progid_")
             ]
 
+def build_class_map():
+    # Set _clsid_to_class in comtypes.server.inprocserver.
+    #
+    # This avoids the need to have registry entries pointing to the
+    # COM server class.
+    classmap = {}
+    for mod in com_modules:
+        # dump each class
+        for cls in get_classes(mod):
+            classmap[cls._reg_clsid_] = cls
+    import comtypes.server.inprocserver
+    comtypes.server.inprocserver._clsid_to_class = classmap
+build_class_map()
+del build_class_map
+
 def DllRegisterServer():
     # Enumerate each module implementing an object
-    from ctypes.com.register import register
+    from comtypes.server.register import register
     for mod in com_modules:
         # register each class
-        register(*get_classes(mod))
+        for cls in get_classes(mod):
+            register(cls)
 
 
 def DllUnregisterServer():
     # Enumerate each module implementing an object
-    from ctypes.com.register import unregister
+    from comtypes.server.register import unregister
     for mod in com_modules:
-        # register each class
-        unregister(*get_classes(mod))
+        # unregister each class
+        for cls in get_classes(mod):
+            unregister(cls)
