@@ -1,6 +1,11 @@
+2008-04-04  Thomas Heller  <theller@python.net>
+
+	* py2exe\boot_ctypes_com_server.py: Port this module from
+	ctypes.com to comtypes.  Work in progress.
+
 2008-04-01  Thomas Heller  <theller@python.net>
 
-	* Allow renaming of single-execuatble files; patch from
+	* Allow renaming of single-executable files; patch from
 	http://snaury.googlepages.com/py2exe-0.6.6-libname-fix.patch.
 
 2008-02-29  Thomas Heller  <theller@python.net>
