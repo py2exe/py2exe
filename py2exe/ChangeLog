@@ -11,8 +11,9 @@
 
 2008-04-01  Thomas Heller  <theller@python.net>
 
-	* Allow renaming of single-executable files; patch from
-	http://snaury.googlepages.com/py2exe-0.6.6-libname-fix.patch.
+	* Allow renaming of single-executable files; patch from Alexey
+	Borzenkov (sf request id 1516099)
+
 
 2008-02-29  Thomas Heller  <theller@python.net>
 
