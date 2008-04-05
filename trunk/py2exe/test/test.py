@@ -20,14 +20,18 @@ import sys
 
 
 excludedTestFiles = dict(
-        AMD64=['test_win32com.shell.py'],
-        Intel=[],
-    )
+    AMD64=['test_win32com.shell.py'],
+    Intel=[],
+)
 
 excludedTestOptions = dict(
-        AMD64=['--bundle=1', '--bundle=2'],
-        Intel=[],
-    )
+    AMD64=['--bundle=1', '--bundle=2'],
+    Intel=[],
+)
+
+options = {
+    'test_noZipFile.py' : ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii'],
+}
 
 
 # This is the default setup script. A custom script will be used for
@@ -68,17 +72,19 @@ def run(*args):
     return popen.returncode, output
 
 
-def main():
+def main(pattern='test_*.py'):
     print 'Python', sys.version
-    for test in glob.glob('test_*.py'):
+    for test in glob.glob(pattern):
         if test not in excludedTestFiles[getPlatform()]:
             print '   ', test
 
             # Execute script to get baseline
             baseline = run(sys.executable, test)
-            exe = os.path.join('dist', os.path.splitext(test)[0] + '.exe')
+            basename = os.path.splitext(test)[0]
+            exe = os.path.join('dist', basename + '.exe')
+            exe2 = os.path.join('dist', basename + '_2.exe')
 
-            for option in ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']:
+            for option in options.get(test, ['--quiet', '--compressed', '--bundle=1', '--bundle=2', '--bundle=3', '--ascii', '--skip-archive']):
                 if option not in excludedTestOptions[getPlatform()]:
                     # Build exe
                     clean()
@@ -90,10 +96,11 @@ def main():
                     run(sys.executable, generatedSetup)
 
                     # Run exe and test against baseline
-                    assert run(exe) == baseline
+                    os.rename(exe, exe2) # ensure that the exe works when renamed
+                    assert run(exe2) == baseline
 
     clean()
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])
