@@ -94,7 +94,7 @@ BOOL calc_dirname(HMODULE hmod)
 	// such names, and as it uses the ANSI API, neither does Windows!
 	// So fix that up here.
 	is_special = strlen(modulename) > 4 &&
-	             strncmp(modulename, "\\\\?\\", 4)==0;
+				 strncmp(modulename, "\\\\?\\", 4)==0;
 	modulename_start = is_special ? modulename + 4 : modulename;
 	strcpy(dirname, modulename_start);
 	cp = strrchr(dirname, '\\');
@@ -152,9 +152,9 @@ static char *MapExistingFile(char *pathname, DWORD *psize)
 	char *data;
 
 	hFile = CreateFile(pathname,
-			    GENERIC_READ, FILE_SHARE_READ, NULL,
-			    OPEN_EXISTING,
-			    FILE_ATTRIBUTE_NORMAL, NULL);
+				GENERIC_READ, FILE_SHARE_READ, NULL,
+				OPEN_EXISTING,
+				FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hFile == INVALID_HANDLE_VALUE)
 		return NULL;
 	nSizeLow = GetFileSize(hFile, &nSizeHigh);
@@ -166,7 +166,7 @@ static char *MapExistingFile(char *pathname, DWORD *psize)
 		return NULL;
 
 	data = MapViewOfFile(hFileMapping,
-			     FILE_MAP_READ, 0, 0, 0);
+				 FILE_MAP_READ, 0, 0, 0);
 
 	CloseHandle(hFileMapping);
 	if (psize)
@@ -251,6 +251,23 @@ void _TryLoadZlib(HMODULE hmod)
 		return;
 	}
 
+	// try to load zlib.pyd from the file system
+	{
+		HMODULE hlib;
+		char buffer[_MAX_PATH + _MAX_FNAME + _MAX_EXT];
+		snprintf(buffer, sizeof(buffer), "%s\\%s", dirname, "zlib.pyd");
+
+		hlib = LoadLibrary(buffer);
+		if(hlib) {
+			void (*proc)(void);
+			proc = (void(*)(void))GetProcAddress(hlib, "initzlib");
+			if(proc) {
+				proc();
+				return;
+			}
+		}
+	}
+
 	// try to load zlib.pyd as bytes at the start of the zipfile
 	pdata = pBaseAddress = MapExistingFile(libfilename, NULL);
 	if (pBaseAddress) {
@@ -276,7 +293,7 @@ static void calc_path()
 	pZipBaseName = libfilename + strlen(libfilename);
 	/* let pZipBaseName point to the basename of the zippath */
 	while (pZipBaseName > libfilename && \
-	       *(pZipBaseName-1) != '\\')
+		   *(pZipBaseName-1) != '\\')
 		pZipBaseName--;
 
  	/* length of lib director name */
@@ -483,7 +500,7 @@ int run_script(void)
 			PyObject *sub = PySequence_GetItem(seq, i);
 			if (sub /*&& PyCode_Check(sub) */) {
 				PyObject *discard = PyEval_EvalCode((PyCodeObject *)sub,
-								    d, d);
+									d, d);
 				if (!discard) {
 					PyErr_Print();
 					rc = 255;
