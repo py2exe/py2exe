@@ -1,5 +1,7 @@
 2008-04-17  Thomas Heller  <theller@python.net>
 
+	* Changes to the test suite.
+
 	* Fix MemoryLoadLibrary to handle loading function addresses by
 	ordinal numbers.  Patch and test by Matthias Miller - thanks!
 
