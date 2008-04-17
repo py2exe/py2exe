@@ -1,3 +1,8 @@
+2008-04-17  Thomas Heller  <theller@python.net>
+
+	* Fix MemoryLoadLibrary to handle loading function addresses by
+	ordinal numbers.  Patch and test by Matthias Miller - thanks!
+
 2008-04-05  Jimmy Retzlaff  <jimmy@retzlaff.com>
 
 	* Using the options compressed=1, bundle_files=3, and zipfile=None at

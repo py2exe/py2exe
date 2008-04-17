@@ -611,8 +611,6 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, const char *name)
 {
 	unsigned char *codeBase = ((PMEMORYMODULE)module)->codeBase;
 	int idx=-1;
-	struct NAME_TABLE *ptab;
-	struct NAME_TABLE *found;
 	PIMAGE_EXPORT_DIRECTORY exports;
 	PIMAGE_DATA_DIRECTORY directory = GET_HEADER_DICTIONARY((PMEMORYMODULE)module, IMAGE_DIRECTORY_ENTRY_EXPORT);
 
@@ -625,16 +623,23 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, const char *name)
 		// DLL doesn't export anything
 		return NULL;
 
-	ptab = GetNameTable((PMEMORYMODULE)module);
-	if (ptab == NULL)
-		// some failure
-		return NULL;
-	found = bsearch(&name, ptab, exports->NumberOfNames, sizeof(struct NAME_TABLE), _find);
-	if (found == NULL)
-		// exported symbol not found
-		return NULL;
+	if (HIWORD(name)) {
+		struct NAME_TABLE *ptab;
+		struct NAME_TABLE *found;
+		ptab = GetNameTable((PMEMORYMODULE)module);
+		if (ptab == NULL)
+			// some failure
+			return NULL;
+		found = bsearch(&name, ptab, exports->NumberOfNames, sizeof(struct NAME_TABLE), _find);
+		if (found == NULL)
+			// exported symbol not found
+			return NULL;
 	
-	idx = found->ordinal;
+		idx = found->ordinal;
+	}
+	else
+		idx = LOWORD(name) - exports->Base;
+
 	if ((DWORD)idx > exports->NumberOfFunctions)
 		// name <-> ordinal number don't match
 		return NULL;
