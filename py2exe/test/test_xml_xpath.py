@@ -2,4 +2,5 @@
 
 import xml.xpath
 
-print xml.xpath.Init()
+if __name__ == "__main__":
+    print xml.xpath.Init()

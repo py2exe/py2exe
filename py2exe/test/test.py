@@ -78,9 +78,15 @@ def main(pattern='test_*.py'):
         if test not in excludedTestFiles[getPlatform()]:
             print '   ', test
 
+            basename = os.path.splitext(test)[0]
+            try:
+                __import__(basename)
+            except ImportError, details:
+                print "(Skipping %s: %s)" % (basename, details)
+                continue
+
             # Execute script to get baseline
             baseline = run(sys.executable, test)
-            basename = os.path.splitext(test)[0]
             exe = os.path.join('dist', basename + '.exe')
             exe2 = os.path.join('dist', basename + '_2.exe')
 
@@ -97,7 +103,11 @@ def main(pattern='test_*.py'):
 
                     # Run exe and test against baseline
                     os.rename(exe, exe2) # ensure that the exe works when renamed
-                    assert run(exe2) == baseline
+                    out2 = run(exe2)
+                    if out2 != baseline:
+                        print "FAILED."
+                        print "\tExpected:", baseline
+                        print "\tGot:", out2
 
     clean()
 
