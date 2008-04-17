@@ -308,7 +308,7 @@ class smart_install_data(install_data):
         return install_data.run(self)
 
 def iter_samples():
-    excludedDirs = ['CVS']
+    excludedDirs = ['CVS', 'build', 'dist']
     for dirpath, dirnames, filenames in os.walk(r'py2exe\samples'):
         for dir in dirnames:
             if dir.startswith('.') and dir not in excludedDirs:
