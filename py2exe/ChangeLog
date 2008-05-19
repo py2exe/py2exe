@@ -10,6 +10,8 @@
 
     * Use Python 2.5 to build the source distribution.
 
+    * Include the entire test suite in the source distribution.
+
 2008-04-17  Thomas Heller  <theller@python.net>
 
 	* Changes to the test suite.
