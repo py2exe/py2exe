@@ -17,6 +17,6 @@ C:\Python25amd64\python.exe setup.py bdist_msi
 ren dist\py2exe-?.?.?.win32-py2.5.msi py2exe-?.?.?.win64-py2.5.amd64.msi
 
 rm MANIFEST
-C:\Python24\python.exe setup.py sdist -f
+C:\Python25\python.exe setup.py sdist -f
 
 rm -rf build

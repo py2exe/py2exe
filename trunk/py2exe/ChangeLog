@@ -8,6 +8,8 @@
     * Merged modulefinder.py r59200 from the Python svn trunk into mf.py
     in order to support relative imports.
 
+    * Use Python 2.5 to build the source distribution.
+
 2008-04-17  Thomas Heller  <theller@python.net>
 
 	* Changes to the test suite.
