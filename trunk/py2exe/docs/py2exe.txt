@@ -7,9 +7,11 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.6.5.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.5.win32-py2.3.exe?download
+.. _py2exe-0.6.7.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.3.exe?download
 
-.. _py2exe-0.6.5.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.5.win32-py2.4.exe?download
+.. _py2exe-0.6.7.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.4.exe?download
+
+.. _py2exe-0.6.7.win32-py2.5.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.5.exe?download
 
 .. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
@@ -35,7 +37,7 @@
 py2exe - convert python scripts into standalone windows programs
 ================================================================
 
-Copyright (c) 2001-2006 Thomas Heller, Mark Hammond, Joachim Bauch,
+Copyright (c) 2001-2008 Thomas Heller, Mark Hammond, Joachim Bauch,
 Jimmy Retzlaff, and contributors.
 
 Abstract
@@ -54,6 +56,10 @@ Public License Version 1.1`_
 
 News
 ----
+
+**py2exe 0.6.7 released (2008/03/25)**
+
+What's new?
 
 **py2exe 0.6.6 released (2006/12/30)**
 
@@ -374,8 +380,9 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.6.5.win32-py2.3.exe_ (for
-Python 2.3), or py2exe-0.6.5.win32-py2.4.exe_ (for Python 2.4).
+Download and run the installer py2exe-0.6.7.win32-py2.3.exe_ (for
+Python 2.3), py2exe-0.6.7.win32-py2.4.exe_ (for
+Python 2.4), or py2exe-0.6.7.win32-py2.5.exe_ (for Python 2.5).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.

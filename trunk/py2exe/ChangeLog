@@ -1,3 +1,10 @@
+2008-02-29  Jimmy Retzlaff  <jimmy@retzlaff.com>
+
+	* Bump version number to 0.6.8.
+
+    * Updated test suite to be smarted about which interpreters
+    to use for testing and to output stats.
+
 2008-04-17  Thomas Heller  <theller@python.net>
 
 	* Changes to the test suite.
