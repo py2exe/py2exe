@@ -57,9 +57,23 @@ Public License Version 1.1`_
 News
 ----
 
-**py2exe 0.6.7 released (2008/03/25)**
+**py2exe 0.6.8 released (2008/06/15)**
 
-What's new?
+Support for relative imports.
+
+Fix MemoryLoadLibrary to handle loading function addresses by ordinal numbers. Patch and test by Matthias Miller.
+
+Using the options compressed=1, bundle_files=3, and zipfile=None at the same time now works; patch from Alexey Borzenkov.
+
+Allow renaming of single-executable files; patch from Alexey Borzenkov.
+
+Embedding icon resources into the image now works correctly even for ico files containing multiple images.
+
+pyd files from different packages with the same filename no longer conflict. Patch from Grant Edwards.
+
+There are new samples for the 'typelibs' support, including the new option of pre-generating a typelib and specifying the file as an input to py2exe.
+
+The test suite is now included in the source distribution.
 
 **py2exe 0.6.6 released (2006/12/30)**
 
