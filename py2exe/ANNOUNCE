@@ -1,10 +1,48 @@
-py2exe 0.6.5 released
+py2exe 0.6.8 released
 =====================
 
 py2exe is a Python distutils extension which converts Python scripts
 into executable Windows programs, able to run without requiring a
 Python installation. Console and Windows (GUI) applications, Windows
 NT services, exe and dll COM servers are supported.
+
+Changes in 0.6.8:
+
+    * Support for relative imports.
+
+    * Fix MemoryLoadLibrary to handle loading function addresses by ordinal
+      numbers. Patch and test by Matthias Miller.
+
+    * Using the options compressed=1, bundle_files=3, and zipfile=None at
+      the same time now works; patch from Alexey Borzenkov.
+
+    * Allow renaming of single-executable files; patch from Alexey
+      Borzenkov.
+
+    * Embedding icon resources into the image now works correctly even for
+      ico files containing multiple images.
+
+    * pyd files from different packages with the same filename no longer
+      conflict. Patch from Grant Edwards.
+
+    * There are new samples for the 'typelibs' support, including the new
+      option of pre-generating a typelib and specifying the file as an
+      input to py2exe.
+
+    * The test suite is now included in the source distribution.
+
+
+Changes in 0.6.6:
+
+    * Better support for Python 2.5.
+
+    * Experimental support for 64-bit builds of Python on win64.
+
+    * Better ISAPI support.
+
+    * New samples for ISAPI and COM servers.
+
+    * Support for new "command-line styles" when building Windows services.
 
 Changes in 0.6.5:
 
