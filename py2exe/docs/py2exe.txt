@@ -7,19 +7,21 @@
 
 .. _setup-script: http://www.python.org/doc/current/dist/setup-script.html
 
-.. _py2exe-0.6.7.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.3.exe?download
+.. _py2exe-0.6.8.win32-py2.3.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.8.win32-py2.3.exe?download
 
-.. _py2exe-0.6.7.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.4.exe?download
+.. _py2exe-0.6.8.win32-py2.4.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.8.win32-py2.4.exe?download
 
-.. _py2exe-0.6.7.win32-py2.5.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.7.win32-py2.5.exe?download
+.. _py2exe-0.6.8.win32-py2.5.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.8.win32-py2.5.exe?download
+
+.. _py2exe-0.6.8.win64-py2.5.amd64.msi: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.8.win64-py2.5.amd64.msi?download
 
 .. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
-.. _announcement: http://cvs.sourceforge.net/viewcvs.py/*checkout*/py2exe/py2exe/ANNOUNCE?content-type=text%2Fplain&rev=release_0_6_2
+.. _announcement: http://py2exe.svn.sourceforge.net/viewvc/*checkout*/py2exe/trunk/py2exe/ANNOUNCE
 
-.. _ChangeLog: http://cvs.sourceforge.net/viewcvs.py/py2exe/py2exe/ChangeLog?content-type=text%2Fplain&rev=release_0_6_2
+.. _ChangeLog: http://py2exe.svn.sourceforge.net/viewvc/*checkout*/py2exe/trunk/py2exe/ChangeLog
 
 .. _`py2exe mailing list`: https://lists.sourceforge.net/lists/listinfo/py2exe-users
 
@@ -394,9 +396,9 @@ list can never be complete.
 Installing py2exe
 -----------------
 
-Download and run the installer py2exe-0.6.7.win32-py2.3.exe_ (for
-Python 2.3), py2exe-0.6.7.win32-py2.4.exe_ (for
-Python 2.4), or py2exe-0.6.7.win32-py2.5.exe_ (for Python 2.5).
+Download and run the installer py2exe-0.6.8.win32-py2.3.exe_ (for
+Python 2.3), py2exe-0.6.8.win32-py2.4.exe_ (for
+Python 2.4), py2exe-0.6.8.win32-py2.5.exe_ (for Python 2.5), or py2exe-0.6.8.win64-py2.5.amd64.msi_ (for 64-bit Python 2.5).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
