@@ -35,6 +35,10 @@
 #include <stdio.h>
 #endif
 
+#ifndef IMAGE_SIZEOF_BASE_RELOCATION
+// Vista SDKs no longer define IMAGE_SIZEOF_BASE_RELOCATION!?
+# define IMAGE_SIZEOF_BASE_RELOCATION (sizeof(IMAGE_BASE_RELOCATION))
+#endif
 #include "MemoryModule.h"
 
 /*
