@@ -1,3 +1,13 @@
+2008-08-28 Mark Hammond <mhammond@skippinet.com.au>
+
+	* Copy the manifest, if any, from the 'template' into the targets
+	to ensure embedded assembly references, as required for python 2.6 based
+	apps, are copied.
+
+	* Allow each target to specify Vista User Access Control flags. For 
+	example, specifying 'uac_execution_info="requireAdministrator"' would
+	force elevation for the final executable.
+
 2008-05-19  Jimmy Retzlaff  <jimmy@retzlaff.com>
 
 	* Bump version number to 0.6.8.

@@ -16,6 +16,7 @@ import zipfile
 import sets
 import tempfile
 import struct
+import re
 
 is_win64 = struct.calcsize("P") == 8
 
@@ -34,6 +35,11 @@ else:
 
 # resource constants
 RT_BITMAP=2
+RT_MANIFEST=24
+
+# Pattern for modifying the 'requestedExecutionLevel' in the manifest.  Groups
+# are setup so all text *except* for the values is matched.
+pat_manifest_uac = re.compile(r'(^.*<requestedExecutionLevel level=")([^"])*(" uiAccess=")([^"])*(".*$)')
 
 # note: we cannot use the list from imp.get_suffixes() because we want
 # .pyc and .pyo, independent of the optimize flag.
@@ -85,6 +91,15 @@ del __load
 # A very loosely defined "target".  We assume either a "script" or "modules"
 # attribute.  Some attributes will be target specific.
 class Target:
+    # A custom requestedExecutionLevel for the User Access Control portion
+    # of the manifest for the target. May be a string, which will be used for
+    # the 'requestedExecutionLevel' portion and False for 'uiAccess', or a tuple
+    # of (string, bool) which specifies both values. If specified and the
+    # target's 'template' executable has no manifest (ie, python 2.5 and
+    # earlier), then a default manifest is created, otherwise the manifest from
+    # the template is copied then updated.
+    uac_info = None
+
     def __init__(self, **kw):
         self.__dict__.update(kw)
         # If modules is a simple string, assume they meant list
@@ -719,6 +734,58 @@ class py2exe(Command):
                }
         return self.build_executable(target, template, arcname, None, vars)
 
+    def build_manifest(self, target, template):
+        # Optionally return a manifest to be included in the target executable.
+        # Note for Python 2.6 and later, its *necessary* to include a manifest
+        # which correctly references the CRT.  For earlier versions, a manifest
+        # is optional, and only necessary to customize things like
+        # Vista's User Access Control 'requestedExecutionLevel' setting, etc.
+        default_manifest = """
+            <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+                <trustInfo xmlns="urn:schemas-microsoft-com:asm.v3">
+                  <security>
+                    <requestedPrivileges>
+                      <requestedExecutionLevel level="asInvoker" uiAccess="false"></requestedExecutionLevel>
+                    </requestedPrivileges>
+                  </security>
+                </trustInfo>
+            </assembly>
+        """
+        from py2exe_util import load_resource
+        if os.path.splitext(template)[1]==".exe":
+            rid = 1
+        else:
+            rid = 2
+        try:
+            # Manfiests have resource type of 24, and ID of either 1 or 2.
+            mfest = load_resource(ensure_unicode(template), RT_MANIFEST, rid)
+            # we consider the manifest 'changed' as we know we clobber all
+            # resources including the existing manifest - so this manifest must
+            # get written even if we make no other changes.
+            changed = True
+        except RuntimeError:
+            mfest = default_manifest
+            # in this case the template had no existing manifest, so its
+            # not considered 'changed' unless we make further changes later.
+            changed = False
+        # update the manifest according to our options.
+        # for now a regex will do.
+        if target.uac_info:
+            changed = True
+            if isinstance(target.uac_info, tuple):
+                exec_level, ui = target.uac_info
+            else:
+                exec_level = target.uac_info
+                ui = False
+            new_lines = []
+            for line in mfest.splitlines():
+                repl = r'\1%s\3%s\5' % (exec_level, ui)
+                new_lines.append(re.sub(pat_manifest_uac, repl, line))
+            mfest = "".join(new_lines)
+        if not changed:
+            return None, None
+        return mfest, rid
+
     def build_executable(self, target, template, arcname, script, vars={}):
         # Build an executable for the target
         # template is the exe-stub to use, and arcname is the zipfile
@@ -826,6 +893,13 @@ class py2exe(Command):
         for ico_id, ico_filename in icon_resources:
             if not self.dry_run:
                 add_icon(ensure_unicode(exe_path), ensure_unicode(ico_filename), ico_id)
+
+        # a manifest
+        mfest, mfest_id = self.build_manifest(target, src)
+        if mfest:
+            self.announce("add manifest, %d bytes" % len(mfest))
+            if not self.dry_run:
+                add_resource(ensure_unicode(exe_path), mfest, RT_MANIFEST, mfest_id, False)
 
         for res_type, res_id, data in getattr(target, "other_resources", []):
             if not self.dry_run:
@@ -960,13 +1034,17 @@ class py2exe(Command):
         images = dlls + templates
 
         self.announce("Resolving binary dependencies:")
+        excludes_use = dll_excludes[:]
+        # The MSVCRT modules are never found when using VS2008+
+        if sys.version_info > (2,6):
+            excludes_use.append("msvcr90.dll")
 
         # we add python.exe (aka sys.executable) to the list of images
         # to scan for dependencies, but remove it later again from the
         # results list.  In this way pythonXY.dll is collected, and
         # also the libraries it depends on.
         alldlls, warnings, other_depends = \
-                 bin_depends(loadpath, images + [sys.executable], dll_excludes)
+                 bin_depends(loadpath, images + [sys.executable], excludes_use)
         alldlls.remove(sys.executable)
         for dll in alldlls:
             self.announce("  %s" % dll)
