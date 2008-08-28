@@ -357,6 +357,62 @@ static PyObject *add_resource(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *load_resource(PyObject *self, PyObject *args)
+{
+	PyObject *ret = NULL;
+	Py_UNICODE *exename;
+	HANDLE hMod = NULL;
+	HRSRC hrsrc = NULL;
+	HGLOBAL hglob = 0;
+	LPVOID res_ptr = NULL;
+	DWORD res_size = 0;
+	PyObject *py_res_type, *py_res_id;
+	Py_UNICODE *res_type;
+	Py_UNICODE *res_id;
+	WORD wLanguage = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL);
+
+	if (!PyArg_ParseTuple(args, "uOO|H",
+	      &exename, &py_res_type, &py_res_id, &wLanguage))
+		return NULL;
+
+	res_type = PyObject_AsRESOURCEID(py_res_type);
+	if (res_type==NULL)
+		return NULL;
+
+	res_id = PyObject_AsRESOURCEID(py_res_id);
+	if (res_id==NULL)
+		return NULL;
+
+	// Note lack of function pointers - this was added after win9x support was
+	// dropped.
+	if (!(hMod = LoadLibraryExW(exename, NULL, LOAD_LIBRARY_AS_DATAFILE)))
+		return SystemError(GetLastError(), "LoadLibraryExW");
+
+	// from here. take care to exit via 'done'
+	if (!(hrsrc = FindResourceExW(hMod, res_type, res_id, wLanguage))) {
+		SystemError(GetLastError(), "FindResourceEx");
+		goto done;
+	}
+	if (0 == (res_size = SizeofResource(hMod, hrsrc))) {
+		SystemError(GetLastError(), "SizeofResource");
+		goto done;
+	}
+	if (0 == (hglob = LoadResource(hMod, hrsrc))) {
+		SystemError(GetLastError(), "LoadResource");
+		goto done;
+	}
+	if (0 == (res_ptr = LockResource(hglob))) {
+		SystemError(GetLastError(), "LockResource");
+		goto done;
+	}
+	ret = PyString_FromStringAndSize((char *)res_ptr, res_size);
+done:
+	if (hMod)
+		FreeLibrary(hMod);
+	// nothing else to clean up (no Unlock/UnloadResource exist)
+	return ret;
+}
+
 /***********************************************************************************
  *
  * Dependency tracker
@@ -510,6 +566,9 @@ static PyMethodDef methods[] = {
       "Return a list containing the dlls needed to run 'executable'.\n"
       "The dlls are searched along 'loadpath'\n"
       "or windows default loadpath", },
+    { "load_resource", load_resource, METH_VARARGS,
+      "load_resource(executable, res_type, res_id[, language]) -> string\n\n"
+      "Load the specified resource from 'executable'", },
     { NULL, NULL },		/* Sentinel */
 };
 
