@@ -970,7 +970,8 @@ class py2exe(Command):
 
     def patch_python_dll_winver(self, dll_name, new_winver = None):
         from py2exe.resources.StringTables import StringTable, RT_STRING
-        from py2exe_util import add_resource
+        from py2exe_util import add_resource, load_resource
+        from py2exe.resources.VersionInfo import RT_VERSION
 
         new_winver = new_winver or self.distribution.metadata.name or "py2exe"
         if self.verbose:
@@ -988,14 +989,30 @@ class py2exe(Command):
             f.close()
         except IOError, why:
             print "WARNING: File %s could not be opened - %s" % (dll_name, why)
-        # OK - do it.
+        # We aren't smart enough to update string resources in place, so we need
+        # to persist other resources we care about.
+        unicode_name = ensure_unicode(dll_name)
+
+        # Preserve existing version info (all versions should have this)
+        ver_info = load_resource(unicode_name, RT_VERSION, 1)
+        # Preserve an existing manifest (only python26.dll+ will have this)
+        try:
+            # Manfiests have resource type of 24, and ID of either 1 or 2.
+            mfest = load_resource(unicode_name, RT_MANIFEST, 2)
+        except RuntimeError:
+            mfest = None
+
+        # Start putting the resources back, passing 'delete=True' for the first.
+        add_resource(unicode_name, ver_info, RT_VERSION, 1, True)
+        if mfest is not None:
+            add_resource(unicode_name, mfest, RT_MANIFEST, 2, False)
+
+        # OK - do the strings.
         s = StringTable()
         # 1000 is the resource ID Python loads for its winver.
         s.add_string(1000, new_winver)
-        delete = True
         for id, data in s.binary():
-            add_resource(ensure_unicode(dll_name), data, RT_STRING, id, delete)
-            delete = False
+            add_resource(ensure_unicode(dll_name), data, RT_STRING, id, False)
 
         # restore the time.
         os.utime(dll_name, (st[stat.ST_ATIME], st[stat.ST_MTIME]))
