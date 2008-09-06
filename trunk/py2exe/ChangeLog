@@ -12,15 +12,15 @@
 
 	* Bump version number to 0.6.8.
 
-    * Updated test suite to be smarter about which interpreters
-    to use for testing and to output stats.
+	* Updated test suite to be smarter about which interpreters to use
+	for testing and to output stats.
 
-    * Merged modulefinder.py r59200 from the Python svn trunk into mf.py
-    in order to support relative imports.
+	* Merged modulefinder.py r59200 from the Python svn trunk into
+	mf.py in order to support relative imports.
 
-    * Use Python 2.5 to build the source distribution.
+	* Use Python 2.5 to build the source distribution.
 
-    * Include the entire test suite in the source distribution.
+	* Include the entire test suite in the source distribution.
 
 2008-04-17  Thomas Heller  <theller@python.net>
 
