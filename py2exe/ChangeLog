@@ -93,7 +93,7 @@
 	* test:
 		* Run all tests with and without the --compression option - this
 		  catches the problems zlib problem with Python 2.5.
-		* Added a test case that cathces the sys.path regression.
+		* Added a test case that catches the sys.path regression.
 
 2006-10-24  Mark Hammond  <mhammond@skippinet.com.au>
 
