@@ -1,31 +1,32 @@
-from wxPython.wx import *
+import sys
+import wx
 
 # By default the executables created by py2exe write output to stderr
 # into a logfile and display a messagebox at program end when there
 # has been any output.  This logger silently overrides the default
-# behaviour by silently shallowing everything.
+# behaviour by silently swallowing everything.
 
-class logger:
-    def write(self, text):
-        pass # silently ignore everything
+if hasattr(sys, "frozen"):
+    class logger:
+        def write(self, text):
+            pass # silently ignore everything
 
-import sys
-sys.stdout = sys.stderr = logger()
+    sys.stdout = sys.stderr = logger()
 
-class MyFrame(wxFrame):
-    def __init__(self, parent, ID, title, pos=wxDefaultPosition,
-                 size=(200, 200), style=wxDEFAULT_FRAME_STYLE):
-        wxFrame.__init__(self, parent, ID, title, pos, size, style)
-        panel = wxPanel(self, -1)
+class MyFrame(wx.Frame):
+    def __init__(self, parent, ID, title, pos=wx.DefaultPosition,
+                 size=(200, 200), style=wx.DEFAULT_FRAME_STYLE):
+        wx.Frame.__init__(self, parent, ID, title, pos, size, style)
+        panel = wx.Panel(self, -1)
 
-        button = wxButton(panel, 1003, "Close Me")
-        button.SetPosition(wxPoint(15, 15))
-        EVT_BUTTON(self, 1003, self.OnCloseMe)
-        EVT_CLOSE(self, self.OnCloseWindow)
+        button = wx.Button(panel, 1003, "Close Me")
+        button.SetPosition(wx.Point(15, 15))
+        wx.EVT_BUTTON(self, 1003, self.OnCloseMe)
+        wx.EVT_CLOSE(self, self.OnCloseWindow)
 
-        button = wxButton(panel, 1004, "Press Me")
-        button.SetPosition(wxPoint(15, 45))
-        EVT_BUTTON(self, 1004, self.OnPressMe)
+        button = wx.Button(panel, 1004, "Press Me")
+        button.SetPosition(wx.Point(15, 45))
+        wx.EVT_BUTTON(self, 1004, self.OnPressMe)
 
     def OnCloseMe(self, event):
         self.Close(True)
@@ -37,12 +38,13 @@ class MyFrame(wxFrame):
     def OnCloseWindow(self, event):
         self.Destroy()
 
-class MyApp(wxApp):
+class MyApp(wx.App):
     def OnInit(self):
-        frame = MyFrame(NULL, -1, "Hello from wxPython")
-        frame.Show(true)
+        frame = MyFrame(None, -1, "Hello from wxPython")
+        frame.Show(True)
         self.SetTopWindow(frame)
-        return true
+        return True
 
-app = MyApp(0)
-app.MainLoop()
+if __name__ == "__main__":
+    app = MyApp(0)
+    app.MainLoop()

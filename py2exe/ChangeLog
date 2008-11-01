@@ -1,3 +1,8 @@
+2008-11-01  Thomas Heller  <theller@python.net>
+
+	* Changed the py2exe\samples\singlefile\gui\test_wx.py sample to
+	use the wx package instead of the old wxPython package.
+
 2008-08-28 Mark Hammond <mhammond@skippinet.com.au>
 
 	* Copy the manifest, if any, from the 'template' into the targets
