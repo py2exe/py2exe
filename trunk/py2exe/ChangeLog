@@ -1,3 +1,7 @@
+2008-11-06  Thomas Heller  <theller@python.net>
+
+	* Fixed a modulefinder crash on certain relative imports.
+
 2008-11-01  Thomas Heller  <theller@python.net>
 
 	* Changed the py2exe\samples\singlefile\gui\test_wx.py sample to
