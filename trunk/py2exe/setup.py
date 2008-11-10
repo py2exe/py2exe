@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ##
-##	   Copyright (c) 2000-2005 Thomas Heller, Jimmy Retzlaff
+##	   Copyright (c) 2000-2008 Thomas Heller, Jimmy Retzlaff
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
