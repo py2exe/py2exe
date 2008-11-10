@@ -17,7 +17,7 @@
 
 .. _py2exe-0.6.9.win32-py2.6.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win32-py2.6.exe?download
 
-.. _WIKI: http://starship.python.net/crew/theller/moin.cgi/Py2Exe
+.. _WIKI: http://www.py2exe.org/
 
 .. _SourceForge: http://sourceforge.net/projects/py2exe/
 
