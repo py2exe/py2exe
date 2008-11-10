@@ -130,7 +130,7 @@ def main(interpreter_pattern=r'C:\Python*', test_pattern='test_*.py'):
                             open(generatedSetup, 'wt').write(open(test.replace('test_', 'setup_'), 'rt').read() % test)
                         else:
                             open(generatedSetup, 'wt').write(py2exeTemplate % test)
-                        run(sys.executable, generatedSetup, 'py2exe', option)
+                        run(interpreter, generatedSetup, 'py2exe', option)
 
                         # Run exe and test against baseline
                         os.rename(exe, exe2) # ensure that the exe works when renamed
