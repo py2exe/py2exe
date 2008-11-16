@@ -12,16 +12,16 @@ Changes in 0.6.9:
 
     * Fixed a modulefinder crash on certain relative imports.
 
-	* Changed the py2exe\samples\singlefile\gui\test_wx.py sample to
-	  use the wx package instead of the old wxPython package.
+    * Changed the py2exe\samples\singlefile\gui\test_wx.py sample to
+      use the wx package instead of the old wxPython package.
 
-	* Copy the manifest, if any, from the 'template' into the targets
-	  to ensure embedded assembly references, as required for python 2.6 based
-	  apps, are copied.
+    * Copy the manifest, if any, from the 'template' into the targets
+      to ensure embedded assembly references, as required for python 2.6 based
+      apps, are copied.
 
-	* Allow each target to specify Vista User Access Control flags. For
-	  example, specifying 'uac_execution_info="requireAdministrator"' would
-	  force elevation for the final executable.
+    * Allow each target to specify Vista User Access Control flags. For
+      example, specifying 'uac_execution_info="requireAdministrator"' would
+      force elevation for the final executable.
 
 
 Changes in 0.6.8:

@@ -17,11 +17,11 @@
 
 .. _py2exe-0.6.9.win32-py2.6.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win32-py2.6.exe?download
 
-.. _py2exe-0.6.9.win64-py2.6.amd64.msi: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win64-py2.6.amd64.msi?download
+.. _py2exe-0.6.9.win64-py2.6.amd64.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win64-py2.6.amd64.exe?download
 
 .. _py2exe-0.6.9.win32-py2.7.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win32-py2.7.exe?download
 
-.. _py2exe-0.6.9.win64-py2.7.amd64.msi: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win64-py2.7.amd64.msi?download
+.. _py2exe-0.6.9.win64-py2.7.amd64.exe: http://prdownloads.sourceforge.net/py2exe/py2exe-0.6.9.win64-py2.7.amd64.exe?download
 
 .. _WIKI: http://www.py2exe.org/
 
@@ -421,9 +421,9 @@ Python 2.3), py2exe-0.6.9.win32-py2.4.exe_ (for
 Python 2.4), py2exe-0.6.9.win32-py2.5.exe_ (for Python 2.5),
 py2exe-0.6.9.win64-py2.5.amd64.msi_ (for 64-bit Python 2.5),
 py2exe-0.6.9.win32-py2.6.exe_ (for Python 2.6),
-py2exe-0.6.9.win64-py2.6.amd64.msi_ (for 64-bit Python 2.6),
+py2exe-0.6.9.win64-py2.6.amd64.exe_ (for 64-bit Python 2.6),
 py2exe-0.6.9.win32-py2.7.exe_ (for Python 2.7), or
-py2exe-0.6.9.win64-py2.7.amd64.msi_ (for 64-bit Python 2.7).
+py2exe-0.6.9.win64-py2.7.amd64.exe_ (for 64-bit Python 2.7).
 
 This installs **py2exe** together with some samples, the samples are in
 the ``lib\site-packages\py2exe\samples`` subdirectory.
