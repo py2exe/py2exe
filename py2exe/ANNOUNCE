@@ -8,7 +8,7 @@ NT services, exe and dll COM servers are supported.
 
 Changes in 0.6.9:
 
-    * Binaries for Python 2.6.
+    * Binaries for Python 2.6 and Python 2.7.
 
     * Fixed a modulefinder crash on certain relative imports.
 
