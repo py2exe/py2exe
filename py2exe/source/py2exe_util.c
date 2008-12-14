@@ -183,7 +183,7 @@ static GRPICONDIRHEADER *CreateGrpIconDirHeader(ICONDIRHEADER *pidh, int icoid)
 
 static PyObject* do_add_icon(Py_UNICODE *exename, Py_UNICODE *iconame, int icoid, BOOL bDelete)
 {
-    static rt_icon_id = 0;
+    static rt_icon_id = 1;
 
     /* from the .ico file */
     ICONDIRHEADER *pidh;

@@ -1,3 +1,7 @@
+2008-12-15  Mark Hammond
+
+	* Fix via the mailing list to fix strange icons being displayed on Vista.
+
 2008-11-06  Thomas Heller  <theller@python.net>
 
 	* Fixed a modulefinder crash on certain relative imports.
