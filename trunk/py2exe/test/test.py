@@ -55,12 +55,16 @@ def getPlatform(version):
 
 
 def PythonInterpreters(pattern):
+    num_found = 0
     for folder in glob.glob(pattern):
         path = os.path.join(folder, 'python.exe')
         if os.path.exists(path):
             errorlevel, output = run(path, '-c', 'import sys; print sys.version')
             if errorlevel == 0:
+                num_found += 1
                 yield output.strip(), path
+    if not num_found:
+        yield sys.version, sys.executable
 
 
 def shortVersion(version):
