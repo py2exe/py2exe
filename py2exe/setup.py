@@ -336,6 +336,8 @@ if _is_debug_build():
 else:
     macros = [("PYTHONDLL", '\\"PYTHON%d%d.DLL\\"' % sys.version_info[:2]),
               ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2])]
+if 'zlib' in sys.builtin_module_names:
+    macros.append(("PYZLIB_BUILTIN", None))
 
 ##macros.append(("AS_PY2EXE_BUILTIN", "1")) # for runtime linking python.dll in _memimporter.c
 depends = ["source/import-tab.c", "source/import-tab.h"]

@@ -439,7 +439,13 @@ int init_with_instance(HMODULE hmod, char *frozen)
 		}
 	}
 
+	// If zlib is builtin to pythonxx.dll, we don't need to take any
+	// special action (and worse, if it so happens an old version of
+	// the app built with python 2.4 is installed, we might attempt to
+	// load that python24 pyd, causing death...)
+#ifndef PYZLIB_BUILTIN
 	_TryLoadZlib(hmod);
+#endif
 
 	return 0;
 }
