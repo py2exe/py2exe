@@ -1,3 +1,9 @@
+2008-04-10  Mark Hammond
+
+	* If a Python 2.5 built app was installed over a Python 2.4 built app,
+	the app would crash as Python 2.5 loaded Python 2.4's zlib.pyd; zlib is
+	builtin in Python 2.5 and later, so no 2.5 version of zlib.pyd exists.
+
 2008-12-15  Mark Hammond
 
 	* Fix via the mailing list to fix strange icons being displayed on Vista.
