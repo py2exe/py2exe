@@ -13,7 +13,10 @@ from distutils.errors import *
 import sys, os, imp, types, stat
 import marshal
 import zipfile
-import sets
+try:
+    set
+except NameError:
+    from sets import Set as set
 import tempfile
 import struct
 import re
@@ -660,7 +663,7 @@ class py2exe(Command):
 
         # make sure all targets use the same directory, this is
         # also the directory where the pythonXX.dll must reside
-        paths = sets.Set()
+        paths = set()
         for target in dist.com_server + dist.service \
                 + dist.windows + dist.console + dist.isapi:
             paths.add(os.path.dirname(target.get_dest_base()))
@@ -1032,7 +1035,7 @@ class py2exe(Command):
         # so the loadpath must be extended by our python path.
         loadpath = loadpath + ';' + ';'.join(pypath)
 
-        templates = sets.Set()
+        templates = set()
         if self.distribution.console:
             templates.add(self.get_console_template())
         if self.distribution.windows:

@@ -1,3 +1,8 @@
+2009-08-14  Thomas Heller  <theller@python.net>
+
+	* Fix 'DeprecationWarning: the sets module is deprecated' in Python 2.6,
+	when building an executable.
+
 2008-04-10  Mark Hammond
 
 	* If a Python 2.5 built app was installed over a Python 2.4 built app,
