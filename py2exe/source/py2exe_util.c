@@ -430,8 +430,8 @@ static PyObject *BindError;
 BOOL __stdcall StatusRoutine(IMAGEHLP_STATUS_REASON reason,
 			  PSTR ImageName,
 			  PSTR DllName,
-			  ULONG Va,
-			  ULONG Parameter)
+			  ULONG_PTR Va,
+			  ULONG_PTR Parameter)
 {
     DWORD result;
 
