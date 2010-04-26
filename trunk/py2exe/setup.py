@@ -332,10 +332,12 @@ def _is_debug_build():
 
 if _is_debug_build():
     macros = [("PYTHONDLL", '\\"PYTHON%d%d_d.DLL\\"' % sys.version_info[:2]),
-              ("PYTHONCOM", '\\"pythoncom%d%d_d.dll\\"' % sys.version_info[:2])]
+              ("PYTHONCOM", '\\"pythoncom%d%d_d.dll\\"' % sys.version_info[:2]),
+              ("_CRT_SECURE_NO_WARNINGS", '1')]
 else:
     macros = [("PYTHONDLL", '\\"PYTHON%d%d.DLL\\"' % sys.version_info[:2]),
-              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2])]
+              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
+              ("_CRT_SECURE_NO_WARNINGS", '1')]
 if 'zlib' in sys.builtin_module_names:
     macros.append(("PYZLIB_BUILTIN", None))
 

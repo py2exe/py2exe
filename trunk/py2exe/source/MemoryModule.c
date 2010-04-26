@@ -102,7 +102,7 @@ HMODULE MyGetModuleHandle(LPCTSTR lpModuleName)
 	MEMORYMODULE *p = loaded;
 	while (p) {
 		// If already loaded, only increment the reference count
-		if (0 == stricmp(lpModuleName, p->name)) {
+		if (0 == _stricmp(lpModuleName, p->name)) {
 			return (HMODULE)p;
 		}
 		p = p->next;
@@ -121,7 +121,7 @@ HMODULE MyLoadLibrary(char *lpFileName)
 
 	while (p) {
 		// If already loaded, only increment the reference count
-		if (0 == stricmp(lpFileName, p->name)) {
+		if (0 == _stricmp(lpFileName, p->name)) {
 			p->refcount++;
 			return (HMODULE)p;
 		}
@@ -435,7 +435,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 
 	while (p) {
 		// If already loaded, only increment the reference count
-		if (0 == stricmp(name, p->name)) {
+		if (0 == _stricmp(name, p->name)) {
 			p->refcount++;
 			return (HMODULE)p;
 		}
@@ -493,7 +493,7 @@ HMEMORYMODULE MemoryLoadLibrary(char *name, const void *data)
 	result->initialized = 0;
 	result->next = result->prev = NULL;
 	result->refcount = 1;
-	result->name = strdup(name);
+	result->name = _strdup(name);
 	result->name_table = NULL;
 
 	// XXX: is it correct to commit the complete memory region at once?
@@ -570,12 +570,12 @@ error:
 
 int _compare(const struct NAME_TABLE *p1, const struct NAME_TABLE *p2)
 {
-	return stricmp(p1->name, p2->name);
+	return _stricmp(p1->name, p2->name);
 }
 
 int _find(const char **name, const struct NAME_TABLE *p)
 {
-	return stricmp(*name, p->name);
+	return _stricmp(*name, p->name);
 }
 
 struct NAME_TABLE *GetNameTable(PMEMORYMODULE module)
