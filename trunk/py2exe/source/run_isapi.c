@@ -185,7 +185,7 @@ BOOL check_init()
 				goto done;
 			}
 			init_memimporter();
-			frozen = PyInt_FromLong((LONG)gInstance);
+			frozen = PyLong_FromVoidPtr(gInstance);
 			if (frozen) {
 				PySys_SetObject("frozendllhandle", frozen);
 				Py_DECREF(frozen);
