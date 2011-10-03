@@ -138,7 +138,7 @@ int check_init()
 			// a little DLL magic.  Set sys.frozen='dll'
 			init_with_instance(gInstance, "dll");
 			init_memimporter();
-			frozen = PyInt_FromLong((LONG)gInstance);
+			frozen = PyLong_FromVoidPtr(gInstance);
 			if (frozen) {
 				PySys_SetObject("frozendllhandle", frozen);
 				Py_DECREF(frozen);
