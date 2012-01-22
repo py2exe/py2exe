@@ -43,6 +43,36 @@ from distutils.errors import *
 if sys.version_info < (2, 3):
     raise DistutilsError, "This package requires Python 2.3 or later"
 
+# Some nasty hacks to ensure all our targets are built with a manifest that
+# references the CRT manifest (which the msvc9compiler implementation
+# removed in an effort to be helpful.
+# For some background on the general problem, see
+# http://bugs.python.org/issue7833
+if sys.version_info > (2,6):
+    import shutil
+    from distutils.spawn import spawn
+    from distutils.msvc9compiler import MSVCCompiler
+    MSVCCompiler._orig_spawn = MSVCCompiler.spawn
+    def monkeypatched_spawn(self, cmd):
+        is_link = cmd[0].endswith("link.exe") or cmd[0].endswith('"link.exe"')
+        if cmd[0].endswith("mt.exe"):
+            # We want mt.exe run with the original manifest
+            for i in range(len(cmd)):
+                if cmd[i] == "-manifest":
+                    cmd[i+1] = cmd[i+1] + ".orig"
+                    break
+        self._orig_spawn(cmd)
+        if is_link:
+            # We want a copy of the original manifest so we can use it later.
+            for i in range(len(cmd)):
+                if cmd[i].startswith("/MANIFESTFILE:"):
+                    mfname = cmd[i][14:]
+                    shutil.copyfile(mfname, mfname + ".orig")
+                    break
+
+    MSVCCompiler.spawn = monkeypatched_spawn
+
+
 class Interpreter(Extension):
     def __init__(self, *args, **kw):
         # Add a custom 'target_desc' option, which matches CCompiler
