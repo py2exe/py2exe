@@ -1,4 +1,5 @@
 from __future__ import division
+# -*- coding: latin-1 -*-
 
 import sys
 

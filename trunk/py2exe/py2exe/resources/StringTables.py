@@ -47,7 +47,7 @@ except NameError:
     try:
         import pywintypes
     except ImportError:
-        raise ImportError, "Could not import StringTables, no unicode available"
+        raise ImportError("Could not import StringTables, no unicode available")
         
 if _use_unicode:
 
@@ -90,7 +90,7 @@ class StringTable:
     def binary(self):
         import struct
         sections = []
-        for key, sect in self.sections().items():
+        for key, sect in self.sections().iteritems():
             data = ""
             for i in range(16):
                 ustr = w32_uc(sect.get(i, ""))
