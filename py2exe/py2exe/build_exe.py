@@ -20,6 +20,7 @@ except NameError:
 import tempfile
 import struct
 import re
+import fnmatch
 
 is_win64 = struct.calcsize("P") == 8
 
@@ -305,12 +306,16 @@ class py2exe(Command):
             mf.create_xref()
 
         print "*** finding dlls needed ***"
-        dlls = self.find_dlls(extensions)
-        self.plat_finalize(mf.modules, py_files, extensions, dlls)
-        dlls = [item for item in dlls
-                if os.path.basename(item).lower() not in self.dll_excludes]
+        alldlls = self.find_dlls(extensions)
+        dlls = set()
+        for dll in alldlls:
+            for filter in self.dll_excludes:
+                if fnmatch.fnmatch(os.path.basename(dll), filter):
+                    break
+            else:
+                dlls.add(dll)
         # should we filter self.other_depends in the same way?
-
+        self.plat_finalize(mf.modules, py_files, extensions, dlls)
         print "*** create binaries ***"
         self.create_binaries(py_files, extensions, dlls)
 
