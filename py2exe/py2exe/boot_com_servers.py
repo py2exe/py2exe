@@ -50,7 +50,7 @@ del name
 
 def get_classes(module):
     return [ob
-            for ob in module.__dict__.values()
+            for ob in module.__dict__.itervalues()
             if hasattr(ob, "_reg_progid_")
             ]
 

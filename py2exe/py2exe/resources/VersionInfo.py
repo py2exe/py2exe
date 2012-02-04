@@ -92,7 +92,7 @@ class VS_FIXEDFILEINFO:
             self.dwFileVersionMS = int(fields[0]) * 65536 + int(fields[1])
             self.dwFileVersionLS = int(fields[2]) * 65536 + int(fields[3])
         except ValueError:
-            raise VersionError, "could not parse version number '%s'" % version
+            raise VersionError("could not parse version number '%s'" % version)
 
     def __str__(self):
         return struct.pack(self.fmt,
@@ -145,7 +145,8 @@ class String(VS_STRUCT):
     wType = 1
     items = ()
 
-    def __init__(self, (name, value)):
+    def __init__(self, name_value):
+        (name, value) = name_value
         self.name = name
         if value:
             self.value = value + '\000' # strings must be zero terminated

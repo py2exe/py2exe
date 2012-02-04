@@ -20,12 +20,12 @@ for name in service_module_names:
     # This makes it possible to have a dotted name work the
     # way you'd expect.
     mod = __import__(name, globals(), locals(), ['DUMMY'])
-    for ob in mod.__dict__.values():
+    for ob in mod.__dict__.itervalues():
         if hasattr(ob, "_svc_name_"):
             service_klasses.append(ob)
 
 if not service_klasses:
-    raise RuntimeError, "No service classes found"
+    raise RuntimeError("No service classes found")
 
 # Event source records come from servicemanager
 evtsrc_dll = os.path.abspath(servicemanager.__file__)
@@ -79,12 +79,12 @@ if cmdline_style == "py2exe":
                     try:
                         opts.append((arg, args[1]))
                     except IndexError:
-                        raise GetoptError, "option '%s' requires an argument" % args[0]
+                        raise GetoptError("option '%s' requires an argument" % args[0])
                     args = args[1:]
                 elif arg in options:
                     opts.append((arg, ''))
                 else:
-                    raise GetoptError, "invalid option '%s'" % args[0]
+                    raise GetoptError("invalid option '%s'" % args[0])
                 args = args[1:]
             else:
                 arguments.append(args[0])

@@ -157,7 +157,7 @@ class IDriveCollection(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{C7C3F5A0-88A3-11D0-ABCB-00A0C90FFFC0}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum' not self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
@@ -270,7 +270,7 @@ class IFileCollection(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{C7C3F5A4-88A3-11D0-ABCB-00A0C90FFFC0}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
@@ -693,7 +693,7 @@ class IFolderCollection(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{C7C3F5A2-88A3-11D0-ABCB-00A0C90FFFC0}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum' not self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
@@ -792,7 +792,7 @@ class IWshCollection(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,1,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() method - allow len(ob) to provide this
@@ -856,7 +856,7 @@ class IWshEnvironment(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,1,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() method - allow len(ob) to provide this
