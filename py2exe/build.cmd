@@ -20,3 +20,4 @@ rm MANIFEST
 C:\Python25\python.exe setup.py sdist -f
 
 rm -rf build
+
