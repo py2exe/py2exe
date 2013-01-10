@@ -6,8 +6,19 @@ from __future__ import division, with_statement, absolute_import, print_function
 
 from modulefinder import ModuleFinder
 
+def _monkeypatch_330():
+    # Fix a bug in Python 3.3.0 by monkeypatching
+    import modulefinder
+    import importlib
+    modulefinder.importlib = importlib
+
 import imp
+import os
+import sys
 import tempfile
+
+if sys.version_info[:3] == (3, 3, 0):
+    _monkeypatch_330()
 
 try:
     # Python3.x
@@ -31,25 +42,43 @@ class ModuleFinderEx(ModuleFinder):
         # have more than one script in py2exe, so we want to keep
         # *all* the pathnames.
         self._scripts.add(pathname)
-        Base.run_script(self, pathname)
+        ModuleFinder.run_script(self, pathname)
 
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         old_last_caller = self._last_caller
         try:
             self._last_caller = caller
-            return Base.import_hook(self,name,caller,fromlist,level)
+            return ModuleFinder.import_hook(self, name, caller, fromlist, level)
         finally:
             self._last_caller = old_last_caller
 
-    def import_module(self,partnam,fqname,parent):
-        r = Base.import_module(self,partnam,fqname,parent)
+    def import_module(self, partnam, fqname, parent):
+        """ModuleFinder.import_module() calls find_module() then load_module()
+        unless the module is already loaded.
+        """
+        r = ModuleFinder.import_module(self, partnam, fqname, parent)
         if r is not None and self._last_caller:
             self._depgraph.setdefault(self._last_caller.__name__, set()).add(r.__name__)
         return r
 
     def load_module(self, fqname, fp, pathname, info):
+        """Base.load_module() determines the module type.
+
+        For a package, it calls load_package().
+
+        Calls add_module(fqname).
+
+        For PY_COMPILED or PY_SOURCE it compiles or loads the bytecode
+        and calls scan_code to determine imports.
+
+        For extension modules (C_EXTENSION: .pyd, .dll) it should scan
+        for binary dependencies, also determine whether the DLL calls
+        PyImport_ImportModule, call the hook (if present), ...
+
+        Returns a modulefinder.Module instance.
+        """
         (suffix, mode, typ) = info
-        r = Base.load_module(self, fqname, fp, pathname, (suffix, mode, typ))
+        r = ModuleFinder.load_module(self, fqname, fp, pathname, (suffix, mode, typ))
         if r is not None:
             self._types[r.__name__] = typ
         return r
@@ -130,6 +159,80 @@ TYPES = {imp.C_BUILTIN: "(builtin module)",
          imp.SEARCH_ERROR: "SEARCH_ERROR"
          }
 
+################################################################
+def test():
+    """This test function has a somwhat unusual command line.
+    mf.py [-d] [-m] [-p path] [-q] [-x exclude] script modules...
+
+    -d  increase debug level
+    -m  script name is followed by module or package names
+    -p  extend searchpath
+    -q  reset debug level
+    -x  exclude module/package
+    """
+    # There also was a bug in the original function in modulefinder,
+    # which is fixed in this version
+
+
+    # Parse command line
+    import sys
+    import getopt
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], "dmp:qx:")
+    except getopt.error as msg:
+        print(msg)
+        return
+
+    # Process options
+    debug = 1
+    domods = 0
+    addpath = []
+    exclude = []
+    for o, a in opts:
+        if o == '-d':
+            debug = debug + 1
+        if o == '-m':
+            domods = 1
+        if o == '-p':
+            addpath = addpath + a.split(os.pathsep)
+        if o == '-q':
+            debug = 0
+        if o == '-x':
+            exclude.append(a)
+
+    # Provide default arguments
+    if not args:
+        script = "hello.py"
+    else:
+        script = args[0]
+        args = args[1:] # BUGFIX: This line was missing in the original
+
+    # Set the path based on sys.path and the script directory
+    path = sys.path[:]
+    path[0] = os.path.dirname(script)
+    path = addpath + path
+    if debug > 1:
+        print("path:")
+        for item in path:
+            print("   ", repr(item))
+
+    # Create the module finder and turn its crank
+    mf = ModuleFinderEx(path, debug, exclude)
+    for arg in args[:]: # BUGFIX: the original used 'for arg in args[1:]'
+        if arg == '-m':
+            domods = 1
+            continue
+        if domods:
+            if arg[-2:] == '.*':
+                mf.import_hook(arg[:-2], None, ["*"])
+            else:
+                mf.import_hook(arg)
+        else:
+            mf.load_file(arg)
+    mf.run_script(script)
+    mf.report()
+    return mf  # for -i debugging
+
+
 if __name__ == "__main__":
-    from modulefinder import test
-    test()
+    mf = test()
