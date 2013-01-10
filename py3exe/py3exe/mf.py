@@ -1,8 +1,20 @@
+#!/usr/bin/python3.3
+# -*- coding: utf-8 -*-
+from __future__ import division, with_statement, absolute_import, print_function
+"""The py2exe modulefinder.
+"""
+
 from modulefinder import ModuleFinder
 
 import imp
 import tempfile
-import urllib
+
+try:
+    # Python3.x
+    from urllib.request import pathname2url
+except ImportError:
+    # Python2.x
+    from urllib import pathname2url
 
 # Much inspired by Toby Dickenson's code:
 # http://www.tarind.com/depgraph.html
@@ -35,7 +47,8 @@ class ModuleFinderEx(ModuleFinder):
             self._depgraph.setdefault(self._last_caller.__name__, set()).add(r.__name__)
         return r
 
-    def load_module(self, fqname, fp, pathname, (suffix, mode, typ)):
+    def load_module(self, fqname, fp, pathname, info):
+        (suffix, mode, typ) = info
         r = Base.load_module(self, fqname, fp, pathname, (suffix, mode, typ))
         if r is not None:
             self._types[r.__name__] = typ
@@ -45,59 +58,59 @@ class ModuleFinderEx(ModuleFinder):
         # this code probably needs cleanup
         depgraph = {}
         importedby = {}
-        for name, value in self._depgraph.items():
+        for name, value in list(self._depgraph.items()):
             depgraph[name] = list(value)
             for needs in value:
                 importedby.setdefault(needs, set()).add(name)
 
-        names = self._types.keys()
+        names = list(self._types.keys())
         names.sort()
 
         fd, htmlfile = tempfile.mkstemp(".html")
         ofi = open(htmlfile, "w")
         os.close(fd)
-        print >> ofi, "<html><title>py2exe cross reference for %s</title><body>" % sys.argv[0]
+        print("<html><title>py2exe cross reference for %s</title><body>" % sys.argv[0], file=ofi)
 
-        print >> ofi, "<h1>py2exe cross reference for %s</h1>" % sys.argv[0]
+        print("<h1>py2exe cross reference for %s</h1>" % sys.argv[0], file=ofi)
 
         for name in names:
             if self._types[name] in (imp.PY_SOURCE, imp.PKG_DIRECTORY):
-                print >> ofi, '<a name="%s"><b><tt>%s</tt></b></a>' % (name, name)
+                print('<a name="%s"><b><tt>%s</tt></b></a>' % (name, name), file=ofi)
                 if name == "__main__":
                     for fname in self._scripts:
-                        path = urllib.pathname2url(os.path.abspath(fname))
-                        print >> ofi, '<a target="code" href="%s" type="text/plain"><tt>%s</tt></a> ' \
-                              % (path, fname)
-                    print >> ofi, '<br>imports:'
+                        path = pathname2url(os.path.abspath(fname))
+                        print('<a target="code" href="%s" type="text/plain"><tt>%s</tt></a> ' \
+                              % (path, fname), file=ofi)
+                    print('<br>imports:', file=ofi)
                 else:
-                    fname = urllib.pathname2url(self.modules[name].__file__)
-                    print >> ofi, '<a target="code" href="%s" type="text/plain"><tt>%s</tt></a><br>imports:' \
-                          % (fname, self.modules[name].__file__)
+                    fname = pathname2url(self.modules[name].__file__)
+                    print('<a target="code" href="%s" type="text/plain"><tt>%s</tt></a><br>imports:' \
+                          % (fname, self.modules[name].__file__), file=ofi)
             else:
                 fname = self.modules[name].__file__
                 if fname:
-                    print >> ofi, '<a name="%s"><b><tt>%s</tt></b></a> <tt>%s</tt><br>imports:' \
-                          % (name, name, fname)
+                    print('<a name="%s"><b><tt>%s</tt></b></a> <tt>%s</tt><br>imports:' \
+                          % (name, name, fname), file=ofi)
                 else:
-                    print >> ofi, '<a name="%s"><b><tt>%s</tt></b></a> <i>%s</i><br>imports:' \
-                          % (name, name, TYPES[self._types[name]])
+                    print('<a name="%s"><b><tt>%s</tt></b></a> <i>%s</i><br>imports:' \
+                          % (name, name, TYPES[self._types[name]]), file=ofi)
 
             if name in depgraph:
                 needs = depgraph[name]
                 for n in needs:
-                    print >>  ofi, '<a href="#%s"><tt>%s</tt></a> ' % (n, n)
-            print >> ofi, "<br>\n"
+                    print('<a href="#%s"><tt>%s</tt></a> ' % (n, n), file=ofi)
+            print("<br>\n", file=ofi)
 
-            print >> ofi, 'imported by:'
+            print('imported by:', file=ofi)
             if name in importedby:
                 for i in importedby[name]:
-                    print >> ofi, '<a href="#%s"><tt>%s</tt></a> ' % (i, i)
+                    print('<a href="#%s"><tt>%s</tt></a> ' % (i, i), file=ofi)
 
-            print >> ofi, "<br>\n"
+            print("<br>\n", file=ofi)
 
-            print >> ofi, "<br>\n"
+            print("<br>\n", file=ofi)
 
-        print >> ofi, "</body></html>"
+        print("</body></html>", file=ofi)
         ofi.close()
         os.startfile(htmlfile)
         # how long does it take to start the browser?
