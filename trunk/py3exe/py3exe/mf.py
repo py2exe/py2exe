@@ -36,6 +36,7 @@ class ModuleFinderEx(ModuleFinder):
         self._types = {}
         self._last_caller = None
         self._scripts = set()
+        self._dlls = set()
         self._bound_images = set()
         self.__sysdir = _wapi.GetSystemDirectory()
         ModuleFinder.__init__(self, *args, **kw)
@@ -88,10 +89,10 @@ class ModuleFinderEx(ModuleFinder):
                 self.bind_image(pathname)
         return mod
 
-    ################################
+    
     def msg(self, level, str, *args):
         # overridden for smaller indent
-        if level <= self.debug-1:
+        if level <= self.debug:
             for i in range(self.indent):
                 print(" ", end=' ')
             print(str, end=' ')
@@ -113,18 +114,16 @@ class ModuleFinderEx(ModuleFinder):
             if reason == _wapi.BindImportModule:
                 dllname = dllname.decode("mbcs").lower()
                 dependends.add(dllname)
-                ## imagepath = self.find_image(dllname, searchpath)
-                ## if imagepath:
-                ##     dependends.add(imagepath)
-                ## else:
-                ##     print("    NOT FOUND:", pathname)
-            ## elif reason == _wapi.BindImportProcedure:
-            ##     dllname = dllname.decode("mbcs").lower()
-            ##     procname = _wapi.STRING(parameter).value.decode("mbcs")
-            ##     imagename = imagename.decode("mbcs").lower()
-            ##     if procname == "PyImport_ImportModule":
-            ##         dependends[dllname] = [1, self.find_image(dllname, searchpath)]
-            ##         print(imagename, procname)
+                ## if imagename.lower().endswith("python%d%d.dll" % sys.version_info[:2]):
+                ##     # This image binds to the pythondll, canot be a systemdll
+                ##     print("***PYDLL", imagename, dllname)
+            elif reason == _wapi.BindImportProcedure:
+                dllname = dllname.decode("mbcs").lower()
+                procname = _wapi.STRING(parameter).value.decode("mbcs")
+                imagename = imagename.decode("mbcs").lower()
+                ## if procname == "PyImport_ImportModule":
+                ##     # This image imports other modules, needs a hint
+                ##     print("***NEED HINT", imagename, procname)
             return True
 
         self._bound_images.add(pathname.lower())
@@ -137,6 +136,7 @@ class ModuleFinderEx(ModuleFinder):
                                     None, # symbolpath
                                     _wapi.PIMAGEHLP_STATUS_ROUTINE(StatusRoutine))
         except WindowsError as details:
+            # XXX Error? Missing Module?
             print("Error binding %s in %s: %s" % (pathname, searchpath, details))
             self.msgout(1, "bind_image ->", pathname, ())
             return
@@ -148,25 +148,44 @@ class ModuleFinderEx(ModuleFinder):
             elif self.is_system_dll(path):
                 self._bound_images.add(path.lower())
             else:
-                result.add(self.bind_image(path))
+                r = self.add_image(path.lower())
+                result.add(r)
 
         self.msgout(1, "bind_image ->", pathname, result or None)
+
+
+    def add_image(self, pathname):
+        self.bind_image(pathname)
+        # Should add a special kind of Module()? A DLL Module()?
+        # How can that be integrated into the report() method?
+        self._dlls.add(pathname)
         return pathname
 
+    def report_dlls(self):
+        print("\n")
+        print("  %-25s %s" % ("Name", "Dll"))
+        print("  %-25s %s" % ("----", "----"))
+        dlls = sorted(self._dlls)
+        for dll in dlls:
+            print("D", end=' ')
+            print("%-25s" % os.path.basename(dll), dll)
+
     def is_system_dll(self, path):
+        basename = os.path.basename(path)
         dirname = os.path.dirname(path).lower()
-        if dirname.startswith(self.__sysdir.lower()):
+        # XXX replace 'not "py" in basename' with a better mechanism...
+        if dirname.startswith(self.__sysdir.lower()) and not "py" in basename:
             return True
         return False
 
     def find_image(self, imagename, searchpath):
-        self.msgin(1, "find_image", imagename)
+        self.msgin(2, "find_image", imagename)
         for p in searchpath.split(";"):
             if os.path.isfile(os.path.join(p, imagename)):
                 result = os.path.join(p, imagename)
-                self.msgout(1, "find_image ->", result)
+                self.msgout(2, "find_image ->", result)
                 return result
-        self.msgout(1, "find_image ->", None)
+        self.msgout(2, "find_image ->", None)
         return None
         
     ################################
@@ -325,6 +344,7 @@ def test():
     mf.run_script(script)
     if doreport:
         mf.report()
+        mf.report_dlls()
     return mf  # for -i debugging
 
 
