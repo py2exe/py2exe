@@ -5,6 +5,7 @@ from __future__ import division, with_statement, absolute_import, print_function
 """
 
 from modulefinder import ModuleFinder
+import _wapi
 
 def _monkeypatch_330():
     # Fix a bug in Python 3.3.0 by monkeypatching
@@ -35,6 +36,9 @@ class ModuleFinderEx(ModuleFinder):
         self._types = {}
         self._last_caller = None
         self._scripts = set()
+        self._bound_images = set()
+        self.__windir = _wapi.GetWindowsDirectory()
+        self.__sysdir = _wapi.GetSystemDirectory()
         ModuleFinder.__init__(self, *args, **kw)
 
     def run_script(self, pathname):
@@ -78,10 +82,93 @@ class ModuleFinderEx(ModuleFinder):
         Returns a modulefinder.Module instance.
         """
         (suffix, mode, typ) = info
-        r = ModuleFinder.load_module(self, fqname, fp, pathname, (suffix, mode, typ))
-        if r is not None:
-            self._types[r.__name__] = typ
-        return r
+        mod = ModuleFinder.load_module(self, fqname, fp, pathname, (suffix, mode, typ))
+        if mod is not None:
+            self._types[mod.__name__] = typ
+            if typ == imp.C_EXTENSION:
+                self.bind_image(pathname)
+        return mod
+
+    ################################
+    def msg(self, level, str, *args):
+        # overridden for smaller indent
+        if level <= self.debug-1:
+            for i in range(self.indent):
+                print(" ", end=' ')
+            print(str, end=' ')
+            for arg in args:
+                print(repr(arg), end=' ')
+            print()
+
+    def bind_image(self, pathname):
+        if pathname.lower() in self._bound_images:
+            return
+
+        # c:/python33/lib/modulefinder.py
+        self.msgin(1, "bind_image", pathname)
+        # XXX Check LoadLibrary search algo...
+        searchpath = ";".join(sys.path + [os.path.dirname(pathname)]) + ";" + os.environ["PATH"]
+        dependends = set()
+
+        def StatusRoutine(reason, imagename, dllname, va, parameter):
+            if reason == _wapi.BindImportModule:
+                dllname = dllname.decode("mbcs").lower()
+                dependends.add(dllname)
+                ## imagepath = self.find_image(dllname, searchpath)
+                ## if imagepath:
+                ##     dependends.add(imagepath)
+                ## else:
+                ##     print("    NOT FOUND:", pathname)
+            ## elif reason == _wapi.BindImportProcedure:
+            ##     dllname = dllname.decode("mbcs").lower()
+            ##     procname = _wapi.STRING(parameter).value.decode("mbcs")
+            ##     imagename = imagename.decode("mbcs").lower()
+            ##     if procname == "PyImport_ImportModule":
+            ##         dependends[dllname] = [1, self.find_image(dllname, searchpath)]
+            ##         print(imagename, procname)
+            return True
+
+        self._bound_images.add(pathname.lower())
+        try:
+            res = _wapi.BindImageEx(_wapi.BIND_NO_BOUND_IMPORTS | _wapi.BIND_NO_UPDATE | _wapi.BIND_ALL_IMAGES,
+                                    pathname.encode("mbcs"), # imagename
+                                    searchpath.encode("mbcs"), # dllpath
+                                    None, # symbolpath
+                                    _wapi.PIMAGEHLP_STATUS_ROUTINE(StatusRoutine))
+        except WindowsError as details:
+            print("Error binding %s in %s: %s" % (pathname, searchpath, details))
+            self.msgout(1, "bind_image ->", pathname, ())
+            return
+        result = set()
+        for dll in dependends.copy():
+            path = self.find_image(dll, searchpath)
+            if path is None:
+                self._bound_images.add(dll.lower())
+            elif self.is_system_dll(path):
+                self._bound_images.add(path.lower())
+            else:
+                result.add(self.bind_image(path))
+
+        self.msgout(1, "bind_image ->", pathname, result or None)
+        return pathname
+
+    def is_system_dll(self, path):
+        dirname = os.path.dirname(path).lower()
+        if dirname.startswith(self.__windir) or dirname.startswith(self.__sysdir):
+            return True
+        return False
+
+    def find_image(self, imagename, searchpath):
+        self.msgin(1, "find_image", imagename)
+        for p in searchpath.split(";"):
+            if os.path.isfile(os.path.join(p, imagename)):
+                result = os.path.join(p, imagename)
+                self.msgout(1, "find_image ->", result)
+                return result
+        self.msgout(1, "find_image ->", None)
+        return None
+        
+    ################################
 
     def create_xref(self):
         # this code probably needs cleanup
@@ -168,6 +255,7 @@ def test():
     -m  script name is followed by module or package names
     -p  extend searchpath
     -q  reset debug level
+    -r  report
     -x  exclude module/package
     """
     # There also was a bug in the original function in modulefinder,
@@ -178,7 +266,7 @@ def test():
     import sys
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "dmp:qx:")
+        opts, args = getopt.getopt(sys.argv[1:], "dmp:qrx:")
     except getopt.error as msg:
         print(msg)
         return
@@ -186,6 +274,7 @@ def test():
     # Process options
     debug = 1
     domods = 0
+    doreport = 0
     addpath = []
     exclude = []
     for o, a in opts:
@@ -199,6 +288,8 @@ def test():
             debug = 0
         if o == '-x':
             exclude.append(a)
+        if o == '-r':
+            doreport = 1
 
     # Provide default arguments
     if not args:
@@ -230,7 +321,8 @@ def test():
         else:
             mf.load_file(arg)
     mf.run_script(script)
-    mf.report()
+    if doreport:
+        mf.report()
     return mf  # for -i debugging
 
 
