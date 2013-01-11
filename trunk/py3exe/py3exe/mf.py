@@ -114,16 +114,17 @@ class ModuleFinderEx(ModuleFinder):
             if reason == _wapi.BindImportModule:
                 dllname = dllname.decode("mbcs").lower()
                 dependends.add(dllname)
-                ## if imagename.lower().endswith("python%d%d.dll" % sys.version_info[:2]):
-                ##     # This image binds to the pythondll, canot be a systemdll
-                ##     print("***PYDLL", imagename, dllname)
+                ## print(imagename, "needs", dllname)
+                if dllname.lower().endswith("python%d%d.dll" % sys.version_info[:2]):
+                    # This image binds to the pythondll
+                    print("***PYDLL", imagename)
             elif reason == _wapi.BindImportProcedure:
                 dllname = dllname.decode("mbcs").lower()
                 procname = _wapi.STRING(parameter).value.decode("mbcs")
                 imagename = imagename.decode("mbcs").lower()
-                ## if procname == "PyImport_ImportModule":
-                ##     # This image imports other modules, needs a hint
-                ##     print("***NEED HINT", imagename, procname)
+                if procname == "PyImport_ImportModule":
+                    # This image imports other modules, needs a hint
+                    print("***NEED HINT", imagename, procname)
             return True
 
         self._bound_images.add(pathname.lower())
