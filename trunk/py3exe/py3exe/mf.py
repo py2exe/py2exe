@@ -37,7 +37,6 @@ class ModuleFinderEx(ModuleFinder):
         self._last_caller = None
         self._scripts = set()
         self._bound_images = set()
-        self.__windir = _wapi.GetWindowsDirectory()
         self.__sysdir = _wapi.GetSystemDirectory()
         ModuleFinder.__init__(self, *args, **kw)
 
@@ -130,7 +129,9 @@ class ModuleFinderEx(ModuleFinder):
 
         self._bound_images.add(pathname.lower())
         try:
-            res = _wapi.BindImageEx(_wapi.BIND_NO_BOUND_IMPORTS | _wapi.BIND_NO_UPDATE | _wapi.BIND_ALL_IMAGES,
+            res = _wapi.BindImageEx(_wapi.BIND_NO_BOUND_IMPORTS
+                                    | _wapi.BIND_NO_UPDATE
+                                    | _wapi.BIND_ALL_IMAGES,
                                     pathname.encode("mbcs"), # imagename
                                     searchpath.encode("mbcs"), # dllpath
                                     None, # symbolpath
@@ -154,7 +155,7 @@ class ModuleFinderEx(ModuleFinder):
 
     def is_system_dll(self, path):
         dirname = os.path.dirname(path).lower()
-        if dirname.startswith(self.__windir) or dirname.startswith(self.__sysdir):
+        if dirname.startswith(self.__sysdir.lower()):
             return True
         return False
 
@@ -296,20 +297,21 @@ def test():
         script = "hello.py"
     else:
         script = args[0]
-        args = args[1:] # BUGFIX: This line was missing in the original
+        args = args[1:] # BUGFIX (theller): This line was missing in the original
 
     # Set the path based on sys.path and the script directory
     path = sys.path[:]
     path[0] = os.path.dirname(script)
     path = addpath + path
     if debug > 1:
+        print("version:", sys.version)
         print("path:")
         for item in path:
             print("   ", repr(item))
 
     # Create the module finder and turn its crank
     mf = ModuleFinderEx(path, debug, exclude)
-    for arg in args[:]: # BUGFIX: the original used 'for arg in args[1:]'
+    for arg in args[:]: # BUGFIX (theller): the original used 'for arg in args[1:]'
         if arg == '-m':
             domods = 1
             continue
