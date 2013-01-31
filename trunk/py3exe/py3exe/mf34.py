@@ -598,7 +598,21 @@ class ModuleFinder:
 
 
 def test():
+    """This test function has a somwhat unusual command line.
+    mf.py [-d] [-m] [-p path] [-q] [-x exclude] script modules...
+
+    -d  increase debug level
+    -m  script name is followed by module or package names
+    -p  extend searchpath
+    -q  reset debug level
+    -x  exclude module/package
+    """
+    # There also was a bug in the original function in modulefinder,
+    # which is fixed in this version
+
+
     # Parse command line
+    import sys
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], "dmp:qx:")
@@ -628,6 +642,7 @@ def test():
         script = "hello.py"
     else:
         script = args[0]
+        args = args[1:] # BUGFIX: This line was missing in the original
 
     # Set the path based on sys.path and the script directory
     path = sys.path[:]
@@ -640,7 +655,7 @@ def test():
 
     # Create the module finder and turn its crank
     mf = ModuleFinder(path, debug, exclude)
-    for arg in args[1:]:
+    for arg in args[:]: # BUGFIX: the original used 'for arg in args[1:]'
         if arg == '-m':
             domods = 1
             continue
