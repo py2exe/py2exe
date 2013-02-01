@@ -130,19 +130,18 @@ class ModuleFinder:
             self.indent = self.indent - 1
             self.msg(*args)
 
-    ## def run_script(self, pathname):
-    ##     self.msg(2, "run_script", pathname)
-    ##     with open(pathname) as fp:
-    ##         stuff = ("", "r", imp.PY_SOURCE)
-    ##         self.load_module('__main__', fp, pathname, stuff)
+    def run_script(self, pathname):
+        self.msg(2, "run_script", pathname)
+        self.load_module('__main__',
+                         importlib.machinery.SourceFileLoader('__main__', pathname))
 
-    ## def load_file(self, pathname):
-    ##     dir, name = os.path.split(pathname)
-    ##     name, ext = os.path.splitext(name)
-    ##     with open(pathname) as fp:
-    ##         stuff = (ext, "r", imp.PY_SOURCE)
-    ##         self.load_module(name, fp, pathname, stuff)
-
+    def load_file(self, pathname):
+        dir, name = os.path.split(pathname)
+        name, ext = os.path.splitext(name)
+        self.msg(2, "load_file", pathname)
+        self.load_module('__main__',
+                         importlib.machinery.SourceFileLoader(name, pathname))
+    
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         self.msg(3, "import_hook", name, caller, fromlist, level)
         parent = self.determine_parent(caller, level=level)
@@ -657,10 +656,8 @@ def test():
                 mf.import_hook(arg)
         else:
             mf.load_file(arg)
-#    mf.run_script(script)
+    mf.run_script(script)
     mf.report()
-    ## for m in mf.modules.values():
-    ##     print(m, m.globalnames.keys())
     return mf  # for -i debugging
 
 
