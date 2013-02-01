@@ -65,11 +65,19 @@ if sys.version_info[:3] == (3, 3, 0):
     
 class Module:
 
-    def __init__(self, name, file=None, path=None):
+    def __init__(self, name, loader):
         self.__name__ = name
-        self.__file__ = file
-        self.__path__ = path
-        self.__code__ = None
+        self.__file__ = loader.path
+        if loader.is_package(loader.name):
+            # XXX zipimporter loaders doen't have .path attribute.
+            # XXX They have get_filename(fqname) and prefix
+            # which should be used to simulate these:
+            # As per comment at top of file, simulate runtime __path__ additions.
+            self.__path__ = [loader.path] + packagePathMap.get(name, [])
+        else:
+            self.__path__ = None
+        self.__code__ = loader.get_code(loader.name)
+
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
         # Python modules.
@@ -435,23 +443,12 @@ class ModuleFinder:
     def add_module(self, fqname, loader):
         if fqname in self.modules:
             return self.modules[fqname]
-        self.modules[fqname] = m = Module(fqname)
-        m.__file__ = loader.path
+        self.modules[fqname] = m = Module(fqname, loader)
 
-        if loader.is_package(loader.name):
-            # XXX zipimporter loaders doen't have .path attribute.
-            # XXX They have get_filename(fqname) and prefix
-            # which should be used to simulate these:
-            m.__path__ = [loader.path]
-            # As per comment at top of file, simulate runtime __path__ additions.
-            m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
-
-        co = loader.get_code(loader.name)
-        if co:
+        if m.__code__:
             if self.replace_paths:
-                co = self.replace_paths_in_code(co)
-            m.__code__ = co
-            self.scan_code(co, m)
+                m.__code__ = self.replace_paths_in_code(m.__code__)
+            self.scan_code(m.__code__, m)
         return m
 
     def find_module(self, name, path, parent=None):
