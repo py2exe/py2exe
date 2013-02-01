@@ -296,6 +296,7 @@ class ModuleFinder:
         self.msgin(2, "load_module", fqname, loader)
         if loader.is_package(loader.name):
             m = self.load_package(fqname, loader)
+            return m
         co = loader.get_code(loader.name)
         m = self.add_module(fqname, loader)
         if hasattr(loader, "path"):
