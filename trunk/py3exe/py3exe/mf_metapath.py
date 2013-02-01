@@ -73,7 +73,7 @@ class Module:
             # XXX They have get_filename(fqname) and prefix
             # which should be used to simulate these:
             # As per comment at top of file, simulate runtime __path__ additions.
-            self.__path__ = [loader.path] + packagePathMap.get(name, [])
+            self.__path__ = [os.path.dirname(loader.path)] + packagePathMap.get(name, [])
         else:
             self.__path__ = None
         self.__code__ = loader.get_code(loader.name)
@@ -659,6 +659,8 @@ def test():
             mf.load_file(arg)
 #    mf.run_script(script)
     mf.report()
+    ## for m in mf.modules.values():
+    ##     print(m, m.globalnames.keys())
     return mf  # for -i debugging
 
 
