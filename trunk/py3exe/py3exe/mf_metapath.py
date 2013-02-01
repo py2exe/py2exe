@@ -294,18 +294,11 @@ class ModuleFinder:
         return m
 
     def load_module(self, fqname, loader):
-        self.msgin(2, "load_module", fqname, loader)
-        if loader.is_package(loader.name):
-            m = self.load_package(fqname, loader)
-            return m
+        is_pkg = loader.is_package(loader.name)
+        self.msgin(2, "load_package" if is_pkg else "load_module",
+                   fqname, loader)
         m = self.add_module(fqname, loader)
-        co = loader.get_code(loader.name)
-        if co:
-            if self.replace_paths:
-                co = self.replace_paths_in_code(co)
-            m.__code__ = co
-            self.scan_code(co, m)
-        self.msgout(2, "load_module ->", m)
+        self.msgout(2, "load_package" if is_pkg else "load_module", m)
         return m
 
     def _add_badmodule(self, name, caller):
@@ -444,21 +437,6 @@ class ModuleFinder:
             if isinstance(c, type(co)):
                 self.scan_code(c, m)
 
-    def load_package(self, fqname, loader):
-        self.msgin(2, "load_package", fqname, loader)
-        newname = replacePackageMap.get(fqname)
-        if newname:
-            fqname = newname
-        m = self.add_module(fqname, loader)
-        co = loader.get_code(loader.name)
-        if co:
-            if self.replace_paths:
-                co = self.replace_paths_in_code(co)
-            m.__code__ = co
-            self.scan_code(co, m)
-        self.msgout(2, "load_package ->", m)
-        return m
-
     def add_module(self, fqname, loader):
         if fqname in self.modules:
             return self.modules[fqname]
@@ -474,6 +452,12 @@ class ModuleFinder:
             # As per comment at top of file, simulate runtime __path__ additions.
             m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
 
+        co = loader.get_code(loader.name)
+        if co:
+            if self.replace_paths:
+                co = self.replace_paths_in_code(co)
+            m.__code__ = co
+            self.scan_code(co, m)
         return m
 
     def find_module(self, name, path, parent=None):
