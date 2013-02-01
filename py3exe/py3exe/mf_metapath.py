@@ -76,6 +76,7 @@ class Module:
         return s
 
 class FakeBuiltinLoader:
+    path = None
     def __init__(self, name):
         self.name = name
 
@@ -297,10 +298,8 @@ class ModuleFinder:
         if loader.is_package(loader.name):
             m = self.load_package(fqname, loader)
             return m
-        co = loader.get_code(loader.name)
         m = self.add_module(fqname, loader)
-        if hasattr(loader, "path"):
-            m.__file__ = loader.path
+        co = loader.get_code(loader.name)
         if co:
             if self.replace_paths:
                 co = self.replace_paths_in_code(co)
@@ -451,14 +450,6 @@ class ModuleFinder:
         if newname:
             fqname = newname
         m = self.add_module(fqname, loader)
-        # XXX zipimporter loaders doen't have .path attribute.
-        # XXX They have get_filename(fqname) and prefix
-        # which should be used to simulate these:
-        m.__file__ = loader.path
-        m.__path__ = [loader.path]
-        # As per comment at top of file, simulate runtime __path__ additions.
-        m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
-
         co = loader.get_code(loader.name)
         if co:
             if self.replace_paths:
@@ -473,6 +464,16 @@ class ModuleFinder:
             return self.modules[fqname]
         self.modules[fqname] = m = Module(fqname)
         m.__loader__ = loader
+        m.__file__ = loader.path
+
+        if loader.is_package(loader.name):
+            # XXX zipimporter loaders doen't have .path attribute.
+            # XXX They have get_filename(fqname) and prefix
+            # which should be used to simulate these:
+            m.__path__ = [loader.path]
+            # As per comment at top of file, simulate runtime __path__ additions.
+            m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
+
         return m
 
     def find_module(self, name, path, parent=None):
