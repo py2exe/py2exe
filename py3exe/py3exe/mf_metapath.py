@@ -50,6 +50,18 @@ def ReplacePackage(oldname, newname):
     replacePackageMap[oldname] = newname
 
 
+################################################################
+if sys.version_info[:3] == (3, 3, 0):
+    # Work around Python bug #17098:
+    # Set __loader__ on modules imported by the C level
+    for m in sys.modules.values():
+        try:
+            m.__loader__
+        except AttributeError:
+            m.__loader__ = importlib.machinery.BuiltinImporter
+################################################################
+            
+    
 class Module:
 
     def __init__(self, name, file=None, path=None):
@@ -57,7 +69,6 @@ class Module:
         self.__file__ = file
         self.__path__ = path
         self.__code__ = None
-        self.__loader__ = None
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
         # Python modules.
@@ -75,20 +86,6 @@ class Module:
         s = s + ")"
         return s
 
-class FakeBuiltinLoader:
-    path = None
-    def __init__(self, name):
-        self.name = name
-
-    def is_package(self, fqname):
-        return False
-
-    def get_code(self, fqname):
-        return None
-
-    def get_source(self, fqname):
-        return None
-        
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes=[], replace_paths=[]):
@@ -269,11 +266,8 @@ class ModuleFinder:
 
     def import_module(self, partname, fqname, parent):
         self.msgin(3, "import_module", partname, fqname, parent)
-        try:
+        if fqname in self.modules:
             m = self.modules[fqname]
-        except KeyError:
-            pass
-        else:
             self.msgout(3, "import_module ->", m)
             return m
         if fqname in self.badmodules:
@@ -441,7 +435,6 @@ class ModuleFinder:
         if fqname in self.modules:
             return self.modules[fqname]
         self.modules[fqname] = m = Module(fqname)
-        m.__loader__ = loader
         m.__file__ = loader.path
 
         if loader.is_package(loader.name):
@@ -471,17 +464,14 @@ class ModuleFinder:
             raise ImportError(name)
 
         if path is None:
-            # XXX importlib.find_loader should be able to handle
-            # builtin modules, but in Python 3.3.0 it isn't because of
-            # a bug.
             if name in sys.builtin_module_names:
-                return FakeBuiltinLoader(name)
+                ldr = importlib.find_loader(name)
+                ldr.name = name
+                ldr.path = None
+                return ldr
 
             path = self.path
-        try:
-            return importlib.find_loader(name, path)
-        except (ValueError, AttributeError):
-            return None # XXX Is this correct?
+        return importlib.find_loader(name, path)
 
 
     def report(self):
