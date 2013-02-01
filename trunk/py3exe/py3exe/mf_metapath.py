@@ -68,15 +68,12 @@ class Module:
     def __init__(self, name, loader):
         self.__name__ = name
         self.__file__ = loader.path
-        if loader.is_package(loader.name):
-            # XXX zipimporter loaders doen't have .path attribute.
-            # XXX They have get_filename(fqname) and prefix
-            # which should be used to simulate these:
+        if loader.is_package():
             # As per comment at top of file, simulate runtime __path__ additions.
             self.__path__ = [os.path.dirname(loader.path)] + packagePathMap.get(name, [])
         else:
             self.__path__ = None
-        self.__code__ = loader.get_code(loader.name)
+        self.__code__ = loader.get_code()
 
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
@@ -95,6 +92,29 @@ class Module:
         s = s + ")"
         return s
 
+class Loader:
+
+    def __init__(self, imp_loader, name, path):
+        self._imp_loader = imp_loader
+        self.name = name
+        self.path = getattr(imp_loader, "path", None)
+
+        import zipimport
+        if isinstance(imp_loader, zipimport.zipimporter):
+            self.path = imp_loader.get_filename(self.name)
+        
+    def is_package(self):
+        return self._imp_loader.is_package(self.name)
+
+    def get_code(self):
+        return self._imp_loader.get_code(self.name)
+        
+def wrap_loader(name, path):
+    ldr = importlib.find_loader(name, path)
+    if ldr is None:
+        return None
+    return Loader(ldr, name, path)
+        
 class ModuleFinder:
 
     def __init__(self, path=None, debug=0, excludes=[], replace_paths=[]):
@@ -296,7 +316,7 @@ class ModuleFinder:
         return m
 
     def load_module(self, fqname, loader):
-        is_pkg = loader.is_package(loader.name)
+        is_pkg = loader.is_package()
         self.msgin(2, "load_package" if is_pkg else "load_module",
                    fqname, loader)
         m = self.add_module(fqname, loader)
@@ -443,7 +463,6 @@ class ModuleFinder:
         if fqname in self.modules:
             return self.modules[fqname]
         self.modules[fqname] = m = Module(fqname, loader)
-
         if m.__code__:
             if self.replace_paths:
                 m.__code__ = self.replace_paths_in_code(m.__code__)
@@ -462,14 +481,10 @@ class ModuleFinder:
 
         if path is None:
             if name in sys.builtin_module_names:
-                ldr = importlib.find_loader(name)
-                ldr.name = name
-                ldr.path = None
-                return ldr
+                return wrap_loader(name, [])
 
             path = self.path
-        return importlib.find_loader(name, path)
-
+        return wrap_loader(name, path)
 
     def report(self):
         """Print a report to stdout, listing the found modules with their
@@ -656,7 +671,7 @@ def test():
                 mf.import_hook(arg)
         else:
             mf.load_file(arg)
-    mf.run_script(script)
+#    mf.run_script(script)
     mf.report()
     return mf  # for -i debugging
 
