@@ -54,7 +54,8 @@ def ReplacePackage(oldname, newname):
 if sys.version_info[:3] == (3, 3, 0):
     # Work around Python bug #17098:
     # Set __loader__ on modules imported by the C level
-    for m in sys.modules.values():
+    for name in sys.builtin_module_names + ("_frozen_importlib",):
+        m = __import__(name)
         try:
             m.__loader__
         except AttributeError:
