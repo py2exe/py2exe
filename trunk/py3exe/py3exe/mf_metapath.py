@@ -1,5 +1,14 @@
 #!/usr/bin/python3.3
-"""Find modules used by a script, using introspection."""
+"""Find modules used by a script, using introspection.
+
+This is a modulefinder that finds modules using sys.meta_path, so it
+should (eventually) be able to handle modules imported even from
+zipped eggs, or other 'strange' mechanisms.
+
+It requires Python 3.3 or later because it uses importlib.
+
+Currently is suffers from bugs in Python 3.3.0.
+"""
 
 import dis
 import importlib.machinery
@@ -285,9 +294,9 @@ class ModuleFinder:
 
     def load_module(self, fqname, loader):
         self.msgin(2, "load_module", fqname, loader)
-        if loader.is_package(fqname):
+        if loader.is_package(loader.name):
             m = self.load_package(fqname, loader)
-        co = loader.get_code(fqname)
+        co = loader.get_code(loader.name)
         m = self.add_module(fqname, loader)
         if hasattr(loader, "path"):
             m.__file__ = loader.path
@@ -449,7 +458,7 @@ class ModuleFinder:
         # As per comment at top of file, simulate runtime __path__ additions.
         m.__path__ = m.__path__ + packagePathMap.get(fqname, [])
 
-        co = loader.get_code(fqname)
+        co = loader.get_code(loader.name)
         if co:
             if self.replace_paths:
                 co = self.replace_paths_in_code(co)
