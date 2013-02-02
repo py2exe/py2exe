@@ -74,6 +74,7 @@ class Module:
         else:
             self.__path__ = None
         self.__code__ = loader.get_code()
+        self.__loader__ = loader
 
         # The set of global names that are assigned to in the module.
         # This includes those names imported through starimports of
@@ -92,8 +93,11 @@ class Module:
         s = s + ")"
         return s
 
-class Loader:
+class LoaderAdapter:
 
+    """This class adapts the PEP 302 loaders to a convenient and
+    extended interface.  """
+    
     def __init__(self, imp_loader, name, path):
         self._imp_loader = imp_loader
         self.name = name
@@ -108,12 +112,20 @@ class Loader:
 
     def get_code(self):
         return self._imp_loader.get_code(self.name)
-        
-def wrap_loader(name, path):
+
+    def get_source(self):
+        return self._imp_loader.get_source(self.name)
+    
+def adapt_loader(name, path, loader=None):
+
+    """Wrap the passed loader, or the loader returned from
+    importlib.find_loader(), into a LoaderAdapter instance, or return
+    None if no loader is found.  """
+
     ldr = importlib.find_loader(name, path)
     if ldr is None:
         return None
-    return Loader(ldr, name, path)
+    return LoaderAdapter(ldr, name, path)
         
 class ModuleFinder:
 
@@ -152,16 +164,24 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        self.load_module('__main__',
-                         importlib.machinery.SourceFileLoader('__main__', pathname))
+        dir, name = os.path.split(pathname)
+        name, ext = os.path.splitext(name)
+        loader = adapt_loader(name, pathname,
+                              importlib.machinery.SourceFileLoader(name, pathname)) 
+        if loader is None:
+            raise ImportError("could run script {!r}".format(pathname))
+        self.load_module('__main__', loader)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
         self.msg(2, "load_file", pathname)
-        self.load_module('__main__',
-                         importlib.machinery.SourceFileLoader(name, pathname))
-    
+        loader = adapt_loader(name, pathname,
+                              importlib.machinery.SourceFileLoader(name, pathname)) 
+        if loader is None:
+            raise ImportError("could not load file {!r}".format(pathname))
+        self.load_module(name, loader)
+
     def import_hook(self, name, caller=None, fromlist=None, level=-1):
         self.msg(3, "import_hook", name, caller, fromlist, level)
         parent = self.determine_parent(caller, level=level)
@@ -316,6 +336,7 @@ class ModuleFinder:
         return m
 
     def load_module(self, fqname, loader):
+        assert loader is not None
         is_pkg = loader.is_package()
         self.msgin(2, "load_package" if is_pkg else "load_module",
                    fqname, loader)
@@ -480,11 +501,13 @@ class ModuleFinder:
             raise ImportError(name)
 
         if path is None:
-            if name in sys.builtin_module_names:
-                return wrap_loader(name, [])
-
+            # look for builtin modules on an empty path
+            ldr = adapt_loader(fullname, [])
+            if ldr:
+                return ldr
+            # no builtin, search again with self.path (which is our sys.path)
             path = self.path
-        return wrap_loader(name, path)
+        return adapt_loader(fullname, path)
 
     def report(self):
         """Print a report to stdout, listing the found modules with their
@@ -671,7 +694,7 @@ def test():
                 mf.import_hook(arg)
         else:
             mf.load_file(arg)
-#    mf.run_script(script)
+    mf.run_script(script)
     mf.report()
     return mf  # for -i debugging
 
