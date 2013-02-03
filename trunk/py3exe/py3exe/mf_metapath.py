@@ -11,6 +11,7 @@ Currently is suffers from bugs in Python 3.3.0.
 """
 
 import dis
+import importlib
 import importlib.machinery
 import marshal
 import os
@@ -166,8 +167,7 @@ class ModuleFinder:
         self.msg(2, "run_script", pathname)
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        loader = adapt_loader(name, pathname,
-                              importlib.machinery.SourceFileLoader(name, pathname)) 
+        loader = adapt_loader(name, [dir])
         if loader is None:
             raise ImportError("could run script {!r}".format(pathname))
         self.load_module('__main__', loader)
@@ -176,8 +176,7 @@ class ModuleFinder:
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
         self.msg(2, "load_file", pathname)
-        loader = adapt_loader(name, pathname,
-                              importlib.machinery.SourceFileLoader(name, pathname)) 
+        loader = adapt_loader(name, [dir])
         if loader is None:
             raise ImportError("could not load file {!r}".format(pathname))
         self.load_module(name, loader)
