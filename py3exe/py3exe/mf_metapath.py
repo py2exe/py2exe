@@ -7,8 +7,17 @@ zipped eggs, or other 'strange' mechanisms.
 
 It requires Python 3.3 or later because it uses importlib.
 
-Currently is suffers from bugs in Python 3.3.0.
+Contains workaround for a bug in Python 3.3.0.
 """
+
+## TODO/Think about:
+##   pyexpat/xml.parsers.expat create their errors and model modules from
+## scratch. This means they do not set __loader__ by default. This is
+## acceptable under importlib/PEP 302 definitions.
+##
+## XXX are there more modules doing something similar?
+## Is this a use-case for hooks?
+
 
 import dis
 import importlib
@@ -117,7 +126,7 @@ class LoaderAdapter:
     def get_source(self):
         return self._imp_loader.get_source(self.name)
     
-def adapt_loader(name, path, loader=None):
+def adapt_loader(name, path):
 
     """Wrap the passed loader, or the loader returned from
     importlib.find_loader(), into a LoaderAdapter instance, or return
