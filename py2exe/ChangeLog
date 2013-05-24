@@ -1,3 +1,11 @@
+2013-05-24  Thomas Heller <theller@ctypes.org>
+
+	* properly implemented the activation context handling like it
+	works in the python dll itself: We store the actctx, and wrap
+	calls to MemoryLoadLibrary with _My_ActivateActCtx() and
+	_My_DeactivateActCtx().
+
+
 2009-08-14  Thomas Heller  <theller@python.net>
 
 	* Fix 'DeprecationWarning: the sets module is deprecated' in Python 2.6,
