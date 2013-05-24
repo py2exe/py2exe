@@ -1,6 +1,7 @@
 /* **************** Python-dynload.c **************** */
 #include "Python-dynload.h"
 #include "MemoryModule.h"
+#include "actctx.h"
 #include <stdio.h>
 
 struct IMPORT imports[] = {
@@ -64,11 +65,13 @@ int _load_python(char *dllname, char *bytes)
 	int i;
 	struct IMPORT *p = imports;
 	HMODULE hmod;
-
+	ULONG_PTR cookie = 0;
 	if (!bytes)
 		return _load_python_FromFile(dllname);
-
+    
+	cookie = _My_ActivateActCtx();//try some windows manifest magic...
 	hmod = MemoryLoadLibrary(dllname, bytes);
+	_My_DeactivateActCtx(cookie);
 	if (hmod == NULL) {
 		return 0;
 	}

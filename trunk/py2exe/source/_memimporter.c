@@ -16,6 +16,7 @@ static char module_doc[] =
 "Importer which can load extension modules from memory";
 
 #include "MemoryModule.h"
+#include "actctx.h"
 
 static void *memdup(void *ptr, Py_ssize_t size)
 {
@@ -77,13 +78,16 @@ import_module(PyObject *self, PyObject *args)
 	FARPROC do_init;
 
 	char *oldcontext;
-
+	ULONG_PTR cookie = 0;
 	/* code, initfuncname, fqmodulename, path */
 	if (!PyArg_ParseTuple(args, "s#sss:import_module",
 			      &data, &size,
 			      &initfuncname, &modname, &pathname))
 		return NULL;
+    
+	cookie = _My_ActivateActCtx();//try some windows manifest magic...
 	hmem = MemoryLoadLibrary(pathname, data);
+	_My_DeactivateActCtx(cookie);
 	if (!hmem) {
 		PyErr_Format(PyExc_ImportError,
 			     "MemoryLoadLibrary failed loading %s", pathname);
