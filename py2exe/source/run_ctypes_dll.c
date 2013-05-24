@@ -29,6 +29,7 @@
 #include <assert.h>
 #include "Python-dynload.h"
 #include "MemoryModule.h"
+#include "actctx.h"
 
 // Function pointers we load from _ctypes.pyd
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);
@@ -38,6 +39,9 @@ CRITICAL_SECTION csInit; // protecting our init code
 
 __PROC__DllCanUnloadNow Pyc_DllCanUnloadNow = NULL;
 __PROC__DllGetClassObject Pyc_DllGetClassObject = NULL;
+
+extern BOOL _LoadPythonDLL(HMODULE hmod);
+extern BOOL _LocateScript(HMODULE hmod);
 
 extern void init_memimporter(void);
 
@@ -81,11 +85,13 @@ int load_ctypes(void)
 
 	// shouldn't do this twice
 	assert(g_ctypes == NULL);
+
 #ifdef _DEBUG
 	strcpy(dll_path, "_ctypes_d.pyd");
 #else
 	strcpy(dll_path, "_ctypes.pyd");
 #endif
+
 	g_ctypes = MyGetModuleHandle(dll_path);
 /*
 	if (g_ctypes == NULL) {
@@ -113,9 +119,11 @@ int load_ctypes(void)
 		// give up in disgust
 		return -1;
 	}
-
+	
 	Pyc_DllCanUnloadNow = (__PROC__DllCanUnloadNow)MyGetProcAddress(g_ctypes, "DllCanUnloadNow");
 	Pyc_DllGetClassObject = (__PROC__DllGetClassObject)MyGetProcAddress(g_ctypes, "DllGetClassObject");
+	assert(Pyc_DllGetClassObject);
+
 	return 0;
 }
 
@@ -132,6 +140,17 @@ int check_init()
 			   call in.
 			*/
 			PyGILState_STATE restore_state = PyGILState_UNLOCKED;
+			if (!Py_IsInitialized) {
+				// Python function pointers are yet to be loaded
+				// - force that now. See above for why we *must*
+				// know about the initialized state of Python so
+				// we can setup the thread-state correctly
+				// before calling init_with_instance(); This is
+				// wasteful, but fixing it would involve a
+				// restructure of init_with_instance()
+				_LocateScript(gInstance);
+				_LoadPythonDLL(gInstance);
+			}
 			if (Py_IsInitialized && Py_IsInitialized()) {
 				restore_state = PyGILState_Ensure();
 			}
@@ -166,10 +185,17 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 	if ( dwReason == DLL_PROCESS_ATTACH) {
 		gInstance = hInstance;
 		InitializeCriticalSection(&csInit);
+		_MyLoadActCtxPointers();
+		if (pfnGetCurrentActCtx && pfnAddRefActCtx)
+		  if ((*pfnGetCurrentActCtx)(&PyWin_DLLhActivationContext))
+			if (!(*pfnAddRefActCtx)(PyWin_DLLhActivationContext))
+			  OutputDebugString("Python failed to load the default activation context\n");
 	}
 	else if ( dwReason == DLL_PROCESS_DETACH ) {
 		gInstance = 0;
 		DeleteCriticalSection(&csInit);
+		if (pfnReleaseActCtx)
+		  (*pfnReleaseActCtx)(PyWin_DLLhActivationContext);
 		// not much else safe to do here
 	}
 	return TRUE; 
