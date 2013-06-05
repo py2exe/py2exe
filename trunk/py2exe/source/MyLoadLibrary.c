@@ -64,7 +64,7 @@ static LIST *_FindMemoryModule(LPCSTR name, HMODULE module)
 {
 	LIST *lib = libraries;
 	while (lib) {
-		if (name && 0 == stricmp(name, lib->name)) {
+		if (name && 0 == _stricmp(name, lib->name)) {
 //			printf("_FindMemoryModule(%s, %p) -> %s\n", name, module, lib->name);
 			return lib;
 		} else if (module == lib->module) {
@@ -84,7 +84,7 @@ static LIST *_FindMemoryModule(LPCSTR name, HMODULE module)
 static LIST *_AddMemoryModule(LPCSTR name, HCUSTOMMODULE module)
 {
 	LIST *entry = (LIST *)malloc(sizeof(LIST));
-	entry->name = strdup(name);
+	entry->name = _strdup(name);
 	entry->module = module;
 	entry->next = libraries;
 	entry->prev = NULL;
