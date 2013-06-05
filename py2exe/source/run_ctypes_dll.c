@@ -28,7 +28,7 @@
 
 #include <assert.h>
 #include "Python-dynload.h"
-#include "MemoryModule.h"
+#include "MyLoadLibrary.h"
 #include "actctx.h"
 
 // Function pointers we load from _ctypes.pyd

@@ -15,87 +15,40 @@
 static char module_doc[] =
 "Importer which can load extension modules from memory";
 
-#include "MemoryModule.h"
+#include "MyLoadLibrary.h"
 #include "actctx.h"
-
-static void *memdup(void *ptr, Py_ssize_t size)
-{
-	void *p = malloc(size);
-	if (p == NULL)
-		return NULL;
-	memcpy(p, ptr, size);
-	return p;
-}
-
-/*
-  Be sure to detect errors in FindLibrary - undetected errors lead to
-  very strange bahaviour.
-*/
-static void* FindLibrary(char *name, PyObject *callback)
-{
-	PyObject *result;
-	char *p;
-	Py_ssize_t size;
-
-	if (callback == NULL)
-		return NULL;
-	result = PyObject_CallFunction(callback, "s", name);
-	if (result == NULL) {
-		PyErr_Clear();
-		return NULL;
-	}
-	if (-1 == PyString_AsStringAndSize(result, &p, &size)) {
-		PyErr_Clear();
-		Py_DECREF(result);
-		return NULL;
-	}
-	p = memdup(p, size);
-	Py_DECREF(result);
-	return p;
-}
-
-static PyObject *set_find_proc(PyObject *self, PyObject *args)
-{
-	PyObject *callback = NULL;
-	if (!PyArg_ParseTuple(args, "|O:set_find_proc", &callback))
-		return NULL;
-	Py_XDECREF((PyObject *)findproc_data);
-	Py_XINCREF(callback);
-	findproc_data = (void *)callback;
-	Py_INCREF(Py_None);
-	return Py_None;
-}
 
 static PyObject *
 import_module(PyObject *self, PyObject *args)
 {
-	char *data;
-	int size;
 	char *initfuncname;
 	char *modname;
 	char *pathname;
-	HMEMORYMODULE hmem;
+	HMODULE hmem;
 	FARPROC do_init;
 
 	char *oldcontext;
 	ULONG_PTR cookie = 0;
+	PyObject *findproc;
 	/* code, initfuncname, fqmodulename, path */
-	if (!PyArg_ParseTuple(args, "s#sss:import_module",
-			      &data, &size,
-			      &initfuncname, &modname, &pathname))
+	if (!PyArg_ParseTuple(args, "sssO:import_module",
+			      &modname, &pathname,
+			      &initfuncname,
+			      &findproc))
 		return NULL;
     
 	cookie = _My_ActivateActCtx();//try some windows manifest magic...
-	hmem = MemoryLoadLibrary(pathname, data);
+	hmem = MyLoadLibrary(pathname, NULL, findproc);
 	_My_DeactivateActCtx(cookie);
+
 	if (!hmem) {
 		PyErr_Format(PyExc_ImportError,
 			     "MemoryLoadLibrary failed loading %s", pathname);
 		return NULL;
 	}
-	do_init = MemoryGetProcAddress(hmem, initfuncname);
+	do_init = MyGetProcAddress(hmem, initfuncname);
 	if (!do_init) {
-		MemoryFreeLibrary(hmem);
+		MyFreeLibrary(hmem);
 		PyErr_Format(PyExc_ImportError,
 			     "Could not find function %s", initfuncname);
 		return NULL;
@@ -119,16 +72,15 @@ get_verbose_flag(PyObject *self, PyObject *args)
 
 static PyMethodDef methods[] = {
 	{ "import_module", import_module, METH_VARARGS,
-	  "import_module(code, initfunc, dllname[, finder]) -> module" },
+	  "import_module(modname, pathname, initfuncname, finder) -> module" },
 	{ "get_verbose_flag", get_verbose_flag, METH_NOARGS,
 	  "Return the Py_Verbose flag" },
-	{ "set_find_proc", set_find_proc, METH_VARARGS },
+//	{ "set_find_proc", set_find_proc, METH_VARARGS },
 	{ NULL, NULL },		/* Sentinel */
 };
 
 DL_EXPORT(void)
 init_memimporter(void)
 {
-	findproc = FindLibrary;
 	Py_InitModule3("_memimporter", methods, module_doc);
 }

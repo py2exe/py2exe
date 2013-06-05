@@ -215,8 +215,6 @@ class py2exe(Command):
         self.bundle_files = int(self.bundle_files)
         if self.bundle_files < 1 or self.bundle_files > 3:
             raise DistutilsOptionError("bundle-files must be 1, 2, or 3, not %s" % self.bundle_files)
-        if is_win64 and self.bundle_files < 3:
-            raise DistutilsOptionError("bundle-files %d not yet supported on win64" % self.bundle_files)
         if self.skip_archive:
             if self.compressed:
                 raise DistutilsOptionError("can't compress when skipping archive")
@@ -1094,7 +1092,7 @@ class py2exe(Command):
 
         tcl_src_dir = tcl_dst_dir = None
         if "Tkinter" in mf.modules.keys():
-            import tkinter
+            import Tkinter
             import _tkinter
             tk = _tkinter.create()
             tcl_dir = tk.call("info", "library")

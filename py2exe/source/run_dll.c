@@ -26,8 +26,7 @@
 #include <windows.h>
 #include <stdio.h>
 #include <olectl.h>
-//#include <Python.h> // XXX
-#include "MemoryModule.h"
+#include "MyLoadLibrary.h"
 
 // Function pointers we load from pythoncom
 typedef int (__stdcall *__PROC__DllCanUnloadNow) (void);

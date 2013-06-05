@@ -63,21 +63,12 @@ class ZipExtensionImporter(zipimport.zipimporter):
                     return self
         return None
 
-    def locate_dll_image(self, name):
-        # A callback function for_memimporter.import_module.  Tries to
-        # locate additional dlls.  Returns the image as Python string,
-        # or None if not found.
-        if name in self._files:
-            return self.get_data(name)
-        return None
-
     def load_module(self, fullname):
         if sys.modules.has_key(fullname):
             mod = sys.modules[fullname]
             if _memimporter.get_verbose_flag():
                 sys.stderr.write("import %s # previously loaded from zipfile %s\n" % (fullname, self.archive))
             return mod
-        _memimporter.set_find_proc(self.locate_dll_image)
         try:
             return zipimport.zipimporter.load_module(self, fullname)
         except zipimport.ZipImportError:
@@ -94,8 +85,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
             if path in self._files:
                 if _memimporter.get_verbose_flag():
                     sys.stderr.write("# found %s in zipfile %s\n" % (path, self.archive))
-                code = self.get_data(path)
-                mod = _memimporter.import_module(code, initname, fullname, path)
+                mod = _memimporter.import_module(fullname, path, initname, self.get_data)
                 mod.__file__ = "%s\\%s" % (self.archive, path)
                 mod.__loader__ = self
                 if _memimporter.get_verbose_flag():
