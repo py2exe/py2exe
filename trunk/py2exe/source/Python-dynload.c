@@ -1,6 +1,7 @@
 /* **************** Python-dynload.c **************** */
 #include "Python-dynload.h"
-#include "MemoryModule.h"
+#include <windows.h>
+#include "MyLoadLibrary.h"
 #include "actctx.h"
 #include <stdio.h>
 
@@ -70,13 +71,13 @@ int _load_python(char *dllname, char *bytes)
 		return _load_python_FromFile(dllname);
     
 	cookie = _My_ActivateActCtx();//try some windows manifest magic...
-	hmod = MemoryLoadLibrary(dllname, bytes);
+	hmod = MyLoadLibrary(dllname, bytes, NULL);
 	_My_DeactivateActCtx(cookie);
 	if (hmod == NULL) {
 		return 0;
 	}
 	for (i = 0; p->name; ++i, ++p) {
-		p->proc = (void (*)())MemoryGetProcAddress(hmod, p->name);
+		p->proc = (void (*)())MyGetProcAddress(hmod, p->name);
 		if (p->proc == NULL) {
 			OutputDebugString("undef symbol");
 			fprintf(stderr, "undefined symbol %s -> exit(-1)\n", p->name);

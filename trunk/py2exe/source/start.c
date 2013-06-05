@@ -35,7 +35,7 @@
 #include "Python-dynload.h"
 #include <stdio.h>
 #include <windows.h>
-#include "MemoryModule.h"
+#include "MyLoadLibrary.h"
 
 #if defined(MS_WINDOWS) || defined(__CYGWIN__)
 #include <fcntl.h>
@@ -226,10 +226,10 @@ BOOL _LoadPythonDLL(HMODULE hmod)
 void _Import_Zlib(char *pdata)
 {
 	HMODULE hlib;
-	hlib = MemoryLoadLibrary("zlib.pyd", pdata);
+	hlib = MyLoadLibrary("zlib.pyd", pdata, NULL);
 	if (hlib) {
 		void (*proc)(void);
-		proc = (void(*)(void))MemoryGetProcAddress(hlib, "initzlib");
+		proc = (void(*)(void))MyGetProcAddress(hlib, "initzlib");
 		if (proc)
 			proc();
 	}
