@@ -43,7 +43,7 @@ manifest_template = '''
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
     version="5.0.0.0"
-    processorArchitecture="x86"
+    processorArchitecture="*"
     name="%(prog)s"
     type="win32"
 />
@@ -54,7 +54,7 @@ manifest_template = '''
             type="win32"
             name="Microsoft.Windows.Common-Controls"
             version="6.0.0.0"
-            processorArchitecture="X86"
+            processorArchitecture="*"
             publicKeyToken="6595b64144ccf1df"
             language="*"
         />
@@ -122,6 +122,8 @@ interp = Target(
 excludes = ["pywin", "pywin.debugger", "pywin.debugger.dbgcon",
             "pywin.dialogs", "pywin.dialogs.list"]
 
+dll_excludes = "MSVCP90.dll mswsock.dll powrprof.dll".split()
+
 setup(
     options = {"py2exe": {"typelibs":
                           # typelib for WMI
@@ -129,6 +131,7 @@ setup(
                           # create a compressed zip archive
                           "compressed": 1,
                           "optimize": 2,
+                          "dll_excludes": dll_excludes,
                           "excludes": excludes}},
     # The lib directory contains everything except the executables and the python dll.
     # Can include a subdirectory name.

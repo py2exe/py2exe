@@ -35,7 +35,7 @@ manifest_template = '''
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
 <assemblyIdentity
     version="5.0.0.0"
-    processorArchitecture="x86"
+    processorArchitecture="*"
     name="%(prog)s"
     type="win32"
 />
@@ -46,7 +46,7 @@ manifest_template = '''
             type="win32"
             name="Microsoft.Windows.Common-Controls"
             version="6.0.0.0"
-            processorArchitecture="X86"
+            processorArchitecture="*"
             publicKeyToken="6595b64144ccf1df"
             language="*"
         />
@@ -73,7 +73,10 @@ setup(
     options = {"py2exe": {"compressed": 1,
                           "optimize": 2,
                           "ascii": 1,
-                          "bundle_files": 1}},
+                          "bundle_files": 1,
+                          "dll_excludes": "MSVCP90.dll mswsock.dll powrprof.dll".split(),
+                          },
+               },
     zipfile = None,
     windows = [test_wx],
     )
