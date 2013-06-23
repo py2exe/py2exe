@@ -22,6 +22,12 @@
  * Portions created by Joachim Bauch are Copyright (C) 2004-2013
  * Joachim Bauch. All Rights Reserved.
  *
+ *
+ * THeller: Added binary search in MemoryGetProcAddress function
+ * (#define USE_BINARY_SEARCH to enable it).  This gives a very large
+ * speedup for libraries that exports lots of functions.
+ *
+ * These portions are Copyright (C) 2013 Thomas Heller.
  */
 
 #ifndef __GNUC__
@@ -49,6 +55,15 @@
 
 #include "MemoryModule.h"
 
+#ifdef USE_BINARY_SEARCH
+
+struct NAME_TABLE {
+    LPCSTR name;
+    WORD idx;
+};
+
+#endif
+
 typedef struct {
     PIMAGE_NT_HEADERS headers;
     unsigned char *codeBase;
@@ -58,6 +73,10 @@ typedef struct {
     CustomLoadLibraryFunc loadLibrary;
     CustomGetProcAddressFunc getProcAddress;
     CustomFreeLibraryFunc freeLibrary;
+#ifdef USE_BINARY_SEARCH
+    struct NAME_TABLE *name_table;
+    int numEntries;
+#endif
     void *userdata;
 } MEMORYMODULE, *PMEMORYMODULE;
 
@@ -387,6 +406,9 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data,
     result->getProcAddress = getProcAddress;
     result->freeLibrary = freeLibrary;
     result->userdata = userdata;
+#ifdef USE_BINARY_SEARCH
+    result->name_table = NULL;
+#endif
 
     // commit memory for headers
     headers = (unsigned char *)VirtualAlloc(code,
@@ -439,6 +461,18 @@ error:
     return NULL;
 }
 
+#ifdef USE_BINARY_SEARCH
+int _compare(const struct NAME_TABLE *p1, const struct NAME_TABLE *p2)
+{
+    return _stricmp(p1->name, p2->name);
+}
+
+int _find(LPCSTR *name, const struct NAME_TABLE *p)
+{
+    return _stricmp(*name, p->name);
+}
+#endif
+
 FARPROC MemoryGetProcAddress(HMEMORYMODULE module, LPCSTR name)
 {
     unsigned char *codeBase = ((PMEMORYMODULE)module)->codeBase;
@@ -460,6 +494,42 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, LPCSTR name)
         return NULL;
     }
 
+#ifdef USE_BINARY_SEARCH
+
+    // build name table and sort it by names
+    if (((PMEMORYMODULE)module)->name_table == NULL) {
+	struct NAME_TABLE *entry = (struct NAME_TABLE*)malloc(exports->NumberOfNames
+							      * sizeof(struct NAME_TABLE));
+	((PMEMORYMODULE)module)->name_table = entry;
+	if (entry == NULL) {
+	    ((PMEMORYMODULE)module)->numEntries = 0;
+	    SetLastError(ERROR_OUTOFMEMORY);
+	    return NULL;
+	}
+	((PMEMORYMODULE)module)->numEntries = exports->NumberOfNames;
+
+	nameRef = (DWORD *) (codeBase + exports->AddressOfNames);
+	ordinal = (WORD *) (codeBase + exports->AddressOfNameOrdinals);
+	for (i=0; i<exports->NumberOfNames; i++, nameRef++, ordinal++) {
+	    entry->name = (const char *) (codeBase + (*nameRef));
+	    entry->idx = *ordinal;
+	    entry++;
+	}
+	entry = ((PMEMORYMODULE)module)->name_table;
+	qsort(entry, exports->NumberOfNames, sizeof(struct NAME_TABLE), _compare);
+    }
+
+    // search function name in list of exported names with binary search
+    if (((PMEMORYMODULE)module)->name_table) {
+	struct NAME_TABLE *found;
+	found = bsearch(&name,
+			((PMEMORYMODULE)module)->name_table,
+			exports->NumberOfNames,
+			sizeof(struct NAME_TABLE), _find);
+	if (found)
+	    idx = found->idx;
+    }
+#else
     // search function name in list of exported names
     nameRef = (DWORD *) (codeBase + exports->AddressOfNames);
     ordinal = (WORD *) (codeBase + exports->AddressOfNameOrdinals);
@@ -469,6 +539,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, LPCSTR name)
             break;
         }
     }
+#endif    
 
     if (idx == -1) {
         // exported symbol not found
@@ -498,6 +569,12 @@ void MemoryFreeLibrary(HMEMORYMODULE mod)
             (*DllEntry)((HINSTANCE)module->codeBase, DLL_PROCESS_DETACH, 0);
             module->initialized = 0;
         }
+
+#ifdef USE_BINARY_SEARCH
+	if (module->name_table != NULL) {
+	    free(module->name_table);
+	}
+#endif
 
         if (module->modules != NULL) {
             // free previously opened libraries

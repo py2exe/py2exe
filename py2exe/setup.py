@@ -371,6 +371,8 @@ else:
 if 'zlib' in sys.builtin_module_names:
     macros.append(("PYZLIB_BUILTIN", None))
 
+macros.append(("USE_BINARY_SEARCH", '1'))
+
 ##macros.append(("AS_PY2EXE_BUILTIN", "1")) # for runtime linking python.dll in _memimporter.c
 depends = ["source/import-tab.c", "source/import-tab.h"]
 
