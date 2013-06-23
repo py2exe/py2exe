@@ -10,6 +10,8 @@
 #include "MemoryModule.h"
 #include "MyLoadLibrary.h"
 
+/* #define VERBOSE /* enable to print debug output */
+
 /*
 
 Windows API:
@@ -56,6 +58,28 @@ typedef struct tagLIST {
 
 static LIST *libraries;
 
+int level;
+
+static int dprintf(char *fmt, ...)
+{
+#ifdef VERBOSE
+	va_list marker;
+	int i;
+	
+	va_start(marker, fmt);
+	for (i = 0; i < level; ++i) {
+		putchar(' ');
+		putchar(' ');
+	}
+	return vprintf(fmt, marker) + 2*level;
+#else
+	return 0;
+#endif
+}
+
+#define PUSH() level++
+#define POP()  level--
+
 /****************************************************************
  * Search for a loaded MemoryModule in the linked list, either by name
  * or by module handle.
@@ -65,16 +89,15 @@ static LIST *_FindMemoryModule(LPCSTR name, HMODULE module)
 	LIST *lib = libraries;
 	while (lib) {
 		if (name && 0 == _stricmp(name, lib->name)) {
-//			printf("_FindMemoryModule(%s, %p) -> %s\n", name, module, lib->name);
+			dprintf("_FindMemoryModule(%s, %p) -> %s[%d]\n", name, module, lib->name, lib->refcount);
 			return lib;
 		} else if (module == lib->module) {
-//			printf("_FindMemoryModule(%s, %p) -> %s\n", name, module, lib->name);
+			dprintf("_FindMemoryModule(%s, %p) -> %s[%d]\n", name, module, lib->name, lib->refcount);
 			return lib;
 		} else {
 			lib = lib->next;
 		}
 	}
-//	printf("_FindMemoryModule(%s, %p) -> NULL\n", name, module);
 	return NULL;
 }
 
@@ -90,7 +113,8 @@ static LIST *_AddMemoryModule(LPCSTR name, HCUSTOMMODULE module)
 	entry->prev = NULL;
 	entry->refcount = 1;
 	libraries = entry;
-//	printf("_AddMemoryModule(%s, %p) -> %p\n", name, module, entry);
+	dprintf("_AddMemoryModule(%s, %p) -> %p[%d]\n",
+		name, module, entry, entry->refcount);
 	return entry;
 }
 
@@ -99,30 +123,26 @@ static LIST *_AddMemoryModule(LPCSTR name, HCUSTOMMODULE module)
  */
 static FARPROC _GetProcAddress(HCUSTOMMODULE module, LPCSTR name, void *userdata)
 {
-	FARPROC res;
-	res = (FARPROC)GetProcAddress((HMODULE)module, name);
-	if (res == NULL) {
-		SetLastError(0);
-		return MemoryGetProcAddress(module, name);
-	} else
-		return res;
+	return MyGetProcAddress(module, name);
 }
 
 static void _FreeLibrary(HCUSTOMMODULE module, void *userdata)
 {
-	LIST *lib = _FindMemoryModule(NULL, module);
-	if (lib && --lib->refcount == 0)
-		MemoryFreeLibrary(module);
-	else
-		FreeLibrary((HMODULE) module);
+	MyFreeLibrary(module);
 }
 
 static HCUSTOMMODULE _LoadLibrary(LPCSTR filename, void *userdata)
 {
 	HCUSTOMMODULE result;
-	LIST *lib = _FindMemoryModule(filename, NULL);
+	LIST *lib;
+	dprintf("_LoadLibrary(%s, %p)\n", filename, userdata);
+	PUSH();
+	lib = _FindMemoryModule(filename, NULL);
 	if (lib) {
 		lib->refcount += 1;
+		POP();
+		dprintf("_LoadLibrary(%s, %p) -> %s[%d]\n\n",
+			filename, userdata, lib->name, lib->refcount);
 		return lib->module;
 	}
 	if (userdata) {
@@ -133,14 +153,24 @@ static HCUSTOMMODULE _LoadLibrary(LPCSTR filename, void *userdata)
 						     _LoadLibrary, _GetProcAddress, _FreeLibrary,
 						     userdata);
 			Py_DECREF(res);
-			lib = _AddMemoryModule(filename, result);
-			return lib->module;
+			if (result) {
+				lib = _AddMemoryModule(filename, result);
+				POP();
+				dprintf("_LoadLibrary(%s, %p) -> %s[%d]\n\n",
+					filename, userdata, lib->name, lib->refcount);
+				return lib->module;
+			} else {
+				dprintf("_LoadLibrary(%s, %p) failed with error %d\n",
+					filename, userdata, GetLastError());
+			}
 		} else {
 			PyErr_Clear();
 		}
-		PyErr_Clear();
 	}
-	return (HCUSTOMMODULE)LoadLibraryA(filename);
+	result = (HCUSTOMMODULE)LoadLibraryA(filename);
+	POP();
+	dprintf("LoadLibraryA(%s) -> %p\n\n", filename, result);
+	return result;
 }
 
 /****************************************************************
@@ -155,23 +185,14 @@ HMODULE MyGetModuleHandle(LPCSTR name)
 	return GetModuleHandle(name);
 }
 
-HMODULE MyLoadLibrary(LPCSTR name, void *data, void *userdata)
+HMODULE MyLoadLibrary(LPCSTR name, void *bytes, void *userdata)
 {
-	LIST *lib;
-//	printf("MyLoadLibrary(%s, %p, %p)\n", name, data, userdata);
-	lib = _FindMemoryModule(name, NULL);
-	if (lib) {
-		++lib->refcount;
-		return lib->module;
-	}
 	if (userdata) {
 		HCUSTOMMODULE mod = _LoadLibrary(name, userdata);
-		if (mod) {
-			LIST *lib = _AddMemoryModule(name, mod);
-			return lib->module;
-		}
-	} else if (data) {
-		HCUSTOMMODULE mod = MemoryLoadLibraryEx(data,
+		if (mod)
+			return mod;
+	} else if (bytes) {
+		HCUSTOMMODULE mod = MemoryLoadLibraryEx(bytes,
 							_LoadLibrary,
 							_GetProcAddress,
 							_FreeLibrary,
@@ -188,10 +209,8 @@ BOOL MyFreeLibrary(HMODULE module)
 {
 	LIST *lib = _FindMemoryModule(NULL, module);
 	if (lib) {
-		if (--lib->refcount == 0) {
+		if (--lib->refcount == 0)
 			MemoryFreeLibrary(module);
-			/* remove lib entry from linked list */
-		}
 		return TRUE;
 	} else
 		return FreeLibrary(module);
@@ -199,9 +218,15 @@ BOOL MyFreeLibrary(HMODULE module)
 
 FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 {
+	FARPROC proc;
 	LIST *lib = _FindMemoryModule(NULL, module);
-	if (lib)
-		return MemoryGetProcAddress(lib->module, procname);
-	else
+	if (lib) {
+//		dprintf("MyGetProcAddress(%p, %s)\n", module, procname);
+//		PUSH();
+		proc = MemoryGetProcAddress(lib->module, procname);
+//		POP();
+//		dprintf("MyGetProcAddress(%p, %s) -> %p\n", module, procname, proc);
+		return proc;
+	} else
 		return GetProcAddress(module, procname);
 }
