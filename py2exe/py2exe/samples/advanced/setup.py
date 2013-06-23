@@ -60,6 +60,17 @@ manifest_template = '''
         />
     </dependentAssembly>
 </dependency>
+<dependency>
+    <dependentAssembly>
+    <assemblyIdentity
+        type="win32"
+        name="Microsoft.VC90.CRT"
+        version="9.0.21022.8"
+        processorArchitecture="*"
+        publicKeyToken="1fc8b3b9a1e18e3b"
+    />
+    </dependentAssembly>
+</dependency>
 </assembly>
 '''
 
@@ -124,6 +135,9 @@ excludes = ["pywin", "pywin.debugger", "pywin.debugger.dbgcon",
 
 dll_excludes = "MSVCP90.dll mswsock.dll powrprof.dll".split()
 
+from glob import glob
+data_files = [("Microsoft.VC90.CRT", glob(r'C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\redist\amd64\Microsoft.VC90.CRT\*.*'))]
+
 setup(
     options = {"py2exe": {"typelibs":
                           # typelib for WMI
@@ -137,6 +151,7 @@ setup(
     # Can include a subdirectory name.
     zipfile = "lib/shared.zip",
 
+    data_files = data_files,
     service = [myservice],
     com_server = [interp],
     console = [test_wx_console, test_wmi],
