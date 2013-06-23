@@ -1,3 +1,8 @@
+2013-06-23  Thomas Heller <theller@ctypes.org>
+
+	* Updated the code with the current MemoryLoadLibrary module which
+	will also work on 64-bit windows.
+
 2013-05-24  Thomas Heller <theller@ctypes.org>
 
 	* properly implemented the activation context handling like it
