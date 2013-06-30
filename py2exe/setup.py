@@ -373,6 +373,14 @@ if 'zlib' in sys.builtin_module_names:
 
 macros.append(("USE_BINARY_SEARCH", '1'))
 
+extra_compile_args = []
+extra_link_args = []
+
+if 0:
+    # enable this to debug a release build
+    extra_compile_args.append("/Z7")
+    extra_link_args.append("/DEBUG")
+
 ##macros.append(("AS_PY2EXE_BUILTIN", "1")) # for runtime linking python.dll in _memimporter.c
 depends = ["source/import-tab.c", "source/import-tab.h"]
 
@@ -383,6 +391,8 @@ _memimporter = Extension("_memimporter",
                           "source/actctx.c"],
                          depends=depends,
                          define_macros=macros + [("STANDALONE", "1")],
+                         extra_compile_args=extra_compile_args,
+                         extra_link_args=extra_link_args,
                          )
 
 run = Interpreter("py2exe.run",
@@ -395,6 +405,8 @@ run = Interpreter("py2exe.run",
                    ],
                   depends=depends,
                   define_macros=macros,
+                  extra_compile_args=extra_compile_args,
+                  extra_link_args=extra_link_args,
                   )
 
 run_w = Interpreter("py2exe.run_w",
@@ -408,6 +420,8 @@ run_w = Interpreter("py2exe.run_w",
                     libraries=["user32"],
                     depends=depends,
                     define_macros=macros,
+                    extra_compile_args=extra_compile_args,
+                    extra_link_args=extra_link_args,
                     )
 
 run_dll = Interpreter("py2exe.run_dll",
@@ -427,6 +441,8 @@ run_dll = Interpreter("py2exe.run_dll",
                       target_desc = "shared_library",
                       depends=depends,
                       define_macros=macros,
+                      extra_compile_args=extra_compile_args,
+                      extra_link_args=extra_link_args,
                       )
 
 run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
@@ -446,6 +462,8 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                              target_desc = "shared_library",
                              depends=depends,
                              define_macros=macros,
+                             extra_compile_args=extra_compile_args,
+                             extra_link_args=extra_link_args,
                              )
 
 run_isapi = Interpreter("py2exe.run_isapi",
@@ -465,11 +483,11 @@ run_isapi = Interpreter("py2exe.run_isapi",
                         target_desc = "shared_library",
                         depends=depends,
                         define_macros=macros,
+                        extra_compile_args=extra_compile_args,
+                        extra_link_args=extra_link_args,
                         )
 
 interpreters = [run, run_w, run_dll, run_ctypes_dll, run_isapi]
-
-options = {"bdist_wininst": {"install_script": "py2exe_postinstall.py"}}
 
 setup(name="py2exe",
       version=__version__,
@@ -502,7 +520,6 @@ setup(name="py2exe",
       packages=['py2exe',
                 'py2exe.resources',
                ],
-      options = options,
       )
 
 # Local Variables:
