@@ -221,11 +221,11 @@ FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 	FARPROC proc;
 	LIST *lib = _FindMemoryModule(NULL, module);
 	if (lib) {
-//		dprintf("MyGetProcAddress(%p, %s)\n", module, procname);
+//		dprintf("MyGetProcAddress(%p, %p(%s))\n", module, procname, HIWORD(procname) ? procname : "");
 //		PUSH();
 		proc = MemoryGetProcAddress(lib->module, procname);
 //		POP();
-//		dprintf("MyGetProcAddress(%p, %s) -> %p\n", module, procname, proc);
+//		dprintf("MyGetProcAddress(%p, %p(%s))\n", module, procname, HIWORD(procname) ? procname : "", proc);
 		return proc;
 	} else
 		return GetProcAddress(module, procname);
