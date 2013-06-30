@@ -519,26 +519,32 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, LPCSTR name)
 	qsort(entry, exports->NumberOfNames, sizeof(struct NAME_TABLE), _compare);
     }
 
-    // search function name in list of exported names with binary search
-    if (((PMEMORYMODULE)module)->name_table) {
-	struct NAME_TABLE *found;
-	found = bsearch(&name,
-			((PMEMORYMODULE)module)->name_table,
-			exports->NumberOfNames,
-			sizeof(struct NAME_TABLE), _find);
-	if (found)
-	    idx = found->idx;
-    }
+    if (!IS_INTRESOURCE(name)) {
+	// search function name in list of exported names with binary search
+	if (((PMEMORYMODULE)module)->name_table) {
+	    struct NAME_TABLE *found;
+	    found = bsearch(&name,
+			    ((PMEMORYMODULE)module)->name_table,
+			    exports->NumberOfNames,
+			    sizeof(struct NAME_TABLE), _find);
+	    if (found)
+		idx = found->idx;
+	}
+    } else
+	idx = (int)name;
 #else
-    // search function name in list of exported names
-    nameRef = (DWORD *) (codeBase + exports->AddressOfNames);
-    ordinal = (WORD *) (codeBase + exports->AddressOfNameOrdinals);
-    for (i=0; i<exports->NumberOfNames; i++, nameRef++, ordinal++) {
-        if (_stricmp(name, (const char *) (codeBase + (*nameRef))) == 0) {
-            idx = *ordinal;
-            break;
-        }
-    }
+    if (!IS_INTRESOURCE(name)) {
+	// search function name in list of exported names
+	nameRef = (DWORD *) (codeBase + exports->AddressOfNames);
+	ordinal = (WORD *) (codeBase + exports->AddressOfNameOrdinals);
+	for (i=0; i<exports->NumberOfNames; i++, nameRef++, ordinal++) {
+	    if (_stricmp(name, (const char *) (codeBase + (*nameRef))) == 0) {
+		idx = *ordinal;
+		break;
+	    }
+	}
+    } else
+	idx = (int)name;
 #endif    
 
     if (idx == -1) {
