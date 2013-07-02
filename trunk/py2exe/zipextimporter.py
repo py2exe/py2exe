@@ -65,7 +65,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
 
     def load_module(self, fullname):
         verbose = _memimporter.get_verbose_flag()
-        if sys.modules.has_key(fullname):
+        if fullname in sys.modules:
             mod = sys.modules[fullname]
             if verbose:
                 sys.stderr.write("import %s # previously loaded from zipfile %s\n" % (fullname, self.archive))
@@ -92,7 +92,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
                 if verbose:
                     sys.stderr.write("import %s # loaded from zipfile %s\n" % (fullname, mod.__file__))
                 return mod
-        raise zipimport.ZipImportError, "can't find module %s" % fullname
+        raise zipimport.ZipImportError("can't find module %s" % fullname)
 
     def __repr__(self):
         return "<%s object %r>" % (self.__class__.__name__, self.archive)
