@@ -41,7 +41,7 @@ from distutils.dep_util import newer_group
 from distutils.errors import *
 
 if sys.version_info < (2, 3):
-    raise DistutilsError, "This package requires Python 2.3 or later"
+    raise DistutilsError("This package requires Python 2.3 or later")
 
 # Some nasty hacks to ensure all our targets are built with a manifest that
 # references the CRT manifest (which the msvc9compiler implementation
@@ -77,7 +77,7 @@ class Interpreter(Extension):
     def __init__(self, *args, **kw):
         # Add a custom 'target_desc' option, which matches CCompiler
         # (is there a better way?
-        if kw.has_key("target_desc"):
+        if "target_desc" in kw:
             self.target_desc = kw['target_desc']
             del kw['target_desc']
         else:
@@ -111,10 +111,9 @@ class BuildInterpreters(build_ext.build_ext):
         for inter in self.interpreters:
             sources = inter.sources
             if sources is None or type(sources) not in (type([]), type(())):
-                raise DistutilsSetupError, \
-                      ("in 'interpreters' option ('%s'), " +
+                raise DistutilsSetupError(("in 'interpreters' option ('%s'), " +
                        "'sources' must be present and must be " +
-                       "a list of source filenames") % inter.name
+                       "a list of source filenames") % inter.name)
             sources = list(sources)
 
             fullname = self.get_exe_fullname(inter.name)
@@ -202,8 +201,8 @@ class BuildInterpreters(build_ext.build_ext):
     def get_exe_filename (self, inter_name):
         ext_path = string.split(inter_name, '.')
         if self.debug:
-            return apply(os.path.join, ext_path) + '_d'
-        return apply(os.path.join, ext_path)
+            return os.path.join(*ext_path) + '_d'
+        return os.path.join(*ext_path)
 
     def setup_compiler(self):
         # This method *should* be available separately in build_ext!
@@ -302,7 +301,7 @@ class deinstall(Command):
                 if not self.dry_run:
                     try:
                         os.remove(name)
-                    except OSError, details:
+                    except OSError as details:
                         self.warn("Could not remove file: %s" % details)
                     if os.path.splitext(name)[1] == '.py':
                         # Try to remove .pyc and -pyo files also
@@ -319,7 +318,7 @@ class deinstall(Command):
                 if not self.dry_run:
                     try:
                         os.rmdir(name)
-                    except OSError, details:
+                    except OSError as details:
                         self.warn("Are there additional user files?\n"\
                               "  Could not remove directory: %s" % details)
             else:
@@ -515,7 +514,6 @@ setup(name="py2exe",
                                libraries=["imagehlp"]),
                      ],
       py_modules = ["zipextimporter"],
-      scripts = ["py2exe_postinstall.py"],
       interpreters = interpreters,
       packages=['py2exe',
                 'py2exe.resources',
