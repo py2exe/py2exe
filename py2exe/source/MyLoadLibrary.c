@@ -71,7 +71,7 @@ static int dprintf(char *fmt, ...)
 		putchar(' ');
 		putchar(' ');
 	}
-	return vprintf(fmt, marker) + 2*level;
+	return vfprintf(stderr, fmt, marker) + 2*level;
 #else
 	return 0;
 #endif
@@ -221,11 +221,11 @@ FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 	FARPROC proc;
 	LIST *lib = _FindMemoryModule(NULL, module);
 	if (lib) {
-//		dprintf("MyGetProcAddress(%p, %p(%s))\n", module, procname, HIWORD(procname) ? procname : "");
-//		PUSH();
+		dprintf("MyGetProcAddress(%p, %p(%s))\n", module, procname, HIWORD(procname) ? procname : "");
+		PUSH();
 		proc = MemoryGetProcAddress(lib->module, procname);
-//		POP();
-//		dprintf("MyGetProcAddress(%p, %p(%s))\n", module, procname, HIWORD(procname) ? procname : "", proc);
+		POP();
+		dprintf("MyGetProcAddress(%p, %p(%s)) -> %p\n", module, procname, HIWORD(procname) ? procname : "", proc);
 		return proc;
 	} else
 		return GetProcAddress(module, procname);
