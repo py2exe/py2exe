@@ -1,6 +1,6 @@
 #!/usr/bin/python
 ##
-##	   Copyright (c) 2000-2008 Thomas Heller, Jimmy Retzlaff
+##	   Copyright (c) 2000-2013 Thomas Heller, Jimmy Retzlaff
 ##
 ## Permission is hereby granted, free of charge, to any person obtaining
 ## a copy of this software and associated documentation files (the
@@ -376,9 +376,10 @@ extra_compile_args = []
 extra_link_args = []
 
 if 0:
-    # enable this to debug a release build
+    # enable this to include debug info into a release build
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
+    macros.append(("VERBOSE", "1"))
 
 ##macros.append(("AS_PY2EXE_BUILTIN", "1")) # for runtime linking python.dll in _memimporter.c
 depends = ["source/import-tab.c", "source/import-tab.h"]
