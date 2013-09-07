@@ -1,6 +1,5 @@
 /*
- *     Copyright (c) 2000, 2001 Thomas Heller
- *     Copyright (c) 2003 Mark Hammond
+ *     Copyright (c) 2000, 2001 Thomas Heller, Mark Hammond
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
