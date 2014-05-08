@@ -1,0 +1,5 @@
+include source/*.c
+include source/*.h
+include source/*.rc
+include source/*.ico
+include LICENSE.txt MIT-License.txt MPL2-License.txt
