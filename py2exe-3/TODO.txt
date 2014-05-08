@@ -1,0 +1,51 @@
+Bugs:
+
+- debug the 'verbose' argument to py2exe.  It defaults to 1, using
+  '-q' sets it to 0, '-v' doesn't change it, '-vv' sets it to 2.
+  Strange.
+
+- Is this true any longer ???:
+  ctypes com servers (inproc) do not work with bundle_files 2 or 3
+  when the same Python version is used in the client.  Did this work
+  at all with py2exe 0.6?
+
+- distutils catches errors different from DistutilsError (or so)
+
+- distutils_buildexe needs to import DistutilsOptionError (or so)
+
+- Does probably not work with extensions built against the limited API
+  (python3.dll)???
+
+- py2exe for Python2 used an 'uac_info' string (exec_level) or tuple
+  (exec_level, ui_access) attribute on the Target to include or patch
+  a default manifest.
+
+- custom_boot_script ?
+
+- typelib ?
+
+Ideas:
+
+- clean up console output when building.
+
+- add some scripts to inspect executables, like:
+-     dump_manifest.py
+-     dump_versioninfo.py
+- or even a general resource dumper?
+
+TODO:
+
+- services cmdline_style not yet implemented
+
+Fixed bugs:
+
+  rev 380: - ctypes DLL COM servers can now load dlls (like sqlite3.dll) correctly.
+  rev 343: - DLL com servers are now implemented
+  rev 336: - py2exe\dll.dll is not installed.
+  rev 342: - when installed as egg, py2exe/boot_common.py is not a file and so not found.
+  rev 342: - number of icons (or icon images) is limited for whatever reason.
+  rev 342: - extensions are in the wrong directory when library is in a subdirectory
+  rev 342: - (String) Versioninfo not build?  (Needs 'self.version = "6.5"' attribute in Target???)
+              Must include this into setup_template.py!
+  rev 342: - services not yet implemented
+
