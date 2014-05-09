@@ -138,6 +138,12 @@ OPTIONS = """
 #     and loaded in the normal way.
 #
 # bundle_files == 1:
+#     Extension modules and the Python dll are put into the zipfile or
+#     the exe/dll files, and everything is loaded without unpacking to
+#     the file system.  This does not work for some dlls, so use with
+#     caution.
+#
+# bundle_files == 0:
 #     Extension modules, the Python dll, and other needed dlls are put
 #     into the zipfile or the exe/dll files, and everything is loaded
 #     without unpacking to the file system.  This does not work for

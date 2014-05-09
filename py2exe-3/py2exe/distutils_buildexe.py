@@ -157,8 +157,8 @@ class py2exe(Command):
         self.includes = fancy_split(self.includes)
         self.ignores = fancy_split(self.ignores)
         self.bundle_files = int(self.bundle_files)
-        if self.bundle_files < 1 or self.bundle_files > 3:
-            raise ValueError("bundle-files must be 1, 2, or 3, not %s"
+        if self.bundle_files < 0 or self.bundle_files > 3:
+            raise ValueError("bundle-files must be 0, 1, 2, or 3, not %s"
                              % self.bundle_files)
         if self.ascii:
             warnings.warn("The 'ascii' option is no longer supported, ignored.")
