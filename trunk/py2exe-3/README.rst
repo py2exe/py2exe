@@ -243,4 +243,4 @@ Bugs
 Building isapi extensions is not supported: I don't use them so I will
 not implement this.
 
-The modulefinder does not yet
+The modulefinder does not yet support PEP420 implicit namespace packages.
