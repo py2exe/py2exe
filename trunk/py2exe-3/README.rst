@@ -3,9 +3,8 @@ py2exe for Python 3
 
 `py2exe` is a distutils extension which allows to build standalone
 Windows executable programs (32-bit and 64-bit) from Python scripts;
-Python 3.3 and Python 3.4 are supported.  It can build console
-executables, windows (GUI) executables, windows services, and DLL/EXE
-COM servers.
+Python 3.3 and later are supported.  It can build console executables,
+windows (GUI) executables, windows services, and DLL/EXE COM servers.
 
 py2exe for Python 2 is still available at
 http://sourceforge.net/project/showfiles.php?group_id=15583.
@@ -16,9 +15,23 @@ http://sourceforge.net/project/showfiles.php?group_id=15583.
 News
 ----
 
+The C-runtime library for Python 3 does NOT need a windows manifest
+any longer to load correctly (this is a feature of Python, not of
+py2exe).
 
-Create an exe-file with a simple command
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+`py2exe` now contains a hooks module which contains information about
+some standard packages.  The goal is to fine-tune the build process so
+that no (at least less) warnings are emitted from modulefinder.
+
+Thanks to a brand new modulefinder (based on Python's importlib)
+py2exe can now find and extract modules even from packages you have
+installed as zipped eggs.
+
+py2exe now longer uses a `build` directory for temporary files.
+
+It is planned to achive full compatibility with the setup-scripts for
+Python 2; however this is probably not yet the case.
+
 
 In addition to your beloved setup.py scripts :-), there is now also a
 command-line utility which allows to build the exe without any effort.
@@ -27,7 +40,7 @@ Running
 
 ::
 
-   py -3.3 -m py2exe.build_exe myscript.py
+   py -3.4 -m py2exe.build_exe myscript.py
 
 or (if you have the Python ``Scripts`` directory on your PATH):
 
@@ -44,39 +57,17 @@ used to further customize the exe:
 
 ::
 
-   py -3.3 -m py2exe myscript.py -W mysetup.py
+   py -3.4 -m py2exe myscript.py -W mysetup.py
    ... edit myssetup.py
-   py -3.3 mysetup.py py2exe
+   py -3.4 mysetup.py py2exe
 
-Hooks
-~~~~~
-
-`py2exe` now contains a hooks module which allows to customize the
-build-process.  The goal is to fine-tune the build process so that no
-warnings are emitted from modulefinder.
-
-The hooks module is the `py2exe\\hooks.py` file in your installation;
-it currently contains hooks for quite some libraries.  Patches for
-more libraries will gratefully be accepted.
-
-Windows C-runtime library
-~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The C-runtime library for Python 3 does NOT need a windows manifest
-any longer, unless you have special requirements.
-
-Compatibility with py2exe for Python 2
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-It is planned to achive full compatibility with the setup-scripts for
-Python 2; however this is probably not yet the case.
 
 Installation
 ------------
 
 ::
 
-    py -3.3 -m pip install py2exe
+    py -3.4 -m pip install py2exe
 
 or
 
@@ -251,3 +242,5 @@ Bugs
 
 Building isapi extensions is not supported: I don't use them so I will
 not implement this.
+
+The modulefinder does not yet
