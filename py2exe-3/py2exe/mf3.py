@@ -153,13 +153,16 @@ class ModuleFinder:
 
         if level == 0:
             if fromlist:
-                text = "%sfrom %s import %s" % (self._indent, name, ", ".join(fromlist)) + caller_info
+                text = "%sfrom %s import %s" % (self._indent, name,
+                                                ", ".join(fromlist)) + caller_info
             else:
                 text = "%simport %s" % (self._indent, name) + caller_info
         elif name:
-            text = "%sfrom %s import %s" % (self._indent, "."*level + name, ", ".join(fromlist)) + caller_info
+            text = "%sfrom %s import %s" % (self._indent, "."*level + name,
+                                            ", ".join(fromlist)) + caller_info
         else:
-            text = "%sfrom %s import %s" % (self._indent, "."*level, ", ".join(fromlist)) + caller_info
+            text = "%sfrom %s import %s" % (self._indent, "."*level,
+                                            ", ".join(fromlist)) + caller_info
         print(text)
 
 
@@ -242,8 +245,8 @@ class ModuleFinder:
 
 
     def _gcd_import(self, name, package=None, level=0):
-        """Import and return the module based on its name, the package the call is
-        being made from, and the level adjustment.
+        """Import and return the module based on its name, the package
+        the call is being made from, and the level adjustment.
 
         """
         # __main__ is always the current main module; do never import that.
@@ -253,7 +256,8 @@ class ModuleFinder:
         self._sanity_check(name, package, level)
         if level > 0:
             name = self._resolve_name(name, package, level)
-        # 'name' is now the fully qualified, absolute name of the module we want to import.
+        # 'name' is now the fully qualified, absolute name of the
+        # module we want to import.
 
         caller = self.__last_caller.__name__ if self.__last_caller else "-"
 
@@ -477,7 +481,8 @@ class ModuleFinder:
                 print("P", end=" ")
             else:
                 print("m", end=" ")
-            print("%-35s" % name, getattr(m, "__file__", "(built-in, frozen, or namespace)"))
+            print("%-35s" % name, getattr(m, "__file__",
+                                          "(built-in, frozen, or namespace)"))
             deps = sorted(self._depgraph[name])
             text = "\n".join(textwrap.wrap(", ".join(deps)))
             print("   imported from:\n%s" % textwrap.indent(text, "      "))
@@ -501,7 +506,8 @@ class ModuleFinder:
             print()
             print("  %-35s" %
                   ("%d submodules that appear to be missing, but"
-                   " could also be global names in the parent package" % len(maybe)))
+                   " could also be global names"
+                   " in the parent package" % len(maybe)))
             print("  %-35s" %
                   "-----------------------------------------"
                   "----------------------------------------------------")
@@ -586,7 +592,8 @@ class Module:
                 source = self.__source__
                 if source is not None:
                     # XXX??? for py3exe:
-                    __file__ = self.__file__ if hasattr(self, "__file__") else "<string>"
+                    __file__ = self.__file__ \
+                               if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
                                                        optimize=self.__optimize__)
