@@ -174,6 +174,7 @@ import_module(PyObject *self, PyObject *args)
 	hmem = MyLoadLibrary(pathname, NULL, findproc);
 	if (res)
 		SetDllDirectory(NULL); // restore the default dll directory search path
+	_My_DeactivateActCtx(cookie);
 
 	if (!hmem) {
 	        char *msg;
