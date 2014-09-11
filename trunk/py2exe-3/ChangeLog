@@ -1,7 +1,17 @@
+2014-09-11    <theller@ctypes.org>
+
+	* py2exe/runtime.py Print a meaningful error message when the
+	build fails because bundle_files is too low for certain packages.
+
+2014-05-26    <theller@ctypes.org>
+
+	* py2exe/runtime.py (Runtime.bootstrap_modules): Add ctypes to the
+	modules needed for bootstrap; it is used by boot_common.
+
 2014-05-12    <theller@ctypes.org>
 
-	* Add missing DeactivateActCtx() call.
-	Change version number to 0.9.2.1.
+	* Add missing DeactivateActCtx() call.  Change version number to
+	0.9.2.1.
 
 2014-05-09    <theller@ctypes.org>
 

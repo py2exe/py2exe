@@ -119,6 +119,7 @@ class Runtime(object):
         "codecs",
         "io",
         "encodings.*",
+        "ctypes", # needed for the boot_common boot script
         }
 
     def __init__(self, options):
@@ -190,12 +191,22 @@ class Runtime(object):
         elif missing:
             mf.report_missing()
 
+        errors = []
         for name, value in self.mf.get_min_bundle().items():
             if value > self.options.bundle_files:
                 # warn if modules are know to work only for a minimum
                 # bundle_files value
-                print("OOPS:", name, value)
-                raise SystemExit(-1)
+                errors.append([name, value])
+
+        if errors:
+            print("The following modules require a minimum bundle_files option,")
+            print("otherwise they will not work.")
+            print("Currently bundle_files is set to %d:\n" % self.options.bundle_files)
+            for name, value in errors:
+                print("    %s: %s" % (name, value))
+            print("\nPlease change the bundle_files option and run the build again.")
+            print("Build failed.")
+            raise SystemExit(-1)
 
     def build(self):
         """Build everything.
@@ -574,11 +585,9 @@ class Runtime(object):
 
             code_objects.append(boot_code)
 
-            with open(target.script, "U") as script_file:
+            with open(target.script, "rb") as script_file:
                 code_objects.append(
-                    # XXX what about compiler options?
-                    # XXX what about source file encodings?
-                    compile(script_file.read() + "\n",
+                    compile(script_file.read() + b"\n",
                             os.path.basename(target.script), "exec",
                             optimize=self.options.optimize))
 
