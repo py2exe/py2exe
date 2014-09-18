@@ -14,6 +14,7 @@ import pkgutil
 import struct
 import sys
 import textwrap
+import warnings
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
@@ -95,6 +96,8 @@ class ModuleFinder:
             raise TypeError("{0} is not a package".format(name))
         for finder, modname, ispkg in pkgutil.iter_modules(package.__path__):
             self.safe_import_hook("%s.%s" % (name, modname))
+            if ispkg:
+                self.import_package("%s.%s" % (name, modname))
 
 
     def import_hook(self, name, caller=None, fromlist=(), level=0):
@@ -597,7 +600,7 @@ class Module:
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
                                                        optimize=self.__optimize__)
-                    except Exception as details:
+                    except Exception:
                         import traceback; traceback.print_exc()
                         raise RuntimeError("compiling %r" % self) from None
                 elif hasattr(self, "__file__") and not self.__file__.endswith(".pyd"):
