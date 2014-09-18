@@ -1,3 +1,8 @@
+2014-09-18    <theller@ctypes.org>
+
+	* py2exe/mf3.py (ModuleFinder.import_package): enumerate and
+	import modules from all subpackages.
+
 2014-09-11    <theller@ctypes.org>
 
 	* py2exe/runtime.py Print a meaningful error message when the
