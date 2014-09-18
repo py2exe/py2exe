@@ -8,10 +8,7 @@ from importlib.machinery import EXTENSION_SUFFIXES
 import os
 import sys
 
-if sys.version_info >= (3, 4):
-    from . mf34 import ModuleFinder
-else:
-    from . mf3 import ModuleFinder
+from . mf3 import ModuleFinder
 from . import hooks
 
 ################################

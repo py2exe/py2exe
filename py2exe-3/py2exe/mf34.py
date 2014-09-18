@@ -1,4 +1,4 @@
-#!/usr/bin/python3.4
+#!/usr/bin/python3.3
 # -*- coding: utf-8 -*-
 """ModuleFinder based on importlib
 """
@@ -14,7 +14,6 @@ import pkgutil
 import struct
 import sys
 import textwrap
-import warnings
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
@@ -23,6 +22,30 @@ STORE_NAME = bytes([dis.opname.index('STORE_NAME')])
 STORE_GLOBAL = bytes([dis.opname.index('STORE_GLOBAL')])
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
 HAVE_ARGUMENT = bytes([dis.HAVE_ARGUMENT])
+
+# Monkeypatch some missing methods in Python 3.3's NamespaceLoader
+def __patch_py33():
+    if sys.version_info < (3, 4):
+        def is_package(self, fullname):
+            return True
+
+        def get_source(self, fullname):
+            return ''
+
+        def get_code(self, fullname):
+            return compile('', '<string>', 'exec', dont_inherit=True)
+
+        def init_module_attrs(self, module):
+            module.__loader__ = self
+            module.__package__ = module.__name__
+        from importlib._bootstrap import NamespaceLoader
+        NamespaceLoader.is_package = is_package
+        NamespaceLoader.get_source = get_source
+        NamespaceLoader.get_code = get_code
+        NamespaceLoader.init_module_attrs = init_module_attrs
+
+__patch_py33()
+del __patch_py33
 
 
 class ModuleFinder:
@@ -56,11 +79,7 @@ class ModuleFinder:
         """
         assert "__SCRIPT__" not in sys.modules
         ldr = importlib.machinery.SourceFileLoader("__SCRIPT__", path)
-        if sys.version_info >= (3, 4):
-            spec = importlib.machinery.ModuleSpec("__SCRIPT__", ldr)
-            mod = Module(spec, "__SCRIPT__", self._optimize)
-        else:
-            mod = Module(ldr, "__SCRIPT__", self._optimize)
+        mod = Module(ldr, "__SCRIPT__", self._optimize)
         # Do NOT add it...
         # self._add_module("__SCRIPT__", mod)
         self._scan_code(mod.__code__, mod)
@@ -76,8 +95,6 @@ class ModuleFinder:
             raise TypeError("{0} is not a package".format(name))
         for finder, modname, ispkg in pkgutil.iter_modules(package.__path__):
             self.safe_import_hook("%s.%s" % (name, modname))
-            if ispkg:
-                self.import_package("%s.%s" % (name, modname))
 
 
     def import_hook(self, name, caller=None, fromlist=(), level=0):
@@ -281,27 +298,14 @@ class ModuleFinder:
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)
                 raise ImportError(msg, name=name)
-        try:
-            spec = importlib.util.find_spec(name, path)
-        except ValueError as details:
-            # workaround for the .pth file for namespace packages that
-            # setuptools installs.  The pth file inserts a 'damaged'
-            # module into sys.modules: it has no __spec__.  Reloading
-            # the module helps (at least in Python3.4).
-            if details.args[0] == '{}.__spec__ is None'.format(name):
-                import imp
-                _ = __import__(name, path)
-                imp.reload(_)
-                spec = importlib.util.find_spec(name, path)
-            else:
-                raise
-        if spec is None:
+        loader = importlib.find_loader(name, path)
+        if loader is None:
             self._add_badmodule(name)
             raise ImportError(name)
         elif name not in self.modules:
             # The parent import may have already imported this module.
             try:
-                self._load_module(spec, name)
+                self._load_module(loader, name)
             except ImportError:
                 self._add_badmodule(name)
                 raise
@@ -331,8 +335,8 @@ class ModuleFinder:
         self.modules[name] = mod
 
 
-    def _load_module(self, spec, name):
-        mod = Module(spec, name, self._optimize)
+    def _load_module(self, loader, name):
+        mod = Module(loader, name, self._optimize)
         self._add_module(name, mod)
         if name in self._package_paths:
             mod.__path__.extend(self._package_paths[name])
@@ -477,10 +481,8 @@ class ModuleFinder:
                 print("P", end=" ")
             else:
                 print("m", end=" ")
-            if m.__spec__.has_location and hasattr(m, "__file__"):
-                print("%-35s" % name, getattr(m, "__file__"))
-            else:
-                print("%-35s" % name, "(%s)" % m.__spec__.origin)
+            print("%-35s" % name, getattr(m, "__file__",
+                                          "(built-in, frozen, or namespace)"))
             deps = sorted(self._depgraph[name])
             text = "\n".join(textwrap.wrap(", ".join(deps)))
             print("   imported from:\n%s" % textwrap.indent(text, "      "))
@@ -547,15 +549,13 @@ class Module:
                 extension modules)
     """
 
-    def __init__(self, spec, name, optimize):
+    def __init__(self, loader, name, optimize):
         self.__optimize__ = optimize
         self.__globalnames__ = set()
 
         self.__name__ = name
-        self.__spec__ = spec
+        self.__loader__ = loader
         self.__code_object__ = None
-
-        loader = self.__loader__ = spec.loader
 
         if hasattr(loader, "get_filename"):
             # python modules
@@ -569,9 +569,6 @@ class Module:
             self.__file__ = fnm
             if loader.is_package(name):
                 self.__path__ = [os.path.dirname(fnm)]
-        elif spec.origin == "namespace":
-            # namespace modules have no loader
-            self.__path__ = spec.submodule_search_locations
         else:
             # frozen or builtin modules
             if loader.is_package(name):
@@ -588,12 +585,13 @@ class Module:
 
     @property
     def __code__(self):
-        if self.__code_object__ is None and self.__loader__ is not None:
+        if self.__code_object__ is None:
             if self.__optimize__ == sys.flags.optimize:
                 self.__code_object__ = self.__loader__.get_code(self.__name__)
             else:
                 source = self.__source__
                 if source is not None:
+                    # XXX??? for py3exe:
                     __file__ = self.__file__ \
                                if hasattr(self, "__file__") else "<string>"
                     try:
