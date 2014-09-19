@@ -1,3 +1,56 @@
+Important Bugs:
+
+- Fix these 'ValueError: __loader__ is None' errors.
+
+  These occur when ModuleFinder encounters an implicit namespace
+  package.
+
+  First step: Catch this case and display a message (which includes
+  the package name) that namespace packages are not yet supported.
+
+  Second step: Make namespace packages work.  Actually they occur in
+  two separate cases - the first one is matplotlib.mpl_toolkit which
+  is a real namespace package becuase it has no __init__.py file.  The
+  second case is zope.interface or wheezy.template, these packages
+  have an __init__.py file in the sources, but setuptools installs a
+  xxx-nspkg.pth file which puts an strange module into sys.modules
+  even if nothing is imported.
+
+  See also messages to the py2exe mailing list, and
+  https://www.mail-archive.com/distutils-sig@python.org/msg20307.html
+  as well as
+  http://sourceforge.net/p/py2exe/bugs/136/
+
+- Packages that use cffi do not work.
+
+  Example: cryptography (which is use by OpenSSL).  The reason is that
+  cffi uses imp.find_module() and later imp.load_dynamic() (in
+  cffi.vengine_ypi.VCPythonEngine). These do only work for files
+  and not for zipimport.
+  pyInstaller has a hook that seems to work.  Can it be adapted for py2exe,
+  or do we need to patch cffi at runtime?
+
+- tkinter programs will not build in virtual environments.
+
+  The problem is that the tcl directory in the system installation is
+  used; there is only a init.tcl file present in the virtual
+  environment.  How can we detect this case and find the correct files
+  to copy?
+
+- Implement a separate modulefinder for Python 3.4 and above which
+  uses the PEP451 ModuleSpec type and avoids calling deprecated apis.
+
+- ModuleFinder.import_package() should either work recursively (have
+  to check what py2exe for Python2 does) or get a receursive
+  parameter.
+
+- Does probably not work with extensions built against the limited API
+  (python3.dll)???
+
+================================================================
+================================================================
+Have to check which of the following is still needed:
+
 Bugs:
 
 - debug the 'verbose' argument to py2exe.  It defaults to 1, using
@@ -12,9 +65,6 @@ Bugs:
 - distutils catches errors different from DistutilsError (or so)
 
 - distutils_buildexe needs to import DistutilsOptionError (or so)
-
-- Does probably not work with extensions built against the limited API
-  (python3.dll)???
 
 - py2exe for Python2 used an 'uac_info' string (exec_level) or tuple
   (exec_level, ui_access) attribute on the Target to include or patch
@@ -32,12 +82,18 @@ Ideas:
 -     dump_manifest.py
 -     dump_versioninfo.py
 - or even a general resource dumper?
+- or even a py2exe dumper?
 
 TODO:
 
 - services cmdline_style not yet implemented
 
+================================================================
+
 Fixed bugs:
+
+  (The version numbers up tp 380 are probably from the former repository at
+   https://ctypes-stuff.googlecode.com/svn/trunk/mf)
 
   rev 380: - ctypes DLL COM servers can now load dlls (like sqlite3.dll) correctly.
   rev 343: - DLL com servers are now implemented
