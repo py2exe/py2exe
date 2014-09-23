@@ -30,6 +30,8 @@ Important Bugs:
   pyInstaller has a hook that seems to work.  Can it be adapted for py2exe,
   or do we need to patch cffi at runtime?
 
+- py2exe does not detect imports from six.moves.
+
 - tkinter programs will not build in virtual environments.
 
   The problem is that the tcl directory in the system installation is
@@ -40,14 +42,18 @@ Important Bugs:
 - Implement a separate modulefinder for Python 3.4 and above which
   uses the PEP451 ModuleSpec type and avoids calling deprecated apis.
 
-- ModuleFinder.import_package() should either work recursively (have
-  to check what py2exe for Python2 does) or get a receursive
-  parameter.
-
 - Does probably not work with extensions built against the limited API
   (python3.dll)???
 
 ================================================================
+
+Fixed in rev. 751: Enumerate subpackages and import all modules from
+the recursively:
+
+    - ModuleFinder.import_package() should either work recursively
+      (have to check what py2exe for Python2 does) or get a receursive
+      parameter.
+
 ================================================================
 Have to check which of the following is still needed:
 
