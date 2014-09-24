@@ -1,5 +1,11 @@
 2014-09-24    <theller@ctypes.org>
 
+	* py2exe/dllfinder.py: Add Scanner.add_bootcode(code) method.  The
+	runtime compiles the code and adds it to the bootstrap code
+	sequences.  This enables the hooks to do more fancy stuff.
+
+2014-09-24    <theller@ctypes.org>
+
 	* Fix the 'ValueError: __loader__ is None' exception when a PEP
 	420 implicit namespace package is encountered.
 

@@ -562,6 +562,12 @@ class Runtime(object):
                           optimize=self.options.optimize)
             code_objects.append(obj)
 
+        for text in self.mf._boot_code:
+            code_objects.append(
+                compile(text,
+                        "<boot hacks>", "exec",
+                        optimize=self.options.optimize))
+
         if target.exe_type == "service":
             # code for services
             # cmdline_style is one of:
