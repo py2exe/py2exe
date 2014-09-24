@@ -200,8 +200,8 @@ class Runtime(object):
 
         if errors:
             print("The following modules require a minimum bundle_files option,")
-            print("otherwise they will not work.")
-            print("Currently bundle_files is set to %d:\n" % self.options.bundle_files)
+            print("otherwise they will not work (currently bundle_files is set to %d):"
+                  % self.options.bundle_files)
             for name, value in errors:
                 print("    %s: %s" % (name, value))
             print("\nPlease change the bundle_files option and run the build again.")

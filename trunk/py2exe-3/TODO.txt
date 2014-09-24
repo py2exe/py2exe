@@ -5,8 +5,9 @@ Important Bugs:
   These occur when ModuleFinder encounters an implicit namespace
   package.
 
-  First step: Catch this case and display a message (which includes
-  the package name) that namespace packages are not yet supported.
+  Fixed in rev. 755:
+   First step: Catch this case and display a message (which includes
+   the package name) that namespace packages are not yet supported.
 
   Second step: Make namespace packages work.  Actually they occur in
   two separate cases - the first one is matplotlib.mpl_toolkit which
@@ -32,13 +33,6 @@ Important Bugs:
 
 - py2exe does not detect imports from six.moves.
 
-- tkinter programs will not build in virtual environments.
-
-  The problem is that the tcl directory in the system installation is
-  used; there is only a init.tcl file present in the virtual
-  environment.  How can we detect this case and find the correct files
-  to copy?
-
 - Implement a separate modulefinder for Python 3.4 and above which
   uses the PEP451 ModuleSpec type and avoids calling deprecated apis.
 
@@ -47,12 +41,16 @@ Important Bugs:
 
 ================================================================
 
-Fixed in rev. 751: Enumerate subpackages and import all modules from
-the recursively:
 
-    - ModuleFinder.import_package() should either work recursively
-      (have to check what py2exe for Python2 does) or get a receursive
-      parameter.
+Fixed in rev. 755: When running in a virtual environment, py2exe did
+      not copy the tcl/tk files when 'import tkinter' is detected.
+
+Fixed in rev. 755: When ModuleFinder encounters a PEP 420 implicit
+      namespace package 'ValueError: __loader__ is None' exception is
+      no longer raised; instead an error message is printed.
+
+Fixed in rev. 751: ModuleFinder.import_package enumerates subpackages
+      and imports modules from them recursively.
 
 ================================================================
 Have to check which of the following is still needed:

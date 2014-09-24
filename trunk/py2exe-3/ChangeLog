@@ -1,3 +1,13 @@
+2014-09-24    <theller@ctypes.org>
+
+	* Fix the 'ValueError: __loader__ is None' exception when a PEP
+	420 implicit namespace package is encountered.
+
+	* Fixed: When running in a virtual environment, py2exe did
+	not copy the tcl/tk files when 'import tkinter' is detected.
+
+	* Ignore 'numpy.core._dotblas' when numpy.core is imported.
+
 2014-09-18    <theller@ctypes.org>
 
 	* py2exe/mf3.py (ModuleFinder.import_package): enumerate and

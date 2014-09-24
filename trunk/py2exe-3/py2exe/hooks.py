@@ -158,7 +158,9 @@ def hook_tkinter(finder, module):
     """
     # It probably doesn't make sense to exclude tix from the tcl distribution,
     # and only copy it when tkinter.tix is imported...
-    tcl_dir = os.path.join(sys.prefix, "tcl")
+    import tkinter._fix as fix
+    tcl_dir = os.path.normpath(os.path.join(fix.tcldir, ".."))
+    assert os.path.isdir(tcl_dir)
     finder.add_datadirectory("tcl", tcl_dir, recursive=True)
     finder.set_min_bundle("tkinter", 2)
 
@@ -166,7 +168,7 @@ def hook_PySide(finder, module):
     finder.set_min_bundle("PySide", 3)
 
 def hook_six(finder, module):
-    """six.py is a python2/python3 compaibility library.  Exclude the
+    """six.py is a python2/python3 compatibility library.  Exclude the
     python2 modules.
     """
     finder.ignore("StringIO")
@@ -180,6 +182,8 @@ def hook_matplotlib(finder, module):
                                  "mpl-data")
     finder.add_datadirectory("mpl-data", mpl_data_path, recursive=True)
     finder.excludes.append("wx")
+    # XXX matplotlib requires tkinter which modulefinder does not
+    # detect because of the six bug.
 
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
@@ -345,3 +349,6 @@ def hook_numpy_core_numerictypes(finder, module):
     module.__globalnames__.add("int32")
     module.__globalnames__.add("number")
     module.__globalnames__.add("single")
+
+def hook_numpy_core(finder, module):
+    finder.ignore("numpy.core._dotblas")

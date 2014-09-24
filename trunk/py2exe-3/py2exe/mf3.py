@@ -301,7 +301,24 @@ class ModuleFinder:
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)
                 raise ImportError(msg, name=name)
-        loader = importlib.find_loader(name, path)
+        try:
+            loader = importlib.find_loader(name, path)
+        except ValueError as details:
+            # Python 3.4 raises this error for namespace packages
+            if str(details) == "{}.__loader__ is None".format(name):
+                msg = "Error: Namespace packages are not yet supported: Skipping package {!r}"
+                print(msg.format(name))
+                loader = None
+            else:
+                raise
+        except AttributeError as details:
+            # Python 3.3 raises this error for namespace packages
+            if details.args == ("'module' object has no attribute '__loader__'",):
+                msg = "Error: Namespace packages are not yet supported: Skipping package {!r}"
+                print(msg.format(name))
+                loader = None
+            else:
+                raise
         if loader is None:
             self._add_badmodule(name)
             raise ImportError(name)
