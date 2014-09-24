@@ -186,7 +186,12 @@ class Scanner(ModuleFinder):
         self._min_bundle = {}
         self._import_package_later = []
         self._safe_import_hook_later = []
+        self._boot_code = []
         hooks.init_finder(self)
+
+    def add_bootcode(self, code):
+        """Add some code that the exe will execute when bootstrapping."""
+        self._boot_code.append(code)
 
     def set_min_bundle(self, name, value):
         self._min_bundle[name] = value

@@ -306,7 +306,7 @@ class ModuleFinder:
         except ValueError as details:
             # Python 3.4 raises this error for namespace packages
             if str(details) == "{}.__loader__ is None".format(name):
-                msg = "Error: Namespace packages are not yet supported: Skipping package {!r}"
+                msg = "Error: Namespace packages not yet supported: Skipping package {!r}"
                 print(msg.format(name))
                 loader = None
             else:
@@ -314,7 +314,7 @@ class ModuleFinder:
         except AttributeError as details:
             # Python 3.3 raises this error for namespace packages
             if details.args == ("'module' object has no attribute '__loader__'",):
-                msg = "Error: Namespace packages are not yet supported: Skipping package {!r}"
+                msg = "Error: Namespace packages not yet supported: Skipping package {!r}"
                 print(msg.format(name))
                 loader = None
             else:
@@ -344,7 +344,6 @@ class ModuleFinder:
             self._scan_code(module.__code__, module)
 
         return module
-
 
     def _add_badmodule(self, name):
         if name not in self.ignores:
