@@ -569,13 +569,18 @@ class Runtime(object):
                         optimize=self.options.optimize))
 
         if target.exe_type == "service":
+
+            cmdline_style = getattr(target, "cmdline_style", "py2exe")
+            if cmdline_style not in ["py2exe", "pywin32", "custom"]:
+                raise RuntimeError("cmdline_handler invalid")
+
             # code for services
             # cmdline_style is one of:
             # py2exe
             # pywin32
             # custom
             code_objects.append(
-                compile("cmdline_style = 'py2exe'; service_module_names = %r" % (target.modules,),
+                compile("cmdline_style = %r; service_module_names = %r" % (cmdline_style, target.modules,),
                         "<service_info>", "exec",
                         optimize=self.options.optimize))
 
@@ -618,7 +623,7 @@ class Runtime(object):
 LOAD_FROM_DIR = r"""\
 def __load():
     import imp, os
-    dllpath = os.path.join(os.path.dirname(__loader__.archive), '{0}')
+    dllpath = os.path.join(os.path.dirname(__loader__.archive), r'{0}')
     try:
         mod = imp.load_dynamic(__name__, dllpath)
     except ImportError as details:
