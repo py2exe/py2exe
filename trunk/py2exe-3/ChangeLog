@@ -1,3 +1,8 @@
+2014-10-16    <theller@ctypes.org>
+
+	* py2exe/boot_service.py: Fix bug in error handling code.
+	cmdline_style = "pywin32" should now work for services.
+
 2014-09-24    <theller@ctypes.org>
 
 	* py2exe/dllfinder.py: Add Scanner.add_bootcode(code) method.  The

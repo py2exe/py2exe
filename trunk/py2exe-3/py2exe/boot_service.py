@@ -179,7 +179,7 @@ elif cmdline_style == "pywin32":
         try:
             servicemanager.StartServiceCtrlDispatcher()
         except win32service.error as details:
-            if details[0] == winerror.ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+            if details.winerror == winerror.ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
                 win32serviceutil.usage()
     else:
         win32serviceutil.HandleCommandLine(k)
@@ -192,7 +192,7 @@ elif cmdline_style == "custom":
         try:
             servicemanager.StartServiceCtrlDispatcher()
         except win32service.error as details:
-            if details[0] == winerror.ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
+            if details.winerror == winerror.ERROR_FAILED_SERVICE_CONTROLLER_CONNECT:
                 win32serviceutil.usage()
     else:
         # assume/insist that the module provides a HandleCommandLine function.
