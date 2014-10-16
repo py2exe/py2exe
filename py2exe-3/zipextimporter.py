@@ -84,7 +84,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
             return mod
         try:
             return zipimport.zipimporter.load_module(self, fullname)
-        except Exception:
+        except ImportError:
             pass
         if sys.version_info >= (3, 0):
             # name of initfunction
