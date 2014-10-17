@@ -407,7 +407,9 @@ class Runtime(object):
         arc = zipfile.ZipFile(libpath, "a",
                               compression=compression)
 
-        for mod in self.mf.modules.values():
+        # The same modules may be in self.ms.modules under different
+        # keys; we only need one of them in the archive.
+        for mod in set(self.mf.modules.values()):
             if mod.__code__:
                 if hasattr(mod, "__path__"):
                     path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix

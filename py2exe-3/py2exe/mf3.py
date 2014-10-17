@@ -291,13 +291,26 @@ class ModuleFinder:
                 return self.modules[name]
             # Backwards-compatibility; be nicer to skip the dict lookup.
             parent_module = self.modules[parent]
+
+            try:
+                # try lazy imports via attribute access (six.moves
+                # does this)...
+                getattr(parent_module, name.rpartition('.')[2])
+                module = self.modules[name]
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if hasattr(module, "__code__"):
+                    self._scan_code(module.__code__, module)
+                return module
+
             try:
                 path = parent_module.__path__
             except AttributeError:
-                # this fixes 'import os.path'. Does it create other problems?
-                child = name.rpartition('.')[2]
-                if child in parent_module.__globalnames__:
-                    return parent_module
+                ## # this fixes 'import os.path'. Does it create other problems?
+                ## child = name.rpartition('.')[2]
+                ## if child in parent_module.__globalnames__:
+                ##     return parent_module
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)
                 raise ImportError(msg, name=name)
@@ -588,7 +601,7 @@ class Module:
             self.__file__ = fnm
             if loader.is_package(name):
                 self.__path__ = [os.path.dirname(fnm)]
-        else:
+        elif hasattr(loader, "is_package"):
             # frozen or builtin modules
             if loader.is_package(name):
                 self.__path__ = [name]
@@ -697,6 +710,11 @@ def usage(script):
         --summary
             Print a single line listing how many modules were found
             and how many modules are missing
+
+        -m
+        --missing
+            Print detailed report about missing modules
+
     """
 
     text = textwrap.dedent(helptext.format(os.path.basename(script)))
@@ -706,7 +724,7 @@ def main():
     import getopt
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "x:f:hi:Op:rsv",
+                                       "x:f:hi:Op:rsvm",
                                        ["exclude=",
                                         "from=",
                                         "help",
@@ -716,6 +734,7 @@ def main():
                                         "report",
                                         "summary",
                                         "verbose",
+                                        "missing",
                                         ])
     except getopt.GetoptError as err:
         print("Error: %s." % err)
@@ -729,6 +748,7 @@ def main():
     optimize = 0
     summary = 0
     packages = []
+    missing = 0
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(sys.argv[0])
@@ -749,6 +769,8 @@ def main():
             summary = 1
         elif o in ("-p", "--package"):
             packages.append(a)
+        elif o in ("-m", "--missing"):
+            missing = 1
 
     mf = ModuleFinder(
         excludes=excludes,
@@ -767,6 +789,8 @@ def main():
         mf.run_script(path)
     if report:
         mf.report()
+    if missing:
+        mf.report_missing()
     if summary:
         mf.report_summary()
     for modname in show_from:

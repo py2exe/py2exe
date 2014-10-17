@@ -262,10 +262,45 @@ def hook_tkinter(finder, module):
     finder.set_min_bundle("tkinter", 2)
 
 def hook_six(finder, module):
-    """six.py is a python2/python3 compatibility library.  Exclude the
-    python2 modules.
+    """six.py has an object 'moves'. This allows to import
+    modules/packages via attribute access under new names.
+
+    We install a fake module named 'six.moves' which simulates this
+    behaviour.
     """
-    finder.ignore("StringIO")
+
+    class SixImporter(type(module)):
+        """Simulate six.moves.
+
+        Import renamed modules when retrived as attributes.
+        """
+
+        __code__ = None
+
+        def __init__(self, mf, *args, **kw):
+            import six
+            self.__moved_modules = {item.name: item.mod
+                                    for item in six._moved_attributes
+                                    if isinstance(item, six.MovedModule)}
+            super().__init__(*args, **kw)
+            self.__finder = mf
+
+        def __getattr__(self, name):
+            if name in self.__moved_modules:
+                renamed = self.__moved_modules[name]
+                self.__finder.safe_import_hook(renamed, caller=self)
+                mod = self.__finder.modules[renamed]
+                # add the module again with the renamed name:
+                self.__finder._add_module("six.moves." + name, mod)
+                return mod
+            else:
+                raise AttributeError(name)
+
+    m = SixImporter(finder,
+                    None, "six.moves", finder._optimize)
+    finder._add_module("six.moves", m)
+    
+
 
 def hook_matplotlib(finder, module):
     """matplotlib requires data files in a 'mpl-data' subdirectory in
