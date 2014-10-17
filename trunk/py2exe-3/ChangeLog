@@ -1,5 +1,11 @@
 2014-10-17    <theller@ctypes.org>
 
+	* py2exe/hooks.py: Add hook for the six compatibility
+	library. py2exe does now understand the renaming of
+	modules/packages the six.py does.
+
+2014-10-17    <theller@ctypes.org>
+
 	* py2exe/hooks.py: Add hooks for pycparser, OpenSSL, cffi.  cffi
 	needs some hacks so that it works from within zipfiles.
 
