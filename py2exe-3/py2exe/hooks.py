@@ -164,9 +164,6 @@ def hook_tkinter(finder, module):
     finder.add_datadirectory("tcl", tcl_dir, recursive=True)
     finder.set_min_bundle("tkinter", 2)
 
-def hook_PySide(finder, module):
-    finder.set_min_bundle("PySide", 3)
-
 def hook_six(finder, module):
     """six.py is a python2/python3 compatibility library.  Exclude the
     python2 modules.
