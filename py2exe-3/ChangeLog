@@ -1,5 +1,10 @@
 2014-10-17    <theller@ctypes.org>
 
+	* py2exe/hooks.py: Add hooks for pycparser, OpenSSL, cffi.  cffi
+	needs some hacks so that it works from within zipfiles.
+
+2014-10-17    <theller@ctypes.org>
+
 	* py2exe/hooks.py: Remove hook_pyside.
 
 2014-10-16    <theller@ctypes.org>
