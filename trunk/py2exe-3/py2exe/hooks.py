@@ -56,14 +56,111 @@ def init_finder(finder):
     finder.ignore("commands")
     finder.ignore("compiler")
     finder.ignore("copy_reg")
+    finder.ignore("dummy_thread")
     finder.ignore("future_builtins")
     finder.ignore("htmlentitydefs")
     finder.ignore("httplib")
     finder.ignore("md5")
     finder.ignore("new")
+    finder.ignore("thread")
     finder.ignore("unittest2")
     finder.ignore("urllib2")
     finder.ignore("urlparse")
+
+def hook_pycparser(finder, module):
+    """pycparser needs lextab.py and yacctab.py which are not picked
+    up automatically.  Make sure the complete package is included;
+    otherwise the exe-files may create yacctab.py and lextab.py when
+    they are run.
+    """
+    finder.import_package_later("pycparser")
+
+def hook_pycparser__build_tables(finder, module):
+    finder.ignore("lextab")
+    finder.ignore("yacctab")
+    finder.ignore("_ast_gen")
+    finder.ignore("c_ast")
+
+def hook_pycparser_ply(finder, module):
+    finder.ignore("lex")
+    finder.ignore("ply")
+
+def hook_OpenSSL(finder, module):
+    """OpenSSL needs the cryptography package."""
+    finder.import_package_later("cryptography")
+
+def hook_cffi_cparser(finder, module):
+    finder.ignore("cffi._pycparser")
+
+def hook_cffi(finder, module):
+    # We need to patch two methods in the
+    # cffi.vengine_cpy.VCPythonEngine class so that cffi libraries
+    # work from within zip-files.
+    finder.add_bootcode("""
+def patch_cffi():
+    def find_module(self, module_name, path, so_suffixes):
+        import sys
+        name = "%s.%s" % (self.verifier.ext_package, module_name)
+        try:
+            __import__(name)
+        except ImportError:
+            return None
+        self.__module = mod = sys.modules[name]
+        return mod.__file__
+
+    def load_library(self):
+        from cffi import ffiplatform
+        import sys
+        # XXX review all usages of 'self' here!
+        # import it as a new extension module
+        module = self.__module
+        #
+        # call loading_cpy_struct() to get the struct layout inferred by
+        # the C compiler
+        self._load(module, 'loading')
+        #
+        # the C code will need the <ctype> objects.  Collect them in
+        # order in a list.
+        revmapping = dict([(value, key)
+                           for (key, value) in self._typesdict.items()])
+        lst = [revmapping[i] for i in range(len(revmapping))]
+        lst = list(map(self.ffi._get_cached_btype, lst))
+        #
+        # build the FFILibrary class and instance and call _cffi_setup().
+        # this will set up some fields like '_cffi_types', and only then
+        # it will invoke the chained list of functions that will really
+        # build (notably) the constant objects, as <cdata> if they are
+        # pointers, and store them as attributes on the 'library' object.
+        class FFILibrary(object):
+            _cffi_python_module = module
+            _cffi_ffi = self.ffi
+            _cffi_dir = []
+            def __dir__(self):
+                return FFILibrary._cffi_dir + list(self.__dict__)
+        library = FFILibrary()
+        if module._cffi_setup(lst, ffiplatform.VerificationError, library):
+            import warnings
+            warnings.warn("reimporting %r might overwrite older definitions"
+                          % (self.verifier.get_module_name()))
+        #
+        # finally, call the loaded_cpy_xxx() functions.  This will perform
+        # the final adjustments, like copying the Python->C wrapper
+        # functions from the module to the 'library' object, and setting
+        # up the FFILibrary class with properties for the global C variables.
+        self._load(module, 'loaded', library=library)
+        module._cffi_original_ffi = self.ffi
+        module._cffi_types_of_builtin_funcs = self._types_of_builtin_functions
+        return library
+
+
+    from cffi.vengine_cpy import VCPythonEngine
+
+    VCPythonEngine.find_module = find_module
+    VCPythonEngine.load_library = load_library
+
+patch_cffi()
+del patch_cffi
+""")
     
 
 def hook_multiprocessing(finder, module):
