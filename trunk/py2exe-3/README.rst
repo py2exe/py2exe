@@ -11,6 +11,14 @@ http://sourceforge.net/project/showfiles.php?group_id=15583.
 
 .. contents::
 
+Changes
+-------
+
+Version 0.9.2.2: Added support for six, cffi, pycparser, openssl.
+Support cmdline_style ("py2exe", "pywin32", "custom") again for
+windows services.
+Several bugfixes, better error messages.
+
 
 News
 ----
