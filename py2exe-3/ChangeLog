@@ -1,3 +1,7 @@
+2014-10-21    <theller@ctypes.org>
+
+	* Released py2exe 0.9.2.2.
+
 2014-10-17    <theller@ctypes.org>
 
 	* py2exe/hooks.py: Add hook for the six compatibility
