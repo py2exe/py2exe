@@ -84,9 +84,18 @@ class DllFinder:
         """Call BindImageEx and collect all dlls that are bound.
         """
         # XXX Should cache results!
+        import platform
+        if platform.architecture()[0]=="32bit":
+            pth = ";".join([p for p in os.environ["PATH"].split(';') if not "intel64_win" in p])
+        elif platform.architecture()[0]=="64bit":
+            pth = ";".join([p for p in os.environ["PATH"].split(';') if not "ia32_win" in p])
+        else:
+            pth = os.environ["PATH"]
+            
+        #import pdb;pdb.set_trace()
         path = ";".join([os.path.dirname(imagename),
                          os.path.dirname(sys.executable),
-                         os.environ["PATH"]])
+                         pth])
         result = set()
 
         @_wapi.PIMAGEHLP_STATUS_ROUTINE
@@ -278,4 +287,4 @@ if __name__ == "__main__":
 
     scanner = Scanner()
     scanner.import_package("numpy")
-    scanner.report_dlls()
+    print(scanner.all_dlls())

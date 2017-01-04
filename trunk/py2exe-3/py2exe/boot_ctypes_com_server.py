@@ -66,6 +66,7 @@ def build_class_map():
         # dump each class
         for cls in get_classes(mod):
             classmap[cls._reg_clsid_] = cls
+    #print("build_class_map: ",classmap)
     import comtypes.server.inprocserver
     comtypes.server.inprocserver._clsid_to_class = classmap
 build_class_map()

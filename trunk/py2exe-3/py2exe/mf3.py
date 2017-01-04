@@ -17,12 +17,12 @@ import textwrap
 import warnings
 
 # XXX Clean up once str8's cstor matches bytes.
-LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
-IMPORT_NAME = bytes([dis.opname.index('IMPORT_NAME')])
-STORE_NAME = bytes([dis.opname.index('STORE_NAME')])
-STORE_GLOBAL = bytes([dis.opname.index('STORE_GLOBAL')])
+LOAD_CONST = dis.opname.index('LOAD_CONST')
+IMPORT_NAME = dis.opname.index('IMPORT_NAME')
+STORE_NAME = dis.opname.index('STORE_NAME')
+STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
-HAVE_ARGUMENT = bytes([dis.HAVE_ARGUMENT])
+HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
 # Monkeypatch some missing methods in Python 3.3's NamespaceLoader
 def __patch_py33():
@@ -317,11 +317,43 @@ class ModuleFinder:
         try:
             loader = importlib.find_loader(name, path)
         except ValueError as details:
+            # XXX XXX XXX
+            # namespace modules only have these attributes (in Python 3.4, when
+            # a xxx.pth file is present in Lib/site-packages:
+            #
+            # __doc__: 	        None
+            # __loader__:       None
+            # __name__:         <the module name>
+            # __package__:      None
+            # __path__:         [<the directory name>]
+            # __spec__:         None
+            #
+            #
+            # When the xxx.pth file is NOT present:
+            #
+            # __doc__: 	        None
+            # __loader__:       <_frozen_importlib._NamespaceLoader object at ...>
+            # __name__:         <the module name>
+            # __package__:      <the module name>
+            # __path__:         <_NamespacePath([<the directory name>]>
+            # __spec__:         ModuleSpec(name=<module_name>, origin='namespace',
+            #                              submodule_search_locations=_NamespacePath([<dir name>]))
+
             # Python 3.4 raises this error for namespace packages
             if str(details) == "{}.__loader__ is None".format(name):
-                msg = "Error: Namespace packages not yet supported: Skipping package {!r}"
-                print(msg.format(name))
-                loader = None
+                ## msg = "Error: Namespace packages not yet supported: Skipping package {!r}"
+                from importlib._bootstrap import _NamespaceLoader
+                ## print(msg.format(name))
+                ## loader = None
+                loader = _NamespaceLoader(name, path, None)
+                self._load_module(loader, name)
+                mod = self.modules[name]
+                real_mod = __import__(name)
+                print("PATH", path)
+                print("__path__", dir(real_mod))
+                mod.__path__ = real_mod.__path__
+                for n in dir(mod):
+                    print(n, getattr(mod, n))
             else:
                 raise
         except AttributeError as details:
@@ -406,26 +438,43 @@ class ModuleFinder:
         Scan the code object, and yield 'interesting' opcode combinations
 
         """
-        code = co.co_code
-        names = co.co_names
-        consts = co.co_consts
-        LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
-        while code:
-            c = bytes([code[0]])
-            if c in STORE_OPS:
-                oparg, = unpack('<H', code[1:3])
-                yield "store", (names[oparg],)
-                code = code[3:]
-                continue
-            if code[:9:3] == LOAD_LOAD_AND_IMPORT:
-                oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
-                yield "import", (consts[oparg_1], consts[oparg_2], names[oparg_3])
-                code = code[9:]
-                continue
-            if c >= HAVE_ARGUMENT:
-                code = code[3:]
-            else:
-                code = code[1:]
+        if hasattr(dis, "get_instructions"):
+            # dis.get_instructions() is only available in python 3.4
+            # and higher
+            instructions = []
+            for inst in dis.get_instructions(co):
+                instructions.append(inst)
+                c = inst.opcode
+                if c == IMPORT_NAME:
+                    assert instructions[-3].opcode == LOAD_CONST
+                    level = instructions[-3].argval
+                    assert instructions[-2].opcode == LOAD_CONST
+                    fromlist = instructions[-2].argval
+                    name = inst.argval
+                    yield "import", (level, fromlist, name)
+                elif c in STORE_OPS:
+                    yield "store", (inst.argval,)
+        else:
+            code = co.co_code
+            names = co.co_names
+            consts = co.co_consts
+            LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
+            while code:
+                c = code[0]
+                if c in STORE_OPS:
+                    oparg, = unpack('<H', code[1:3])
+                    yield "store", (names[oparg],)
+                    code = code[3:]
+                    continue
+                if code[:9:3] == LOAD_LOAD_AND_IMPORT:
+                    oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
+                    yield "import", (consts[oparg_1], consts[oparg_2], names[oparg_3])
+                    code = code[9:]
+                    continue
+                if c >= HAVE_ARGUMENT:
+                    code = code[3:]
+                else:
+                    code = code[1:]
 
     def ignore(self, name):
         """If the module or package with the given name is not found,
@@ -621,7 +670,11 @@ class Module:
             if self.__optimize__ == sys.flags.optimize:
                 self.__code_object__ = self.__loader__.get_code(self.__name__)
             else:
-                source = self.__source__
+                try:
+                    source = self.__source__
+                except Exception:
+                    import traceback; traceback.print_exc()
+                    raise RuntimeError("loading %r" % self) from None
                 if source is not None:
                     # XXX??? for py3exe:
                     __file__ = self.__file__ \
