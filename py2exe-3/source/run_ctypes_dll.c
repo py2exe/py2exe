@@ -93,7 +93,7 @@ int load_ctypes(void)
 	char dll_path[_MAX_PATH+_MAX_FNAME+1];
 	wchar_t ctypes_path[_MAX_PATH+_MAX_FNAME+1];
 	wchar_t * temp=NULL;
-	int length=0;
+	size_t length=0;
 	// shouldn't do this twice
 	assert(g_ctypes == NULL);
 
