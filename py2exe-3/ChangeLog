@@ -1,3 +1,9 @@
+2017-01-04    <theller@ctypes.org>
+
+	* Updates from upstream version, adds compatibility with Python
+	3.5 and 3.6.
+	Version number 0.9.2.5.
+
 2014-10-21    <theller@ctypes.org>
 
 	* Released py2exe 0.9.2.2.
