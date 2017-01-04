@@ -55,6 +55,11 @@ int *_Py_VerboseFlag_PTR()
   DATA(int *, Py_VerboseFlag);
 }
 
+char **__Py_PackageContext_PTR()
+{
+  DATA(char **, _Py_PackageContext);
+}
+
 ////////////////////////////////////////////////////////////////
 
 int Py_IsInitialized(void)

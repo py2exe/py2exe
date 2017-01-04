@@ -198,7 +198,8 @@ HMODULE MyGetModuleHandle(LPCSTR name)
 	if (lib)
 		return lib->module;
 	SetLastError(0);
-	return GetModuleHandle(name);
+    return NULL;
+	//return GetModuleHandle(name);
 }
 
 HMODULE MyLoadLibrary(LPCSTR name, void *bytes, void *userdata)

@@ -326,6 +326,7 @@ def hook_numpy(finder, module):
     finder.ignore("nose")
     finder.ignore("scipy")
 
+    
 def hook_nose(finder, module):
     finder.ignore("IronPython")
     finder.ignore("cStringIO")
@@ -481,3 +482,45 @@ def hook_numpy_core_numerictypes(finder, module):
 
 def hook_numpy_core(finder, module):
     finder.ignore("numpy.core._dotblas")
+    numpy_core_path = os.path.dirname(module.__loader__.path)
+    #add mkl dlls from numpy.core, if present 
+    from os import listdir
+    dlls = [os.path.join(numpy_core_path,mkl) for mkl in listdir(numpy_core_path) if mkl.startswith('mkl_')]
+    for dll in dlls:
+        finder.add_dll(dll)
+
+    
+def hook_scipy_special(finder, module):
+    #import pdb;pdb.set_trace()
+    depth = getattr(finder,"recursion_depth_special",0)
+    if depth==0:
+        finder.recursion_depth_special = depth + 1
+        finder.import_hook("scipy.special._ufuncs_cxx")
+        finder.import_hook("scipy.special.orthogonal")
+        finder.import_hook("scipy", fromlist=("linalg",))
+        finder.recursion_depth_special = depth
+
+def hook_scipy_linalg(finder, module):
+    depth = getattr(finder,"recursion_depth_linalg",0)
+    if depth==0:
+        finder.recursion_depth_linalg = depth + 1
+        finder.import_hook("scipy.linalg.cython_blas")
+        finder.import_hook("scipy.linalg.cython_lapack")
+        finder.import_hook("scipy.integrate")
+        finder.recursion_depth_linalg = depth
+        
+        
+def hook_scipy_sparse_csgraph(finder, module):
+    depth = getattr(finder,"recursion_depth_sparse",0)
+    if depth==0:
+        finder.recursion_depth_sparse = depth + 1
+        finder.import_hook("scipy.sparse.csgraph._validation")
+        finder.recursion_depth_sparse = depth
+
+def hook_scipy_optimize(finder, module):
+    #import pdb;pdb.set_trace()
+    depth = getattr(finder,"recursion_depth_optimize",0)
+    if depth==0:
+        finder.recursion_depth_optimize = depth + 1
+        finder.import_hook("scipy.optimize.minpack2")
+        finder.recursion_depth_optimize = depth

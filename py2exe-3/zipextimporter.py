@@ -75,6 +75,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
 
     def load_module(self, fullname):
         verbose = _memimporter.get_verbose_flag()
+        
         if fullname in sys.modules:
             mod = sys.modules[fullname]
             if verbose:
@@ -84,36 +85,38 @@ class ZipExtensionImporter(zipimport.zipimporter):
             return mod
         try:
             return zipimport.zipimporter.load_module(self, fullname)
-        except ImportError:
-            pass
-        if sys.version_info >= (3, 0):
-            # name of initfunction
-            initname = "PyInit_" + fullname.split(".")[-1]
-        else:
-            # name of initfunction
-            initname = "init" + fullname.split(".")[-1]
-        filename = fullname.replace(".", "\\")
-        if filename in ("pywintypes", "pythoncom"):
-            filename = filename + "%d%d" % sys.version_info[:2]
-            suffixes = ('.dll',)
-        else:
-            suffixes = self._suffixes
-        for s in suffixes:
-            path = filename + s
-            if path in self._files:
-                if verbose > 1:
-                    sys.stderr.write("# found %s in zipfile %s\n"
-                                     % (path, self.archive))
-                mod = _memimporter.import_module(fullname, path,
-                                                 initname,
-                                                 self.get_data)
-                mod.__file__ = "%s\\%s" % (self.archive, path)
-                mod.__loader__ = self
-                if verbose:
-                    sys.stderr.write("import %s # loaded from zipfile %s\n"
-                                     % (fullname, mod.__file__))
-                return mod
-        raise zipimport.ZipImportError("can't find module %s" % fullname)
+        except ImportError as err:
+            if verbose:
+                sys.stderr.write("error loading %s: %s\n"% (fullname, err))
+
+            if sys.version_info >= (3, 0):
+                # name of initfunction
+                initname = "PyInit_" + fullname.split(".")[-1]
+            else:
+                # name of initfunction
+                initname = "init" + fullname.split(".")[-1]
+            filename = fullname.replace(".", "\\")
+            if filename in ("pywintypes", "pythoncom"):
+                filename = filename + "%d%d" % sys.version_info[:2]
+                suffixes = ('.dll',)
+            else:
+                suffixes = self._suffixes
+            for s in suffixes:
+                path = filename + s
+                if path in self._files:
+                    if verbose > 1:
+                        sys.stderr.write("# found %s in zipfile %s\n"
+                                         % (path, self.archive))
+                    mod = _memimporter.import_module(fullname, path,
+                                                     initname,
+                                                     self.get_data)
+                    mod.__file__ = "%s\\%s" % (self.archive, path)
+                    mod.__loader__ = self
+                    if verbose:
+                        sys.stderr.write("import %s # loaded from zipfile %s\n"
+                                         % (fullname, mod.__file__))
+                    return mod
+            raise zipimport.ZipImportError("can't find module %s" % fullname) from err
 
     def __repr__(self):
         return "<%s object %r>" % (self.__class__.__name__, self.archive)

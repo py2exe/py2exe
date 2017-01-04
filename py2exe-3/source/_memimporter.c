@@ -52,7 +52,7 @@ int do_import(FARPROC init_func, char *modname)
 	PyObject* (*p)(void);
 	PyObject *m = NULL;
 	struct PyModuleDef *def;
-//	char *oldcontext;
+	char *oldcontext;
 	PyObject *name = PyUnicode_FromString(modname);
 
 	if (name == NULL)
@@ -75,15 +75,15 @@ int do_import(FARPROC init_func, char *modname)
 		Py_DECREF(name);
 		return -1;
 	}
-/*
+
         oldcontext = _Py_PackageContext;
 	_Py_PackageContext = modname;
-*/
+
 	p = (PyObject*(*)(void))init_func;
 	m = (*p)();
-/*
+
 	_Py_PackageContext = oldcontext;
-*/
+
 
 	if (PyErr_Occurred()) {
 		Py_DECREF(name);

@@ -6,10 +6,12 @@ from distutils.dist import Distribution
 from distutils.command import build_ext, build
 from distutils.sysconfig import customize_compiler
 from distutils.dep_util import newer_group
-from distutils.errors import DistutilsError, DistutilsSetupError
+from distutils.errors import DistutilsError, DistutilsSetupError, DistutilsPlatformError
+from distutils.errors import CCompilerError, CompileError
 from distutils.util import get_platform
+from distutils import log
 
-# We don't need a manifest in the executable, so monkeypath the code away:
+# We don't need a manifest in the executable, so monkeypatch the code away:
 from distutils.msvc9compiler import MSVCCompiler
 MSVCCompiler.manifest_setup_ldargs = lambda *args: None
 
@@ -40,122 +42,17 @@ class BuildInterpreters(build_ext.build_ext):
     description = "build special python interpreter stubs"
 
     def finalize_options(self):
-        build_ext.build_ext.finalize_options(self)
+        super().finalize_options()
         self.interpreters = self.distribution.interpreters
 
-    def run (self):
-        if not self.interpreters:
-            return
-
-        self.setup_compiler()
-
-        # Now actually compile and link everything.
-        for inter in self.interpreters:
-            sources = inter.sources
-            if sources is None or type(sources) not in (type([]), type(())):
-                raise DistutilsSetupError(("in 'interpreters' option ('%s'), " +
-                       "'sources' must be present and must be " +
-                       "a list of source filenames") % inter.name)
-            sources = list(sources)
-
-            fullname = self.get_exe_fullname(inter.name)
-            if self.inplace:
-                # ignore build-lib -- put the compiled extension into
-                # the source tree along with pure Python modules
-                modpath = fullname.split('.')
-                package = '.'.join(modpath[0:-1])
-                base = modpath[-1]
-
-                build_py = self.get_finalized_command('build_py')
-                package_dir = build_py.get_package_dir(package)
-                exe_filename = os.path.join(package_dir,
-                                            self.get_exe_filename(base))
-            else:
-                exe_filename = os.path.join(self.build_lib,
-                                            self.get_exe_filename(fullname))
-            if inter.target_desc == "executable":
-                exe_filename += ".exe"
-            else:
-                exe_filename += ".dll"
-
-            if not (self.force or \
-                    newer_group(sources + inter.depends, exe_filename, 'newer')):
-                self.announce("skipping '%s' interpreter (up-to-date)" %
-                              inter.name)
-                continue # 'for' loop over all interpreters
-            else:
-                self.announce("building '%s' interpreter" % inter.name)
-
-            extra_args = inter.extra_compile_args or []
-
-            macros = inter.define_macros[:]
-            for undef in inter.undef_macros:
-                macros.append((undef,))
-
-            objects = self.compiler.compile(sources,
-                                            output_dir=self.build_temp,
-                                            macros=macros,
-                                            include_dirs=inter.include_dirs,
-                                            debug=self.debug,
-                                            extra_postargs=extra_args,
-                                            depends=inter.depends)
-
-            if inter.extra_objects:
-                objects.extend(inter.extra_objects)
-            extra_args = inter.extra_link_args or []
-
-            if inter.export_symbols:
-                # The mingw32 compiler writes a .def file containing
-                # the export_symbols.  Since py2exe uses symbols in
-                # the extended form 'DllCanUnloadNow,PRIVATE' (to
-                # avoid MS linker warnings), we have to replace the
-                # comma(s) with blanks, so that the .def file can be
-                # properly parsed.
-                # XXX MingW32CCompiler, or CygwinCCompiler ?
-                from distutils.cygwinccompiler import Mingw32CCompiler
-                if isinstance(self.compiler, Mingw32CCompiler):
-                    inter.export_symbols = [s.replace(",", " ") for s in inter.export_symbols]
-                    inter.export_symbols = [s.replace("=", "\t") for s in inter.export_symbols]
-
-            # XXX - is msvccompiler.link broken?  From what I can see, the
-            # following should work, instead of us checking the param:
-            self.compiler.link(inter.target_desc,
-                               objects, exe_filename,
-                               libraries=self.get_libraries(inter),
-                               library_dirs=inter.library_dirs,
-                               runtime_library_dirs=inter.runtime_library_dirs,
-                               export_symbols=inter.export_symbols,
-                               extra_postargs=extra_args,
-                               debug=self.debug)
-    # build_extensions ()
-
-    def get_exe_fullname (self, inter_name):
-        if self.package is None:
-            return inter_name
-        else:
-            return self.package + '.' + inter_name
-
-    def get_exe_filename (self, inter_name):
-        ext_path = inter_name.split('.')
-        if self.debug:
-            fnm = os.path.join(*ext_path) + '_d'
-        else:
-            fnm = os.path.join(*ext_path)
-        if ext_path[-1] == "resources":
-            return fnm
-        return '%s-py%s.%s-%s' % (fnm, sys.version_info[0], sys.version_info[1], get_platform())
-
-    def setup_compiler(self):
-        # This method *should* be available separately in build_ext!
+    def run(self):
+        # Copied from build_ext.run() except that we use
+        # self.interpreters instead of self.extensions and
+        # self.build_interpreters() instead of self.build_extensions()
         from distutils.ccompiler import new_compiler
 
-        # If we were asked to build any C/C++ libraries, make sure that the
-        # directory where we put them is in the library search path for
-        # linking interpreters.
-        if self.distribution.has_c_libraries():
-            build_clib = self.get_finalized_command('build_clib')
-            self.libraries.extend(build_clib.get_library_names() or [])
-            self.library_dirs.append(build_clib.build_clib)
+        if not self.interpreters:
+            return
 
         # Setup the CCompiler object that we'll use to do all the
         # compiling and linking
@@ -163,11 +60,12 @@ class BuildInterpreters(build_ext.build_ext):
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
-        try:
-            self.compiler.initialize()
-        except AttributeError:
-            pass # initialize doesn't exist before 2.5
         customize_compiler(self.compiler)
+        # If we are cross-compiling, init the compiler now (if we are not
+        # cross-compiling, init would not hurt, but people may rely on
+        # late initialization of compiler even if they shouldn't...)
+        if os.name == 'nt' and self.plat_name != get_platform():
+            self.compiler.initialize(self.plat_name)
 
         # And make sure that any compile/link-related options (which might
         # come from the command-line or from the setup script) are set in
@@ -176,8 +74,8 @@ class BuildInterpreters(build_ext.build_ext):
         if self.include_dirs is not None:
             self.compiler.set_include_dirs(self.include_dirs)
         if self.define is not None:
-            # 'define' option is a list of (name, value) tuples
-            for (name,value) in self.define:
+            # 'define' option is a list of (name,value) tuples
+            for (name, value) in self.define:
                 self.compiler.define_macro(name, value)
         if self.undef is not None:
             for macro in self.undef:
@@ -191,9 +89,124 @@ class BuildInterpreters(build_ext.build_ext):
         if self.link_objects is not None:
             self.compiler.set_link_objects(self.link_objects)
 
-    # setup_compiler()
+        # Now actually compile and link everything.
+        self.build_interpreters()
 
-# class BuildInterpreters
+    def build_interpreters(self):
+
+        for interp in self.interpreters:
+            self.build_interp(interp)
+
+    def build_interp(self, ext):
+        sources = ext.sources
+        if sources is None or not isinstance(sources, (list, tuple)):
+            raise DistutilsSetupError(
+                  "in 'interpreters' option (extension '%s'), "
+                  "'sources' must be present and must be "
+                  "a list of source filenames" % ext.name)
+        sources = list(sources)
+
+        ext_path = self.get_ext_fullpath(ext.name)
+
+        if ext.target_desc == "executable":
+            ext_path += ".exe"
+        else:
+            ext_path += ".dll"
+
+        depends = sources + ext.depends
+        if not (self.force or newer_group(depends, ext_path, 'newer')):
+            log.debug("skipping '%s' extension (up-to-date)", ext.name)
+            return
+        else:
+            log.info("building '%s' extension", ext.name)
+
+        # First, compile the source code to object files.
+
+        # XXX not honouring 'define_macros' or 'undef_macros' -- the
+        # CCompiler API needs to change to accommodate this, and I
+        # want to do one thing at a time!
+
+        # Two possible sources for extra compiler arguments:
+        #   - 'extra_compile_args' in Extension object
+        #   - CFLAGS environment variable (not particularly
+        #     elegant, but people seem to expect it and I
+        #     guess it's useful)
+        # The environment variable should take precedence, and
+        # any sensible compiler will give precedence to later
+        # command line args.  Hence we combine them in order:
+        extra_args = ext.extra_compile_args or []
+
+        macros = ext.define_macros[:]
+        for undef in ext.undef_macros:
+            macros.append((undef,))
+
+        objects = self.compiler.compile(sources,
+                                         output_dir=self.build_temp,
+                                         macros=macros,
+                                         include_dirs=ext.include_dirs,
+                                         debug=self.debug,
+                                         extra_postargs=extra_args,
+                                         depends=ext.depends)
+
+        # XXX -- this is a Vile HACK!
+        #
+        # The setup.py script for Python on Unix needs to be able to
+        # get this list so it can perform all the clean up needed to
+        # avoid keeping object files around when cleaning out a failed
+        # build of an extension module.  Since Distutils does not
+        # track dependencies, we have to get rid of intermediates to
+        # ensure all the intermediates will be properly re-built.
+        #
+        self._built_objects = objects[:]
+
+        # Now link the object files together into a "shared object" --
+        # of course, first we have to figure out all the other things
+        # that go into the mix.
+        if ext.extra_objects:
+            objects.extend(ext.extra_objects)
+        extra_args = ext.extra_link_args or []
+
+        # Detect target language, if not provided
+##        language = ext.language or self.compiler.detect_language(sources)
+
+        ## self.compiler.link_shared_object(
+        ##     objects, ext_path,
+        ##     libraries=self.get_libraries(ext),
+        ##     library_dirs=ext.library_dirs,
+        ##     runtime_library_dirs=ext.runtime_library_dirs,
+        ##     extra_postargs=extra_args,
+        ##     export_symbols=self.get_export_symbols(ext),
+        ##     debug=self.debug,
+        ##     build_temp=self.build_temp,
+        ##     target_lang=language)
+
+        # Hm, for Python 3.5 to link a shared library (instead of exe
+        # or pyd) we need to add /DLL to the linker arguments.
+        # Currently this is done in the setup script; should we do it
+        # here?
+
+        self.compiler.link(ext.target_desc,
+                           objects, ext_path,
+                           libraries=self.get_libraries(ext),
+                           library_dirs=ext.library_dirs,
+                           runtime_library_dirs=ext.runtime_library_dirs,
+                           export_symbols=ext.export_symbols,
+                           extra_postargs=extra_args,
+                           debug=self.debug)
+
+
+    # -- Name generators -----------------------------------------------
+
+    def get_ext_filename (self, inter_name):
+        ext_path = inter_name.split('.')
+        if self.debug:
+            fnm = os.path.join(*ext_path) + '_d'
+        else:
+            fnm = os.path.join(*ext_path)
+        if ext_path[-1] == "resources":
+            return fnm
+        return '%s-py%s.%s-%s' % (fnm, sys.version_info[0], sys.version_info[1], get_platform())
+
 
 def InstallSubCommands():
     """Adds our own sub-commands to build and install"""

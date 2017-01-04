@@ -81,6 +81,7 @@ HMODULE gInstance = 0;
 extern int init_with_instance(HMODULE, char *);
 extern void fini();
 extern int run_script(void);
+extern wchar_t libfilename[_MAX_PATH + _MAX_FNAME + _MAX_EXT];
 
 #include "MyLoadLibrary.h"
 
@@ -90,7 +91,9 @@ extern int run_script(void);
 int load_ctypes(void)
 {
 	char dll_path[_MAX_PATH+_MAX_FNAME+1];
-
+	wchar_t ctypes_path[_MAX_PATH+_MAX_FNAME+1];
+	wchar_t * temp=NULL;
+	int length=0;
 	// shouldn't do this twice
 	assert(g_ctypes == NULL);
 
@@ -104,7 +107,14 @@ int load_ctypes(void)
 	if (g_ctypes == NULL) {
 		// not already loaded - try and load from the current dir
 //		char *temp;
-		GetModuleFileNameA(gInstance, dll_path, sizeof(dll_path));
+		//wrong, this is myself, makes an endless loop...
+		//GetModuleFileNameA(gInstance, dll_path, sizeof(dll_path));
+		temp=wcsrchr(libfilename,L'\\');
+		length=temp-(wchar_t*)libfilename+1;
+		wcscpy(ctypes_path,libfilename);
+		ctypes_path[length]=L'\0';
+		wcscat(ctypes_path,L"_ctypes.pyd");
+
 /* ???
 		temp = dll_path + strlen(dll_path);
 		while (temp>dll_path && *temp != '\\')
@@ -113,13 +123,14 @@ int load_ctypes(void)
 		// temp points to '\\filename.ext'!
 */
 /* ???
+		
 #ifdef _DEBUG
 		g_ctypes = MyGetModuleHandle("_ctypes_d.pyd");
 #else
 		g_ctypes = MyGetModuleHandle("_ctypes.pyd");
 #endif
 */
-		g_ctypes = LoadLibraryEx(dll_path, // points to name of executable module 
+		g_ctypes = LoadLibraryExW(ctypes_path, // points to name of executable module 
 					 NULL, // HANDLE hFile, // reserved, must be NULL 
 					 LOAD_WITH_ALTERED_SEARCH_PATH // DWORD dwFlags // entry-point execution flag 
 			);
@@ -202,7 +213,8 @@ int check_init()
 // *****************************************************************
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
-	if ( dwReason == DLL_PROCESS_ATTACH) {
+	OutputDebugString("DllMain");
+    if ( dwReason == DLL_PROCESS_ATTACH) {
 		gInstance = hInstance;
 		InitializeCriticalSection(&csInit);
 		_MyLoadActCtxPointers();
@@ -224,7 +236,10 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 HRESULT __stdcall DllCanUnloadNow(void)
 {
 	HRESULT rc;
+    ULONG_PTR cookie = 0;
+    cookie = _My_ActivateActCtx(); // some windows manifest magic...
 	check_init();
+    _My_DeactivateActCtx(cookie);
 	assert(Pyc_DllCanUnloadNow);
 	if (!Pyc_DllCanUnloadNow) return E_UNEXPECTED;
 	rc = Pyc_DllCanUnloadNow();
@@ -235,10 +250,22 @@ HRESULT __stdcall DllCanUnloadNow(void)
 HRESULT __stdcall DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID *ppv)
 {
 	HRESULT rc;
+    ULONG_PTR cookie = 0;
+    /*
+    OutputDebugString("DllGetClassObject");
+    
+	MessageBox(NULL,"Debug\n",
+      "DllGetClassObject", 
+      MB_OK | MB_ICONINFORMATION);
+    */
+    cookie = _My_ActivateActCtx(); // some windows manifest magic...
 	check_init();
+
 	assert(Pyc_DllGetClassObject);
 	if (!Pyc_DllGetClassObject) return E_UNEXPECTED;
 	rc = Pyc_DllGetClassObject(rclsid, riid, ppv);
+    _My_DeactivateActCtx(cookie);
+
 	return rc;
 }
 
@@ -247,8 +274,28 @@ STDAPI DllRegisterServer()
 {
 	int rc=0;
 	PyGILState_STATE state;
+    wchar_t buf[300];
+    ULONG_PTR cookie = 0;
+
+	OutputDebugString("DllRegisterServer");
+    /*
+    MessageBox(NULL,
+               "Debug\n",
+               "DllregisterServer", 
+               MB_OK | MB_ICONINFORMATION);
+    */
+    cookie = _My_ActivateActCtx(); // some windows manifest magic...
 	check_init();
+    _My_DeactivateActCtx(cookie);
+
+	OutputDebugString("check_init ok");
+    
 	state = PyGILState_Ensure();
+	OutputDebugString("PyGILState_Ensure done");
+
+    swprintf(buf,300,L"DllRegisterServer: libfilename=%s\n",&libfilename);
+    OutputDebugStringW(buf);
+    
 	rc = PyRun_SimpleString("DllRegisterServer()\n");
 	if (rc != 0)
 		PyErr_Print();
@@ -260,7 +307,11 @@ STDAPI DllUnregisterServer()
 {
 	int rc=0;
 	PyGILState_STATE state;
+    ULONG_PTR cookie = 0;
+    cookie = _My_ActivateActCtx(); // some windows manifest magic...
 	check_init();
+    _My_DeactivateActCtx(cookie);
+
 	state = PyGILState_Ensure();
 	rc = PyRun_SimpleString("DllUnregisterServer()\n");
 	if (rc != 0)

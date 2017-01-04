@@ -130,9 +130,12 @@ class py2exe(Command):
 
         ('custom-boot-script=', None,
          "Python file that will be run when setting up the runtime environment"),
+
+        ('use-assembly', None,
+         "use windows assembly to isolate python dll in ctypes-com-server."),
         ]
 
-    boolean_options = ["compressed", "xref", "ascii", "skip-archive"]
+    boolean_options = ["compressed", "xref", "ascii", "skip-archive","use-assembly"]
 
     def initialize_options (self):
         self.xref =0
@@ -150,6 +153,7 @@ class py2exe(Command):
         self.skip_archive = 0
         self.ascii = 0
         self.custom_boot_script = None
+        self.use_assembly = False
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -258,11 +262,12 @@ class py2exe(Command):
                             data_files = self.distribution.data_files,
                             
                             compress = self.compressed,
+                            use_assembly = self.use_assembly,
                             )
 
         ## level = logging.INFO if options.verbose else logging.WARNING
         ## logging.basicConfig(level=level)
-
+        #import pdb;pdb.set_trace()
         builder = runtime.Runtime(options)
         builder.analyze()
         builder.build()
