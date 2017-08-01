@@ -1,3 +1,7 @@
+2017-08-01    <theller@ctypes.org>
+
+	* Add more MKL files to numpy_core hook, bump version to 0.9.2.7.
+
 2017-01-04    <theller@ctypes.org>
 
 	* Updates from upstream version, adds compatibility with Python
