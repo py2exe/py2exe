@@ -485,7 +485,9 @@ def hook_numpy_core(finder, module):
     numpy_core_path = os.path.dirname(module.__loader__.path)
     #add mkl dlls from numpy.core, if present 
     from os import listdir
-    dlls = [os.path.join(numpy_core_path,mkl) for mkl in listdir(numpy_core_path) if mkl.startswith('mkl_')]
+    dlls = [os.path.join(numpy_core_path,mkl)
+            for mkl in listdir(numpy_core_path)
+            if mkl.startswith('mkl_') or mkl in ['libmmd.dll', 'libifcoremd.dll', 'libiomp5md.dll']]
     for dll in dlls:
         finder.add_dll(dll)
 
