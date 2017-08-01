@@ -53,7 +53,7 @@ for name in com_module_names:
 def get_classes(module):
     return [ob
             for ob in module.__dict__.values()
-            if hasattr(ob, "_reg_progid_")
+            if hasattr(ob, "_reg_progid_") and ob._reg_progid_ is not None
             ]
 
 def build_class_map():
