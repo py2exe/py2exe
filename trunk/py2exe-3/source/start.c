@@ -115,7 +115,7 @@ BOOL calc_dirname(HMODULE hmod)
  */
 BOOL locate_script(HMODULE hmod)
 {
-	HRSRC hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), "PYTHONSCRIPT");
+	HRSRC hrsrc = FindResourceA(hmod, MAKEINTRESOURCEA(1), "PYTHONSCRIPT");
 	HGLOBAL hgbl;
 
 	// load the script resource
@@ -281,7 +281,7 @@ HMODULE load_pythondll(void)
 	HMODULE hmod = LoadLibraryExW(libfilename, NULL, LOAD_LIBRARY_AS_DATAFILE);
 
 	// Try to locate pythonxy.dll as resource in the exe
-	hrsrc = FindResource(hmod, MAKEINTRESOURCE(1), PYTHONDLL);
+	hrsrc = FindResourceA(hmod, MAKEINTRESOURCEA(1), PYTHONDLL);
 	if (hrsrc) {
 		HGLOBAL hgbl;
 		DWORD size;
@@ -296,7 +296,7 @@ HMODULE load_pythondll(void)
 		  LOAD_WITH_ALTERED_SEARCH_PATH so that really our own one is
 		  used.
 		 */
-		hmod_pydll = LoadLibrary(PYTHONDLL);
+		hmod_pydll = LoadLibraryA(PYTHONDLL);
 	FreeLibrary(hmod);
 	return hmod_pydll;
 }
@@ -384,7 +384,7 @@ static PyObject *Py_MessageBox(PyObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "is|zi", &hwnd, &message, &title, &flags))
 		return NULL;
-	return PyLong_FromLong(MessageBox(hwnd, message, title, flags));
+	return PyLong_FromLong(MessageBoxA(hwnd, message, title, flags));
 }
 
 static PyObject *Py_SHGetSpecialFolderPath(PyObject *self, PyObject *args)

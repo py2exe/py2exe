@@ -31,7 +31,7 @@ void SystemError(int error, char *msg)
 
 	if (error) {
 		LPVOID lpMsgBuf;
-		FormatMessage( 
+		FormatMessageA( 
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | 
 			FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
@@ -45,9 +45,9 @@ void SystemError(int error, char *msg)
 		LocalFree(lpMsgBuf);
 	} else
 		Buffer[0] = '\0';
-	n = lstrlen(Buffer);
+	n = lstrlenA(Buffer);
 	_snprintf(Buffer+n, sizeof(Buffer)-n, msg);
-	MessageBox(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
+	MessageBoxA(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
 }
 
 extern int init(char *);
