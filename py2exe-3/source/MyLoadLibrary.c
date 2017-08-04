@@ -219,7 +219,7 @@ HMODULE MyLoadLibrary(LPCSTR name, void *bytes, void *userdata)
 			return lib->module;
 		}
 	}
-	return LoadLibrary(name);
+	return LoadLibraryA(name);
 }
 
 BOOL MyFreeLibrary(HMODULE module)

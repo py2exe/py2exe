@@ -55,7 +55,7 @@ void SystemError(int error, char *msg)
 
 	if (error) {
 		LPVOID lpMsgBuf;
-		FormatMessage( 
+		FormatMessageA( 
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | 
 			FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
@@ -69,9 +69,9 @@ void SystemError(int error, char *msg)
 		LocalFree(lpMsgBuf);
 	} else
 		Buffer[0] = '\0';
-	n = lstrlen(Buffer);
+	n = lstrlenA(Buffer);
 	_snprintf(Buffer+n, sizeof(Buffer)-n, msg);
-	MessageBox(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
+	MessageBoxA(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
 }
 
 BOOL have_init = FALSE;
@@ -136,7 +136,7 @@ int load_ctypes(void)
 			);
 	}
 	if (g_ctypes == NULL) {
-		OutputDebugString("GetModuleHandle _ctypes.pyd failed");
+		OutputDebugStringA("GetModuleHandle _ctypes.pyd failed");
 		// give up in disgust
 		return -1;
 	}
@@ -213,7 +213,7 @@ int check_init()
 // *****************************************************************
 BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 {
-	OutputDebugString("DllMain");
+	OutputDebugStringA("DllMain");
     if ( dwReason == DLL_PROCESS_ATTACH) {
 		gInstance = hInstance;
 		InitializeCriticalSection(&csInit);
@@ -221,7 +221,7 @@ BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD dwReason, LPVOID lpReserved)
 		if (pfnGetCurrentActCtx && pfnAddRefActCtx)
 		  if ((*pfnGetCurrentActCtx)(&PyWin_DLLhActivationContext))
 			if (!(*pfnAddRefActCtx)(PyWin_DLLhActivationContext))
-			  OutputDebugString("Python failed to load the default activation context\n");
+			  OutputDebugStringA("Python failed to load the default activation context\n");
 	}
 	else if ( dwReason == DLL_PROCESS_DETACH ) {
 		gInstance = 0;
@@ -277,7 +277,7 @@ STDAPI DllRegisterServer()
     wchar_t buf[300];
     ULONG_PTR cookie = 0;
 
-	OutputDebugString("DllRegisterServer");
+	OutputDebugStringA("DllRegisterServer");
     /*
     MessageBox(NULL,
                "Debug\n",
@@ -288,10 +288,10 @@ STDAPI DllRegisterServer()
 	check_init();
     _My_DeactivateActCtx(cookie);
 
-	OutputDebugString("check_init ok");
+	OutputDebugStringA("check_init ok");
     
 	state = PyGILState_Ensure();
-	OutputDebugString("PyGILState_Ensure done");
+	OutputDebugStringA("PyGILState_Ensure done");
 
     swprintf(buf,300,L"DllRegisterServer: libfilename=%s\n",&libfilename);
     OutputDebugStringW(buf);

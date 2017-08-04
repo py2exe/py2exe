@@ -26,7 +26,7 @@ ULONG_PTR _My_ActivateActCtx()
 	ULONG_PTR ret = 0;
 	if (PyWin_DLLhActivationContext && pfnActivateActCtx)
 		if (!(*pfnActivateActCtx)(PyWin_DLLhActivationContext, &ret)) {
-			OutputDebugString("py2exe failed to activate the activation context before loading a DLL\n");
+			OutputDebugStringA("py2exe failed to activate the activation context before loading a DLL\n");
 			ret = 0; // no promise the failing function didn't change it!
 		}
 	return ret;
@@ -36,5 +36,5 @@ void _My_DeactivateActCtx(ULONG_PTR cookie)
 {
 	if (cookie && pfnDeactivateActCtx)
 		if (!(*pfnDeactivateActCtx)(0, cookie))
-			OutputDebugString("py2exe failed to de-activate the activation context\n");
+			OutputDebugStringA("py2exe failed to de-activate the activation context\n");
 }
