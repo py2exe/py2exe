@@ -40,12 +40,11 @@ extra_compile_args = []
 extra_link_args = []
 
 if 0:
-    # XXX enable this to debug a release build, otherwise let disabled
-    # because the .PDB files are huge.
+    # enable this to debug a release build
     extra_compile_args.append("/Od")
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
-    #macros.append(("VERBOSE", "1"))
+    macros.append(("VERBOSE", "1"))
 
 run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                              ["source/run_ctypes_dll.c",
@@ -120,7 +119,7 @@ resource_dll = Interpreter("py2exe.resources",
                            ["source/dll.c",
                             "source/icon.rc"],
                            target_desc = "shared_library",
-                           extra_link_args=["/DLL", "/NOENTRY"],
+                           extra_link_args=["/DLL"],
                            )
 
 interpreters = [run, run_w, resource_dll,
@@ -133,12 +132,12 @@ except ImportError:
 else:
     class my_bdist_wheel(bdist_wheel.bdist_wheel):
         """We change the bdist_wheel command so that it creates a
-        wheel-file compatible with CPython, 3.4, 3.5, and 3.6 only
-        by setting the impl_tag to 'cp33.cp34.cp35.cp36'
+        wheel-file compatible with Python 3.3 and Python 3.4 only by
+        setting the impl_tag to py33.py34.
         """
         def get_tag(self):
             impl_tag, abi_tag, plat_tag = super().get_tag()
-            return "cp33.cp34.cp35.cp36", abi_tag, plat_tag
+            return "py33.py34", abi_tag, plat_tag
 
 
 if __name__ == "__main__":

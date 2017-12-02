@@ -19,7 +19,8 @@ from .icons import BuildIcons
 
 logger = logging.getLogger("runtime")
 
-from importlib.machinery import EXTENSION_SUFFIXES
+#from importlib.machinery import EXTENSION_SUFFIXES
+EXTENSION_SUFFIXES = ['.pyd']
 from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 RT_MANIFEST = 24
@@ -423,7 +424,7 @@ class Runtime(object):
                 arc.writestr(path, stream.getvalue())
 
             elif hasattr(mod, "__file__"):
-                assert mod.__file__.endswith(tuple(EXTENSION_SUFFIXES))
+                #assert mod.__file__.endswith(EXTENSION_SUFFIXES[0])
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
                     arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_SUFFIXES[0]
@@ -495,7 +496,7 @@ class Runtime(object):
                     # nothing to do for python modules.
                     continue
                 if hasattr(mod, "__file__"):
-                    assert mod.__file__.endswith(tuple(EXTENSION_SUFFIXES))
+                    assert mod.__file__.endswith(EXTENSION_SUFFIXES[0])
                     pydfile = mod.__name__ + EXTENSION_SUFFIXES[0]
 
                     dst = os.path.join(libdir, pydfile)
