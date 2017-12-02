@@ -120,7 +120,7 @@ resource_dll = Interpreter("py2exe.resources",
                            ["source/dll.c",
                             "source/icon.rc"],
                            target_desc = "shared_library",
-                           extra_link_args=["/DLL", "/NOENTRY"],
+                           extra_link_args=["/DLL"],
                            )
 
 interpreters = [run, run_w, resource_dll,
