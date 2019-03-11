@@ -1,0 +1,55 @@
+image: Visual Studio 2015
+
+environment:
+  PYTHON: "C:\\Python35"
+  PYTHON_VERSION: 3.5
+  PYTHON_ARCH: 32
+  MSVC_VERSION: "Visual Studio 14"
+  INCLUDE: "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt"
+  LIB: "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\lib;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10586.0\\ucrt\\x86"
+
+platform: x86
+
+configuration: Release
+
+init:
+  - set PYTHONPATH=%PYTHON%
+  - set PYTHONHOME=%PYTHON%
+  - set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
+  - python --version
+  - python -m site
+  - python -m pip install -U pip setuptools wheel
+  #- dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10586.0\ucrt"
+
+install:
+  - python setup.py bdist_wheel
+  - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
+  - pip install dist/py2exe-%ver%-py33.py34.py35-none-any.whl
+  - python -c "import py2exe"
+
+# Not a project with an msbuild file, build done at install.
+build: off
+
+artifacts:
+  - path: 'dist/py2exe-$(ver)-py33.py34.py35-none-any.whl'
+    name: py2exe-$(ver)-py33.py34.py35-none-any.whl
+
+# Push artefact to S3 bucket and list all
+before_deploy:
+  - dir dist
+  #- python -c "from PySide2 import QtCore; print QtCore.QLibraryInfo.location(QtCore.QLibraryInfo.PluginsPath)"
+
+
+# Deploy build to BinTray
+deploy:
+  provider: BinTray
+  username: alby128
+  api_key:
+    secure: lAocj5KA9Z9x4BefQBIgNlQJbeW4qPBfCgYVBHMyOP3NgyhnMLmvR57ZCqtCKBlQ
+  subject: alby128
+  repo: py2exe
+  package: py2exe
+  version: $(ver)
+  publish: true
+  override: true
+    
