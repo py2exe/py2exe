@@ -32,12 +32,16 @@ if _is_debug_build():
 else:
     macros = [("PYTHONDLL", '\\"python%d%d.dll\\"' % sys.version_info[:2]),
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
-              ("_CRT_SECURE_NO_WARNINGS", '1')]
+              ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
 macros.append(("Py_BUILD_CORE", '1'))
 
 extra_compile_args = []
 extra_link_args = []
+
+extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
+extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
+extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
 
 if 0:
     # enable this to debug a release build
@@ -137,7 +141,7 @@ else:
         """
         def get_tag(self):
             impl_tag, abi_tag, plat_tag = super().get_tag()
-            return "py33.py34", abi_tag, plat_tag
+            return "py33.py34.py35", abi_tag, plat_tag
 
 
 if __name__ == "__main__":
@@ -171,6 +175,7 @@ if __name__ == "__main__":
               "Programming Language :: Python :: 3",
               "Programming Language :: Python :: 3.3",
               "Programming Language :: Python :: 3.4",
+              "Programming Language :: Python :: 3.5",
               "Programming Language :: Python :: Implementation :: CPython",
               "Topic :: Software Development",
               "Topic :: Software Development :: Libraries",
