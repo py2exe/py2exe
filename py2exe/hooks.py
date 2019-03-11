@@ -89,6 +89,26 @@ def hook_OpenSSL(finder, module):
     """OpenSSL needs the cryptography package."""
     finder.import_package_later("cryptography")
 
+def hook_certifi(finder, module):
+    import certifi
+    finder.add_datafile("lib", certifi.where())
+    finder.add_bootcode("""
+def patch_certifi():
+    def override_where():
+        # change this to match the location of cacert.pem
+        import os
+        return os.path.join(os.getcwd(), 'lib', 'cacert.pem')
+
+    import certifi
+    from certifi.core import where
+
+    certifi.where = override_where
+    certifi.core.where = override_where
+
+patch_certifi()
+del patch_certifi
+""")
+
 def hook_cffi_cparser(finder, module):
     finder.ignore("cffi._pycparser")
 

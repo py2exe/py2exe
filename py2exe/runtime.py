@@ -263,7 +263,7 @@ class Runtime(object):
 
         self.copy_files(destdir)
 
-        # data files from modulefinder
+        # data directories from modulefinder
         for name, (src, recursive) in self.mf._data_directories.items():
             if recursive:
                 dst = os.path.join(destdir, name)
@@ -273,6 +273,11 @@ class Runtime(object):
                 shutil.copytree(src, dst)
             else:
                 raise RuntimeError("not yet supported")
+
+        # data files from modulefinder
+        for name, src in self.mf._data_files.items():
+            dst = os.path.join(destdir, name)
+            shutil.copy2(src, dst)
 
         # other data files
         if self.options.data_files:
@@ -424,7 +429,7 @@ class Runtime(object):
                 arc.writestr(path, stream.getvalue())
 
             elif hasattr(mod, "__file__"):
-                #assert mod.__file__.endswith(tuple(EXTENSION_SUFFIXES))
+                #assert mod.__file__.endswith(EXTENSION_SUFFIXES[0])
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
                     arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_SUFFIXES[0]
@@ -496,7 +501,7 @@ class Runtime(object):
                     # nothing to do for python modules.
                     continue
                 if hasattr(mod, "__file__"):
-                    assert mod.__file__.endswith(tuple(EXTENSION_SUFFIXES))
+                    assert mod.__file__.endswith(EXTENSION_SUFFIXES[0])
                     pydfile = mod.__name__ + EXTENSION_SUFFIXES[0]
 
                     dst = os.path.join(libdir, pydfile)

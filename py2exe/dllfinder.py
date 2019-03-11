@@ -192,6 +192,7 @@ class Scanner(ModuleFinder):
         super().__init__(path, verbose, excludes, optimize)
         self.dllfinder = DllFinder()
         self._data_directories = {}
+        self._data_files = {}
         self._min_bundle = {}
         self._import_package_later = []
         self._safe_import_hook_later = []
@@ -241,6 +242,9 @@ class Scanner(ModuleFinder):
 
     def add_datadirectory(self, name, path, recursive):
         self._data_directories[name] = (path, recursive)
+
+    def add_datafile(self, name, path):
+        self._data_files[name] = path
 
     def add_dll(self, path):
         self.dllfinder._add_dll(path)
