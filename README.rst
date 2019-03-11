@@ -13,6 +13,8 @@ For further information see [the original README](README_ORIGINAL.rst).
 Version History
 -------
 
+Version 0.9.2.8: introduce compatibility with Python 3.5.
+
 Version 0.9.2.7: last version from upstream.
 
 How to build and install on Python 3.5:
