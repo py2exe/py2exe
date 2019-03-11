@@ -156,7 +156,7 @@ if __name__ == "__main__":
     setup(name="py2exe",
           version=py2exe.__version__,
           description="Build standalone executables for Windows (python 3 version)",
-          long_description=open("README.rst").read(),
+          long_description=open("README_ORIGINAL.rst").read(),
           author="Thomas Heller",
           author_email="theller@ctypes.org",
     ##      maintainer="Jimmy Retzlaff",
