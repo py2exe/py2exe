@@ -141,7 +141,7 @@ else:
         """
         def get_tag(self):
             impl_tag, abi_tag, plat_tag = super().get_tag()
-            return "py33.py34.py35", abi_tag, plat_tag
+            return "py35", abi_tag, plat_tag
 
 
 if __name__ == "__main__":
@@ -151,7 +151,6 @@ if __name__ == "__main__":
     if my_bdist_wheel is not None:
         cmdclass['bdist_wheel'] = my_bdist_wheel
     
-
     setup(name="py2exe",
           version=py2exe.__version__,
           description="Build standalone executables for Windows (python 3 version)",
