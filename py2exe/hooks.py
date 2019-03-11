@@ -282,6 +282,7 @@ def hook_six(finder, module):
             self.__moved_modules = {item.name: item.mod
                                     for item in six._moved_attributes
                                     if isinstance(item, six.MovedModule)}
+            self.__moved_modules.pop('urllib')
             super().__init__(*args, **kw)
             self.__finder = mf
 
