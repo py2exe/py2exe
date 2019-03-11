@@ -44,8 +44,7 @@ extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14
 extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
 
 if 0:
-    # XXX enable this to debug a release build, otherwise let disabled
-    # because the .PDB files are huge.
+    # enable this to debug a release build
     extra_compile_args.append("/Od")
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
@@ -137,12 +136,12 @@ except ImportError:
 else:
     class my_bdist_wheel(bdist_wheel.bdist_wheel):
         """We change the bdist_wheel command so that it creates a
-        wheel-file compatible with CPython, 3.4, 3.5, and 3.6 only
-        by setting the impl_tag to 'cp33.cp34.cp35.cp36'
+        wheel-file compatible with Python 3.3 and Python 3.4 only by
+        setting the impl_tag to py33.py34.
         """
         def get_tag(self):
             impl_tag, abi_tag, plat_tag = super().get_tag()
-            return "py33.py34.py35", abi_tag, plat_tag
+            return "py35", abi_tag, plat_tag
 
 
 if __name__ == "__main__":
@@ -151,7 +150,6 @@ if __name__ == "__main__":
     cmdclass = {'build_interpreters': BuildInterpreters}
     if my_bdist_wheel is not None:
         cmdclass['bdist_wheel'] = my_bdist_wheel
-    
 
     setup(name="py2exe",
           version=py2exe.__version__,
