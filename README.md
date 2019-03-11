@@ -13,6 +13,11 @@ For further information see [the original README](README_ORIGINAL.rst).
 Version History
 -------
 
+Version 0.9.2.9:
+- fix a bug experienced when embedding `six.moves.urllib`.
+- introduce a `add_datafile` method in runtime for hooks.
+- new hook for `certifi`.
+
 Version 0.9.2.8: introduce compatibility with Python 3.5.
 
 Version 0.9.2.7: last version from upstream.
