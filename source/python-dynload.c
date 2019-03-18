@@ -296,6 +296,12 @@ PyModuleDef *PyModule_GetDef(PyObject *module)
   return proc(module);
 }
 
+PyObject *PyImport_GetModuleDict(void)
+{
+  FUNC(PyObject *, PyImport_GetModuleDict, (void));
+  return proc();
+}
+
 PyObject *PyImport_ImportModule(const char *name)
 {
   FUNC(PyObject *, PyImport_ImportModule, (const char *));
@@ -308,10 +314,10 @@ PyObject *_PyImport_FindExtensionObject(PyObject *a, PyObject *b)
   return proc(a, b);
 }
 
-int _PyImport_FixupExtensionObject(PyObject *m, PyObject *a, PyObject *b)
+int _PyImport_FixupExtensionObject(PyObject *m, PyObject *a, PyObject *b, PyObject *l)
 {
-  FUNC(int, _PyImport_FixupExtensionObject, (PyObject *, PyObject *, PyObject *));
-  return proc(m, a, b);
+  FUNC(int, _PyImport_FixupExtensionObject, (PyObject *, PyObject *, PyObject *, PyObject *));
+  return proc(m, a, b, l);
 }
 
 int PySys_SetObject(const char *name, PyObject *v)
