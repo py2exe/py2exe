@@ -1,8 +1,8 @@
 image: Visual Studio 2015
 
 environment:
-  PYTHON: "C:\\Python35"
-  PYTHON_VERSION: 3.5
+  PYTHON: "C:\\Python37"
+  PYTHON_VERSION: 3.7
   PYTHON_ARCH: 32
   MSVC_VERSION: "Visual Studio 14"
   INCLUDE: "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include;C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt"
@@ -24,15 +24,15 @@ init:
 install:
   - python setup.py bdist_wheel
   - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
-  - pip install dist/py2exe-%ver%-py35-none-any.whl
+  - pip install dist/py2exe-%ver%-py37-none-any.whl
   - python -c "import py2exe"
 
 # Not a project with an msbuild file, build done at install.
 build: off
 
 artifacts:
-  - path: 'dist/py2exe-$(ver)-py35-none-any.whl'
-    name: py2exe-$(ver)-py35-none-any.whl
+  - path: 'dist/py2exe-$(ver)-py37-none-any.whl'
+    name: py2exe-$(ver)-py37-none-any.whl
 
 # Push artefact to S3 bucket and list all
 before_deploy:
