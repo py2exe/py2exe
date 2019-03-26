@@ -6,6 +6,10 @@ environment:
   LIB: "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\lib;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10586.0\\ucrt\\x86"
   
   matrix:
+    -  PYTHON: "C:\\Python35"
+       PYTHON_VERSION: 3.5
+       PYTHON_ARCH: 32
+
     -  PYTHON: "C:\\Python36"
        PYTHON_VERSION: 3.6
        PYTHON_ARCH: 32
@@ -30,16 +34,23 @@ for:
   - 
     matrix:
       only:
+        - PYTHON_VERSION: 3.5
+    install:
+        - python setup.py bdist_wheel --python-tag cp35 --plat-name win32
+
+  - 
+    matrix:
+      only:
         - PYTHON_VERSION: 3.6
     install:
-        - python setup.py bdist_wheel --python-tag py36
+        - python setup.py bdist_wheel --python-tag cp36 --plat-name win32
 
   - 
     matrix:
       only:
         - PYTHON_VERSION: 3.7
     install:
-        - python setup.py bdist_wheel --python-tag py37
+        - python setup.py bdist_wheel --python-tag cp37 --plat-name win32
 
 # Not a project with an msbuild file, build done at install.
 build: off
