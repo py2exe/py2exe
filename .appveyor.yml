@@ -18,7 +18,17 @@ environment:
        PYTHON_VERSION: 3.7
        PYTHON_ARCH: 32
 
-platform: x86
+    -  PYTHON: "C:\\Python35-x64"
+       PYTHON_VERSION: 3.5
+       PYTHON_ARCH: 64
+
+    -  PYTHON: "C:\\Python36-x64"
+       PYTHON_VERSION: 3.6
+       PYTHON_ARCH: 64
+
+    -  PYTHON: "C:\\Python37-x64"
+       PYTHON_VERSION: 3.7
+       PYTHON_ARCH: 64
 
 configuration: Release
 
@@ -27,6 +37,7 @@ init:
   - set PYTHONHOME=%PYTHON%
   - set PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%
   - python --version
+  - python -c "import struct; print(struct.calcsize('P') * 8)"
   - python -m site
   - python -m pip install -U pip setuptools wheel
 
@@ -35,6 +46,7 @@ for:
     matrix:
       only:
         - PYTHON_VERSION: 3.5
+          PYTHON_ARCH: 32
     install:
         - python setup.py bdist_wheel --python-tag cp35 --plat-name win32
 
@@ -42,6 +54,7 @@ for:
     matrix:
       only:
         - PYTHON_VERSION: 3.6
+          PYTHON_ARCH: 32
     install:
         - python setup.py bdist_wheel --python-tag cp36 --plat-name win32
 
@@ -49,8 +62,33 @@ for:
     matrix:
       only:
         - PYTHON_VERSION: 3.7
+          PYTHON_ARCH: 32
     install:
         - python setup.py bdist_wheel --python-tag cp37 --plat-name win32
+        
+  - 
+    matrix:
+      only:
+        - PYTHON_VERSION: 3.5
+          PYTHON_ARCH: 64
+    install:
+        - python setup.py bdist_wheel --python-tag cp35 --plat-name win_amd64
+
+  - 
+    matrix:
+      only:
+        - PYTHON_VERSION: 3.6
+          PYTHON_ARCH: 64
+    install:
+        - python setup.py bdist_wheel --python-tag cp36 --plat-name win_amd64
+
+  - 
+    matrix:
+      only:
+        - PYTHON_VERSION: 3.7
+          PYTHON_ARCH: 64
+    install:
+        - python setup.py bdist_wheel --python-tag cp37 --plat-name win_amd64
 
 # Not a project with an msbuild file, build done at install.
 build: off
