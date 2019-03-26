@@ -22,7 +22,8 @@ init:
   #- dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.10586.0\ucrt"
 
 install:
-  - python setup.py bdist_wheel
+  - python setup.py bdist_wheel --python-tag py37
+  - dir dist
   - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
   - pip install dist/py2exe-%ver%-py37-none-any.whl
   - python -c "import py2exe"
