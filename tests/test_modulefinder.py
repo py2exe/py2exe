@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 ##import modulefinder
-import mf3 as modulefinder
+import py2exe.mf3 as modulefinder
 
 TEST_DIR = tempfile.mkdtemp()
 TEST_PATH = [TEST_DIR]#, os.path.dirname(tempfile.__file__)]
@@ -251,7 +251,9 @@ class ModuleFinderTest(unittest.TestCase):
             self.assertEqual(found, modules)
 
             # check for missing and maybe missing modules
-            bad, maybe = mf.any_missing_maybe()
+            bad, maybe = mf.missing_maybe()
+            bad = sorted(bad)
+            maybe = sorted(maybe)
             self.assertEqual(bad, missing)
             self.assertEqual(maybe, maybe_missing)
         finally:
@@ -261,11 +263,11 @@ class ModuleFinderTest(unittest.TestCase):
     def test_package(self):
         self._do_test(package_test)
 
-    @unittest.skip("test_maybe")
+    #@unittest.skip("test_maybe")
     def test_maybe(self):
         self._do_test(maybe_test)
 
-    @unittest.skip("test_maybe_new")
+    #@unittest.skip("test_maybe_new")
     def test_maybe_new(self):
         self._do_test(maybe_test_new)
 

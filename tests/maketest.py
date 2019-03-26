@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, with_statement, absolute_import, print_function
 
-from mf3 import ModuleFinder
+from py2exe.mf3 import ModuleFinder
 
 import errno
 import os
@@ -195,8 +195,6 @@ class SimpleTests(unittest.TestCase):
         self.assertIn("ntpath", mf.modules)
         self.assertNotIn("os.path", mf.missing())
         self.assertIn("posix", mf.missing())
-        self.assertIn("fcntl", mf.missing())
-        self.assertIn("os2", mf.missing())
 
     def test_sys(self):
         mf = ModuleFinder(excludes=["posix"])
@@ -204,14 +202,6 @@ class SimpleTests(unittest.TestCase):
         mf.import_hook("sys", None, ["spam"])
         self.assertNotIn("os.path", mf.missing())
         self.assertNotIn("posix", mf.missing())
-
-
-    def test_sys2(self):
-        mf = ModuleFinder()
-##        # This raises ImportError:
-        mf.import_hook("os.path")
-        self.assertNotIn("os.path", mf.missing())
-        self.assertIn("posix", mf.missing())
 
     def test_collections_abc(self):
         from collections import abc
@@ -240,7 +230,7 @@ class SimpleTests(unittest.TestCase):
         mf.import_hook("encodings", None, ["codecs"])
         mf.import_hook("encodings", None, ["foo"])
         self.assertIn("encodings.big5", mf.modules)
-        self.assertEqual({"encodings.foo"}, mf.missing())
+        self.assertIn("encodings.foo", mf.missing())
 
 if __name__ == "__main__":
     unittest.main()

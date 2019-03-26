@@ -101,6 +101,8 @@ test_script:
   - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
   - pip install dist/%wheelname%
   - python -c "import py2exe"
+  - cd tests
+  - python maketest.py
   
 artifacts:
   - path: 'dist/$(wheelname)'
