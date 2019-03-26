@@ -104,12 +104,20 @@ int do_import(FARPROC init_func, char *modname)
 		return -1;
 	}
 	def->m_base.m_init = p;
-    
+
+    #if (PY_VERSION_HEX >= 0x03070000)
+
     PyObject *modules = NULL;
     modules = PyImport_GetModuleDict();
-    
-	res = _PyImport_FixupExtensionObject(m, name, name, modules);
-	Py_DECREF(name);
+    res = _PyImport_FixupExtensionObject(m, name, name, modules);
+
+    #else
+
+    res = _PyImport_FixupExtensionObject(m, name, name);
+
+    #endif
+
+    Py_DECREF(name);
 	return res;
 }
 

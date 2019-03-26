@@ -296,11 +296,15 @@ PyModuleDef *PyModule_GetDef(PyObject *module)
   return proc(module);
 }
 
+#if (PY_VERSION_HEX >= 0x03070000)
+
 PyObject *PyImport_GetModuleDict(void)
 {
   FUNC(PyObject *, PyImport_GetModuleDict, (void));
   return proc();
 }
+
+#endif
 
 PyObject *PyImport_ImportModule(const char *name)
 {
@@ -314,11 +318,24 @@ PyObject *_PyImport_FindExtensionObject(PyObject *a, PyObject *b)
   return proc(a, b);
 }
 
+#if (PY_VERSION_HEX >= 0x03070000)
+
 int _PyImport_FixupExtensionObject(PyObject *m, PyObject *a, PyObject *b, PyObject *l)
 {
   FUNC(int, _PyImport_FixupExtensionObject, (PyObject *, PyObject *, PyObject *, PyObject *));
   return proc(m, a, b, l);
 }
+
+#else
+
+int _PyImport_FixupExtensionObject(PyObject *m, PyObject *a, PyObject *b)
+{
+    FUNC(int, _PyImport_FixupExtensionObject, (PyObject *, PyObject *, PyObject *));
+    return proc(m, a, b);
+}
+
+#endif
+
 
 int PySys_SetObject(const char *name, PyObject *v)
 {

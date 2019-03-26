@@ -423,7 +423,8 @@ class Runtime(object):
                     path = mod.__name__.replace(".", "\\") + bytecode_suffix
                 stream = io.BytesIO()
                 stream.write(imp.get_magic())
-                stream.write(b"\0\0\0\0") # null flags
+                if sys.version_info >= (3,7,0):
+                    stream.write(b"\0\0\0\0") # null flags
                 stream.write(b"\0\0\0\0") # null timestamp
                 stream.write(b"\0\0\0\0") # null size
                 marshal.dump(mod.__code__, stream)
@@ -455,7 +456,8 @@ class Runtime(object):
                         path = mod.__name__.replace(".", "\\") + bytecode_suffix
                     stream = io.BytesIO()
                     stream.write(imp.get_magic())
-                    stream.write(b"\0\0\0\0") # null flags
+                    if sys.version_info >= (3,7,0):
+                        stream.write(b"\0\0\0\0") # null flags
                     stream.write(b"\0\0\0\0") # null timestamp
                     stream.write(b"\0\0\0\0") # null size
                     marshal.dump(code, stream)
