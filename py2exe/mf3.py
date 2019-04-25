@@ -21,6 +21,7 @@ LOAD_CONST = dis.opname.index('LOAD_CONST')
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
 STORE_NAME = dis.opname.index('STORE_NAME')
 STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
+EXTENDED_ARG = dis.opname.index('EXTENDED_ARG')
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
 HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
@@ -446,10 +447,16 @@ class ModuleFinder:
                 instructions.append(inst)
                 c = inst.opcode
                 if c == IMPORT_NAME:
-                    assert instructions[-3].opcode == LOAD_CONST
-                    level = instructions[-3].argval
-                    assert instructions[-2].opcode == LOAD_CONST
-                    fromlist = instructions[-2].argval
+                    ind = len(instructions) - 2
+                    while instructions[ind].opcode == EXTENDED_ARG:
+                        ind -= 1
+                    assert instructions[ind].opcode == LOAD_CONST
+                    fromlist = instructions[ind].argval
+                    ind -= 1
+                    while instructions[ind].opcode == EXTENDED_ARG:
+                        ind -= 1
+                    assert instructions[ind].opcode == LOAD_CONST
+                    level = instructions[ind].argval
                     name = inst.argval
                     yield "import", (level, fromlist, name)
                 elif c in STORE_OPS:
