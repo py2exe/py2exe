@@ -346,8 +346,15 @@ def hook_numpy(finder, module):
     finder.ignore("Pyrex")
     finder.ignore("nose")
     finder.ignore("scipy")
+    #add numpy external DLLs to the bundle
+    numpy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
+    from os import listdir
+    dlls = [os.path.join(numpy_libs_path, fln)
+            for fln in listdir(numpy_libs_path)
+            if fln.endswith('.dll')]
+    for dll in dlls:
+        finder.add_dll(dll)
 
-    
 def hook_nose(finder, module):
     finder.ignore("IronPython")
     finder.ignore("cStringIO")
@@ -467,6 +474,7 @@ def hook_numpy_core_umath(finder, module):
     module.__globalnames__.add("logical_xor")
     module.__globalnames__.add("maximum")
     module.__globalnames__.add("minimum")
+    module.__globalnames__.add("multiarray")
     module.__globalnames__.add("multiply")
     module.__globalnames__.add("negative")
     module.__globalnames__.add("not_equal")
