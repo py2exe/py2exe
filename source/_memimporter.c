@@ -68,10 +68,10 @@ int do_import(FARPROC init_func, char *modname)
 		PyObject *msg = PyUnicode_FromFormat("dynamic module does not define "
 						     "init function (PyInit_%s)",
 						     modname);
-		if (msg == NULL)
-			return -1;
-		PyErr_SetImportError(msg, name, NULL);
-		Py_DECREF(msg);
+		if (msg != NULL) {
+			PyErr_SetImportError(msg, name, NULL);
+			Py_DECREF(msg);
+		}
 		Py_DECREF(name);
 		return -1;
 	}
