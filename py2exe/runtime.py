@@ -495,8 +495,8 @@ class Runtime(object):
             if self.options.verbose:
                 print("Copy %s to %s" % (pydll, destdir))
             shutil.copy2(pydll, dst)
-            with UpdateResources(dst, delete_existing=False) as resource:
-                resource.add_string(1000, "py2exe")
+#             with UpdateResources(dst, delete_existing=False) as resource:
+#                 resource.add_string(1000, "py2exe")
 
         if self.options.bundle_files == 3:
             # copy extension modules; they go to libdir
