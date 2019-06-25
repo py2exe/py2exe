@@ -12,6 +12,9 @@ For further information see [the original README](README_ORIGINAL.rst).
 
 Version History
 -------
+Version 0.9.3.1:
+read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.1).
+
 Version 0.9.3.0:
 - introduce compatibility with Python 3.7.
 - automatic wheels building for cp35-cp36-cp37 on win32 and win_amd64.
