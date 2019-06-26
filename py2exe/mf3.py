@@ -15,6 +15,7 @@ import struct
 import sys
 import textwrap
 import warnings
+from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 # XXX Clean up once str8's cstor matches bytes.
 LOAD_CONST = dis.opname.index('LOAD_CONST')
@@ -670,13 +671,31 @@ class Module:
             except AttributeError:
                 pass
 
+    @property
+    def __compiled_file__(self):
+        """Gets the path for the module that will be used as file name at compilation time."""
+        try:
+            source = self.__source__
+        except:
+            source = None
+        if source is None:
+            if hasattr(self, __file__):
+                return self.__file__
+            raise RuntimeError("getting compiled file from %r" % self) from None
+        if self.__optimize__:
+            bytecode_suffix = OPTIMIZED_BYTECODE_SUFFIXES[0]
+        else:
+            bytecode_suffix = DEBUG_BYTECODE_SUFFIXES[0]
+        if hasattr(self, "__path__"):
+            return self.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+        else:
+            return self.__name__.replace(".", "\\") + bytecode_suffix
+
 
     @property
     def __code__(self):
         if self.__code_object__ is None:
-            if self.__optimize__ == sys.flags.optimize:
-                self.__code_object__ = self.__loader__.get_code(self.__name__)
-            else:
+            try:
                 try:
                     source = self.__source__
                 except Exception:
@@ -684,7 +703,7 @@ class Module:
                     raise RuntimeError("loading %r" % self) from None
                 if source is not None:
                     # XXX??? for py3exe:
-                    __file__ = self.__file__ \
+                    __file__ = self.__compiled_file__ \
                                if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
@@ -695,6 +714,11 @@ class Module:
                 elif hasattr(self, "__file__") and not self.__file__.endswith(".pyd"):
                     # XXX Remove the following line if the Bug is never triggered!
                     raise RuntimeError("should read __file__ to get the source???")
+            except RuntimeError:
+                if self.__optimize__ != sys.flags.optimize:
+                    raise
+                print("Falling back to loader to get code for module %s" % self.__name__)
+                self.__code_object__ = self.__loader__.get_code(self.__name__)
         return self.__code_object__
 
 
