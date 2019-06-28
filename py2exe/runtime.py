@@ -417,7 +417,7 @@ class Runtime(object):
         # keys; we only need one of them in the archive.
         for mod in set(self.mf.modules.values()):
             if mod.__code__:
-                path =mod.__compiled_file__
+                path =mod.__dest_file__
                 stream = io.BytesIO()
                 stream.write(imp.get_magic())
                 if sys.version_info >= (3,7,0):

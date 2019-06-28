@@ -672,16 +672,8 @@ class Module:
                 pass
 
     @property
-    def __compiled_file__(self):
-        """Gets the path for the module that will be used as file name at compilation time."""
-        try:
-            source = self.__source__
-        except:
-            source = None
-        if source is None:
-            if hasattr(self, __file__):
-                return self.__file__
-            raise RuntimeError("getting compiled file from %r" % self) from None
+    def __dest_file__(self):
+        """Gets the destination path for the module that will be used at compilation time."""
         if self.__optimize__:
             bytecode_suffix = OPTIMIZED_BYTECODE_SUFFIXES[0]
         else:
@@ -703,7 +695,7 @@ class Module:
                     raise RuntimeError("loading %r" % self) from None
                 if source is not None:
                     # XXX??? for py3exe:
-                    __file__ = self.__compiled_file__ \
+                    __file__ = self.__dest_file__ \
                                if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
