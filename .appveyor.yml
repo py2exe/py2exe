@@ -103,6 +103,10 @@ test_script:
   - python -c "import py2exe"
   - cd tests
   - python maketest.py
+  - cd functional
+  - cd ssl_test
+  - python setup.py py2exe
+  - dist\ssl_test.exe
   
 artifacts:
   - path: 'dist/$(wheelname)'
