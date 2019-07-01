@@ -106,6 +106,12 @@ test_script:
   - cd functional
   - cd ssl_test
   - python setup.py py2exe
+  #- where /r c:\Windows libssl*
+  #- where /r c:\Windows libcry*
+  - del C:\Windows\System32\libssl*.dll /F
+  - del C:\Windows\SysWOW64\libssl*.dll /F
+  - del C:\Windows\System32\libcrypto*.dll /F
+  - del C:\Windows\SysWOW64\libcrypto*.dll /F
   - dist\ssl_test.exe
   
 artifacts:
