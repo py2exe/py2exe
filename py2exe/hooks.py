@@ -561,7 +561,7 @@ def hook__ssl(finder, module):
     On python 3.7 and above, _ssl.pyd requires additional dll's to load.
     Based on code by Sebastian Krause: https://github.com/anthony-tuininga/cx_Freeze/pull/470
     """
-    if sys.version_info < (3, 7):
+    if sys.version_info < (3, 7, 0):
         return
     import glob
     for dll_search in ["libcrypto-*.dll", "libssl-*.dll"]:
