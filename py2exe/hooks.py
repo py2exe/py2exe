@@ -219,9 +219,12 @@ def hook__socket(finder, module):
     """
     _socket.pyd uses the 'idna' encoding; and that requires
     'unicodedata.pyd'.
+    Also 'imp' is required from Python 3.6
     """
     finder.import_hook("encodings.idna")
     finder.import_hook("unicodedata")
+    if sys.version_info >= (3,6,0):
+        finder.import_hook("imp")
 
 def hook_pyreadline(finder, module):
     """
