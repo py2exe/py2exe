@@ -558,3 +558,16 @@ def hook_scipy_optimize(finder, module):
         finder.recursion_depth_optimize = depth + 1
         finder.import_hook("scipy.optimize.minpack2")
         finder.recursion_depth_optimize = depth
+
+def hook__ssl(finder, module):
+    """
+    On python 3.7 and above, _ssl.pyd requires additional dll's to load.
+    Based on code by Sebastian Krause: https://github.com/anthony-tuininga/cx_Freeze/pull/470
+    """
+    if sys.version_info < (3, 7, 0):
+        return
+    import glob
+    for dll_search in ["libcrypto-*.dll", "libssl-*.dll"]:
+        for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
+            dll_name = os.path.basename(dll_path)
+            finder.add_dll(dll_path)
