@@ -93,17 +93,23 @@ for:
 # Not a project with an msbuild file, build done at install.
 build: off
 
-# Run tests here
-test_script:
+before_test:
   - dir dist
   - for /r %%f in (dist/*) do @set wheelname=%%~nxf
   - echo %wheelname% 
   - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
+
+test_script:
   - pip install dist/%wheelname%
   - python -c "import py2exe"
   - cd tests
   - python maketest.py
   - cd functional
+  - cd tk_test
+  - python setup.py py2exe
+  - cd dist
+  - tk_test.exe
+  - cd ..\..
   - cd ssl_test
   - python setup.py py2exe
   #- where /r c:\Windows libssl*
