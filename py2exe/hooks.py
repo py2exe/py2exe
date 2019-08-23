@@ -274,15 +274,37 @@ def hook_win32api(finder, module):
     finder.import_hook("win32timezone")
 
 def hook_tkinter(finder, module):
-    """Recusively copy tcl and tk directories.
-    """
-    # It probably doesn't make sense to exclude tix from the tcl distribution,
-    # and only copy it when tkinter.tix is imported...
-    import tkinter._fix as fix
-    tcl_dir = os.path.normpath(os.path.join(fix.tcldir, ".."))
+    """Recusively copy tcl and tk directories"""
+    from tkinter import Tcl
+    from _tkinter import TK_VERSION
+    tcl_dir = os.path.normpath(Tcl().eval("info library"))
     assert os.path.isdir(tcl_dir)
-    finder.add_datadirectory("tcl", tcl_dir, recursive=True)
+    finder.add_datadirectory("lib/tcl", tcl_dir, recursive=True)
+    tk_dir = os.path.join(os.path.dirname(tcl_dir), 'tk{}'.format(TK_VERSION))
+    assert os.path.isdir(tk_dir)
+    finder.add_datadirectory("lib/tk", tk_dir, recursive=True)
     finder.set_min_bundle("tkinter", 2)
+    if sys.version_info >= (3,6,0):
+        finder.import_hook("imp")
+    # import DLLs
+    tk_ver = TK_VERSION.replace('.', '')
+    import glob
+    for dll_search in ["tcl"+ tk_ver + "*.dll", "tk"+ tk_ver + "*.dll"]:
+        for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
+            dll_name = os.path.basename(dll_path)
+            finder.add_dll(dll_path)
+    # add environment variables that point to the copied paths at runtime
+    finder.add_bootcode("""
+def tk_env_paths():
+    import os
+    tcl_dir = os.path.join(os.getcwd(), 'lib', 'tcl')
+    tk_dir = os.path.join(os.getcwd(), 'lib', 'tk')
+    os.environ["TCL_LIBRARY"] = tcl_dir
+    os.environ["TK_LIBRARY"] = tk_dir
+
+tk_env_paths()
+del tk_env_paths
+""")
 
 def hook_six(finder, module):
     """six.py has an object 'moves'. This allows to import
