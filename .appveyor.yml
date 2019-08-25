@@ -110,6 +110,14 @@ test_script:
   - cd dist
   - tk_test.exe
   - cd ..\..
+  - cd certifi_test
+  - pip install certifi
+  - python setup.py py2exe
+  - dist\certifi_test.exe
+  - rmdir /Q /S dist
+  - python setup_zip.py py2exe
+  - dist\certifi_test.exe
+  - cd ..
   - cd ssl_test
   - python setup.py py2exe
   #- where /r c:\Windows libssl*
