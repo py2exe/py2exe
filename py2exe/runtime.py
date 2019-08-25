@@ -277,6 +277,7 @@ class Runtime(object):
         # data files from modulefinder
         for name, src in self.mf._data_files.items():
             dst = os.path.join(destdir, name)
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy2(src, dst)
 
         # other data files
@@ -523,6 +524,18 @@ class Runtime(object):
             if self.options.verbose:
                 print("Copy DLL %s to %s" % (src, extdlldir))
             shutil.copy2(src, extdlldir)
+
+        # lib files from modulefinder
+        for name, src in self.mf._lib_files.items():
+            if self.options.bundle_files == 3:
+                extdlldir = libdir
+            else:
+                extdlldir = destdir            
+            dst = os.path.join(extdlldir, name)
+            os.makedirs(os.path.dirname(extdlldir), exist_ok=True)
+            if self.options.verbose:
+                print("Copy lib file %s to %s" % (src, extdlldir))
+            shutil.copy2(src, dst)
 
         if self.options.bundle_files == 3:
             # extension dlls go to libdir
