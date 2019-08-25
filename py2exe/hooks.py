@@ -91,16 +91,20 @@ def hook_OpenSSL(finder, module):
 
 def hook_certifi(finder, module):
     import certifi
-    finder.add_datafile("lib", certifi.where())
+    finder.add_libfile("cacert.pem", certifi.where())
     finder.add_bootcode("""
 def patch_certifi():
-    def override_where():
-        # change this to match the location of cacert.pem
-        import os
-        return os.path.join(os.getcwd(), 'lib', 'cacert.pem')
-
     import certifi
     from certifi.core import where
+
+    def override_where():
+        # change this to match the location of cacert.pem
+        import os.path
+        pt = where()
+        while not os.path.exists(pt):
+            pt = os.path.dirname(pt)
+        pt = os.path.dirname(pt)
+        return os.path.join(pt, 'cacert.pem')
 
     certifi.where = override_where
     certifi.core.where = override_where
