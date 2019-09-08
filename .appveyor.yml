@@ -98,9 +98,11 @@ before_test:
   - for /r %%f in (dist/*) do @set wheelname=%%~nxf
   - echo %wheelname% 
   - for /F "tokens=2 delims='" %%a in ('findstr __version__ py2exe\__init__.py') do @set ver=%%a
+  - echo %ver%
 
 test_script:
   - pip install dist/%wheelname%
+  #- pip install --no-index --find-links=dist py2exe
   - python -c "import py2exe"
   - cd tests
   - python maketest.py
@@ -127,6 +129,12 @@ test_script:
   - del C:\Windows\System32\libcrypto*.dll /F
   - del C:\Windows\SysWOW64\libcrypto*.dll /F
   - dist\ssl_test.exe
+  - cd ..
+  - pip install pywin32
+  - cd pywin32_test
+  - python setup.py py2exe
+  - dist\pywin32_test.exe
+  
   
 artifacts:
   - path: 'dist/$(wheelname)'
