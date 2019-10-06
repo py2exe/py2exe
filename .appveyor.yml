@@ -112,6 +112,12 @@ test_script:
   - cd dist
   - tk_test.exe
   - cd ..\..
+  - cd sqlite_test
+  - python sqlite_test.py
+  - python setup.py py2exe
+  - cd dist
+  - sqlite_test.exe
+  - cd ..\..
   - cd certifi_test
   - pip install certifi
   - python setup.py py2exe
