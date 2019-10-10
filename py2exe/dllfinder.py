@@ -3,9 +3,12 @@
 """dllfinder
 """
 from . import _wapi
+from . import pewalker
 import collections
 from importlib.machinery import EXTENSION_SUFFIXES
 import os
+
+import platform
 import sys
 
 from . mf3 import ModuleFinder
@@ -84,7 +87,6 @@ class DllFinder:
         """Call BindImageEx and collect all dlls that are bound.
         """
         # XXX Should cache results!
-        import platform
         if platform.architecture()[0]=="32bit":
             pth = ";".join([p for p in os.environ["PATH"].split(';') if not "intel64_win" in p])
         elif platform.architecture()[0]=="64bit":
@@ -124,6 +126,15 @@ class DllFinder:
                           status_routine)
         # Be a good citizen and cleanup:
         os.environ["PATH"] = old_path
+
+        if not result:
+            # Backup method based on pewaklker
+            dlls = pewalker.getImports(imagename)
+
+            for lib in dlls:
+                pt = self.search_path(lib, path)
+                if pt is not None:
+                    result.add(pt)
 
         return result
 
