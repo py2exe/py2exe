@@ -1,3 +1,8 @@
+The file py2exe/pewalker.py is licensed under the GNU General 
+Public License v2, see GPL2-License.txt. This file of any portion of it
+is never included in either artifacts or binaries generated through the 
+use of this software.
+
 The files source/MemoryModule.c and source/MemoryModule.h are licensed
 under the Mozilla Public License Version 2.0, see
 MPL2-License.txt.
