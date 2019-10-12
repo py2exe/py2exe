@@ -276,13 +276,13 @@ PyObject *PyUnicode_FromString(const char *u)
   return proc(u);
 }
 
-#ifdef Py_LIMITED_API
+#undef _Py_Dealloc
+
 void _Py_Dealloc(PyObject *ob)
 {
-  FUNC(void, _Py_Dealloc, (PyObject *));
+  FUNC(void, _Py_Dealloc_inline, (PyObject *));
   proc(ob);
 }
-#endif
 
 char *PyBytes_AsString(PyObject *string)
 {
