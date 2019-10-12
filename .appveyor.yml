@@ -40,7 +40,7 @@ init:
   - python -c "import struct; print(struct.calcsize('P') * 8)"
   - python -m site
   - python -m pip install -U pip setuptools wheel
-  - python -m pip install -U pefile
+  - python -m pip install -U cachetools pefile
 
 for:
   - 

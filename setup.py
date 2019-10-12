@@ -145,7 +145,7 @@ if __name__ == "__main__":
     ##      maintainer_email="jimmy@retzlaff.com",
           url="http://www.py2exe.org/",
           license="MIT/X11",
-          install_requires=["pefile"],
+          install_requires=["cachetools", "pefile"],
           platforms="Windows",
     ##      download_url="http://sourceforge.net/project/showfiles.php?group_id=15583",
 

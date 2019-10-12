@@ -11,6 +11,8 @@ import os
 import platform
 import sys
 
+from cachetools import cached, LFUCache
+
 from . mf3 import ModuleFinder
 from . import hooks
 
@@ -83,10 +85,10 @@ class DllFinder:
                 todo.add(dep_dll)
                 self._dlls[dep_dll].add(dll)
 
+    @cached(cache=LFUCache(maxsize=128))
     def bind_image(self, imagename):
         """Call BindImageEx and collect all dlls that are bound.
         """
-        # XXX Should cache results!
         if platform.architecture()[0]=="32bit":
             pth = ";".join([p for p in os.environ["PATH"].split(';') if not "intel64_win" in p])
         elif platform.architecture()[0]=="64bit":
