@@ -6,12 +6,15 @@ Windows executable programs (32-bit and 64-bit) from Python scripts.
 It can build console executables, windows (GUI) executables, windows
 services, and DLL/EXE COM servers.
 
-This is an attempt to support py2exe on Python 3.5-3.6-3.7 and with modern modules. Credits to [mitre/caldera-py2exe](https://github.com/mitre/caldera-py2exe) for the fixes for Python 3.5.
+This repository extends the support of py2exe to Python 3.5-3.6-3.7. 
 
 For further information see [the original README](README_ORIGINAL.rst).
 
 Version History
 -------
+Version 0.9.3.2:
+read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
+
 Version 0.9.3.1:
 read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.1).
 
@@ -38,3 +41,8 @@ How to manually build and install:
 - Navigate to the py2exe folder
 - Execute `python setup.py bdist_wheel`
 - Install with `pip`
+
+Credits
+--------
+Credits to [mitre/caldera-py2exe](https://github.com/mitre/caldera-py2exe) for the 
+original fixes for Python 3.5.
