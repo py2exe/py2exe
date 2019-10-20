@@ -422,6 +422,8 @@ class Runtime(object):
         for mod in set(self.mf.modules.values()):
             if mod.__code__:
                 path =mod.__dest_file__
+                if self.options.verbose > 1:
+                    print("Add %s to %s" % (mod.__file__, libpath))
                 stream = io.BytesIO()
                 stream.write(imp.get_magic())
                 if sys.version_info >= (3,7,0):
@@ -485,6 +487,7 @@ class Runtime(object):
         """Copy files (pyds, dlls, depending on the bundle_files value,
         into the dist resp. library directory.
         """
+
         if self.options.libname is not None:
             libdir = os.path.join(destdir, os.path.dirname(self.options.libname))
         else:
