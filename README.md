@@ -10,6 +10,11 @@ This repository extends the support of py2exe to Python 3.5-3.6-3.7.
 
 For further information see [the original README](README_ORIGINAL.rst).
 
+How to install:
+-------
+- Get the latest wheels for your Python version/architecture from [releases](https://github.com/albertosottile/py2exe/releases).
+- Install the downloaded wheel using `pip install` followed by the wheel filename. 
+
 Version History
 -------
 Version 0.9.3.2:
@@ -35,12 +40,12 @@ Version 0.9.2.7: last version from upstream.
 
 How to manually build and install:
 -------
-
-- Install VS2015 or [VC++ Build Tools](http://landinghub.visualstudio.com/visual-cpp-build-tools)
+- Install VS2015 or VC++ Build Tools (details available [here](https://wiki.python.org/moin/WindowsCompilers#Microsoft_Visual_C.2B-.2B-_14.2_standalone:_Build_Tools_for_Visual_Studio_2019_.28x86.2C_x64.2C_ARM.2C_ARM64.29))
 - Open the "VS2015 x64 Native Tools Command Prompt" 
 - Navigate to the py2exe folder
+- Install the dependencies `pip install pefile cachetools wheel`
 - Execute `python setup.py bdist_wheel`
-- Install with `pip`
+- Install the built wheel with `pip`
 
 Credits
 --------
