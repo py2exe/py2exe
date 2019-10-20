@@ -108,40 +108,19 @@ test_script:
   - cd tests
   - python maketest.py
   - cd functional
-  - cd tk_test
-  - python setup.py py2exe
-  - cd dist
-  - tk_test.exe
-  - cd ..\..
-  - cd sqlite_test
-  - python sqlite_test.py
-  - python setup.py py2exe
-  - cd dist
-  - sqlite_test.exe
-  - cd ..\..
-  - cd certifi_test
-  - pip install certifi
-  - python setup.py py2exe
-  - dist\certifi_test.exe
-  - rmdir /Q /S dist
-  - python setup_zip.py py2exe
-  - dist\certifi_test.exe
-  - cd ..
+  - runner tk_test
+  - runner sqlite_test
+  - runner certifi_test
+  - runner certifi_zip_test
+  - runner pywin32_test
   - cd ssl_test
   - python setup.py py2exe
-  #- where /r c:\Windows libssl*
-  #- where /r c:\Windows libcry*
   - del C:\Windows\System32\libssl*.dll /F
   - del C:\Windows\SysWOW64\libssl*.dll /F
   - del C:\Windows\System32\libcrypto*.dll /F
   - del C:\Windows\SysWOW64\libcrypto*.dll /F
   - dist\ssl_test.exe
   - cd ..
-  - pip install pywin32
-  - cd pywin32_test
-  - python setup.py py2exe
-  - dist\pywin32_test.exe
-  
   
 artifacts:
   - path: 'dist/$(wheelname)'
