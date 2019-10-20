@@ -113,14 +113,7 @@ test_script:
   - runner certifi_test
   - runner certifi_zip_test
   - runner pywin32_test
-  - cd ssl_test
-  - python setup.py py2exe
-  - del C:\Windows\System32\libssl*.dll /F
-  - del C:\Windows\SysWOW64\libssl*.dll /F
-  - del C:\Windows\System32\libcrypto*.dll /F
-  - del C:\Windows\SysWOW64\libcrypto*.dll /F
-  - dist\ssl_test.exe
-  - cd ..
+  - runner ssl_test
   
 artifacts:
   - path: 'dist/$(wheelname)'
