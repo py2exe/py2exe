@@ -67,6 +67,9 @@ def init_finder(finder):
     finder.ignore("urllib2")
     finder.ignore("urlparse")
 
+    # Import distutils with a method able to handle virtualenvs
+    import_distutils(finder)
+
 def hook_pycparser(finder, module):
     """pycparser needs lextab.py and yacctab.py which are not picked
     up automatically.  Make sure the complete package is included;
@@ -185,7 +188,6 @@ def patch_cffi():
 patch_cffi()
 del patch_cffi
 """)
-    
 
 def hook_multiprocessing(finder, module):
     module.__globalnames__.add("AuthenticationError")
@@ -591,3 +593,27 @@ def hook__ssl(finder, module):
         for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
+
+def import_distutils(finder):
+    '''
+    This hook is needed when packaging from a virtualenv
+    virtualenv uses a heavily modified version of distutils, this hook embeds
+    instead the module (and other stdlib modules) from the parent Python installation.
+    Technique taken from virtualenv code:
+    https://github.com/pypa/virtualenv/blob/16.3.0/virtualenv_embedded/distutils-init.py#L5
+    '''
+    import distutils
+    import opcode
+
+    system_path = os.path.normpath(os.path.dirname(opcode.__file__))
+    loaded_path = os.path.normpath(os.path.dirname(distutils.__file__))
+    if system_path != loaded_path:
+        finder.excludes.append('distutils')
+        # import distutils from parent Python
+        import importlib.machinery
+        import importlib.util
+        distutils_path = os.path.join(system_path, "distutils", "__init__.py")
+        print('Importing distutils from {}'.format(distutils_path))
+        loader = importlib.machinery.SourceFileLoader("distutils", distutils_path)
+        finder._load_module(loader, "distutils")
+        finder.import_package('distutils', skipimport=True)

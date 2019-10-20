@@ -87,11 +87,12 @@ class ModuleFinder:
         # self._add_module("__SCRIPT__", mod)
         self._scan_code(mod.__code__, mod)
 
-    def import_package(self, name):
+    def import_package(self, name, skipimport=False):
         """Import a complete package.
 
         """
-        self.import_hook(name)
+        if not skipimport:
+            self.import_hook(name)
         package = self.modules[name]
         if not hasattr(package, "__path__"):
             # Hm, should we raise ImportError instead?
@@ -100,7 +101,6 @@ class ModuleFinder:
             self.safe_import_hook("%s.%s" % (name, modname))
             if ispkg:
                 self.import_package("%s.%s" % (name, modname))
-
 
     def import_hook(self, name, caller=None, fromlist=(), level=0):
         """Import a module.
