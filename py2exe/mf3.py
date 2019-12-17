@@ -15,6 +15,12 @@ import struct
 import sys
 import textwrap
 import warnings
+
+from importlib.machinery import EXTENSION_SUFFIXES
+if '.pyd' in EXTENSION_SUFFIXES:
+    EXTENSION_TARGET_SUFFIX = '.pyd'
+else:
+    raise AssertionError
 from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 # XXX Clean up once str8's cstor matches bytes.
@@ -682,6 +688,21 @@ class Module:
             return self.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
         else:
             return self.__name__.replace(".", "\\") + bytecode_suffix
+
+
+    @property
+    def __filename__(self):
+        if not hasattr(self, "__file__"):
+            return None
+        assert self.__file__.endswith(self.__extension__)
+        return self.__file__
+
+
+    @property
+    def __extension__(self):
+        if self.__loader__.__class__ != importlib.machinery.ExtensionFileLoader:
+            return None
+        return EXTENSION_TARGET_SUFFIX
 
 
     @property

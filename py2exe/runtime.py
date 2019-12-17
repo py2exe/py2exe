@@ -19,11 +19,6 @@ from .icons import BuildIcons
 
 logger = logging.getLogger("runtime")
 
-from importlib.machinery import EXTENSION_SUFFIXES
-if '.pyd' in EXTENSION_SUFFIXES:
-    EXTENSION_TARGET_SUFFIX = '.pyd'
-else:
-    raise AssertionError
 from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 RT_MANIFEST = 24
@@ -431,11 +426,10 @@ class Runtime(object):
                 marshal.dump(mod.__code__, stream)
                 arc.writestr(path, stream.getvalue())
 
-            elif hasattr(mod, "__file__"):
-                assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+            elif mod.__filename__:
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
-                    arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_TARGET_SUFFIX
+                    arcfnm = mod.__name__.replace(".", "\\") + mod.__extension__
                     if self.options.verbose > 1:
                         print("Add %s to %s" % (os.path.basename(mod.__file__), libpath))
                     arc.write(mod.__file__, arcfnm)
@@ -444,7 +438,7 @@ class Runtime(object):
                     # dlldir.  To be able to import it without dlldir
                     # being on sys.path, create a loader module and
                     # put that into the archive.
-                    pydfile = mod.__name__ + EXTENSION_TARGET_SUFFIX
+                    pydfile = mod.__name__ + mod.__extension__
                     if self.options.verbose > 1:
                         print("Add Loader for %s to %s" % (os.path.basename(mod.__file__), libpath))
                     loader = LOAD_FROM_DIR.format(pydfile)
@@ -505,9 +499,8 @@ class Runtime(object):
                 if mod.__code__:
                     # nothing to do for python modules.
                     continue
-                if hasattr(mod, "__file__"):
-                    assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
-                    pydfile = mod.__name__ + EXTENSION_TARGET_SUFFIX
+                if mod.__filename__:
+                    pydfile = mod.__name__ + mod.__extension__
 
                     dst = os.path.join(libdir, pydfile)
                     if self.options.verbose:
