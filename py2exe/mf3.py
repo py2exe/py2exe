@@ -687,6 +687,8 @@ class Module:
     @property
     def __code__(self):
         if self.__code_object__ is None:
+            if self.__loader__.__class__ == importlib.machinery.ExtensionFileLoader:
+                return None
             try:
                 try:
                     source = self.__source__
