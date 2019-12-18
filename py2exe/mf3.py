@@ -21,6 +21,7 @@ if '.pyd' in EXTENSION_SUFFIXES:
     EXTENSION_TARGET_SUFFIX = '.pyd'
 else:
     raise AssertionError
+DLL_SUFFIX = '.dll'
 from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 # XXX Clean up once str8's cstor matches bytes.
@@ -702,7 +703,13 @@ class Module:
     def __extension__(self):
         if self.__loader__.__class__ != importlib.machinery.ExtensionFileLoader:
             return None
-        return EXTENSION_TARGET_SUFFIX
+        if self.__file__.endswith(EXTENSION_TARGET_SUFFIX):
+            return EXTENSION_TARGET_SUFFIX
+        if 'pywintypes' in self.__file__:
+            return DLL_SUFFIX
+        if 'pythoncom' in self.__file__:
+            return DLL_SUFFIX
+        raise RuntimeError('Suffix for Extension Module "{}" unsupported'.format(self.__file__))
 
 
     @property
