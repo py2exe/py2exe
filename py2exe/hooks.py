@@ -591,3 +591,11 @@ def hook__ssl(finder, module):
         for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
+
+
+def hook_PyQt5(finder, module):
+    qt_libs_path = os.path.join(os.path.dirname(module.__loader__.path), 'Qt\\bin\\')
+    from os import listdir
+    dlls = [os.path.join(qt_libs_path, fln) for fln in listdir(qt_libs_path) if fln.endswith('.dll')]
+    for dll in dlls:
+        finder.add_dll(dll)
