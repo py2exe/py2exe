@@ -370,12 +370,13 @@ def hook_numpy(finder, module):
     finder.ignore("scipy")
     #add numpy external DLLs to the bundle
     numpy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
-    from os import listdir
-    dlls = [os.path.join(numpy_libs_path, fln)
-            for fln in listdir(numpy_libs_path)
-            if fln.endswith('.dll')]
-    for dll in dlls:
-        finder.add_dll(dll)
+    if os.path.isdir(numpy_libs_path):
+        from os import listdir
+        dlls = [os.path.join(numpy_libs_path, fln)
+                for fln in listdir(numpy_libs_path)
+                if fln.endswith('.dll')]
+        for dll in dlls:
+            finder.add_dll(dll)
 
 def hook_nose(finder, module):
     finder.ignore("IronPython")
