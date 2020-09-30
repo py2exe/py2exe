@@ -18,6 +18,10 @@ environment:
        PYTHON_VERSION: 3.7
        PYTHON_ARCH: 32
 
+    -  PYTHON: "C:\\Python38"
+       PYTHON_VERSION: 3.8
+       PYTHON_ARCH: 32
+
     -  PYTHON: "C:\\Python35-x64"
        PYTHON_VERSION: 3.5
        PYTHON_ARCH: 64
@@ -28,6 +32,10 @@ environment:
 
     -  PYTHON: "C:\\Python37-x64"
        PYTHON_VERSION: 3.7
+       PYTHON_ARCH: 64
+
+    -  PYTHON: "C:\\Python38-x64"
+       PYTHON_VERSION: 3.8
        PYTHON_ARCH: 64
 
 configuration: Release
@@ -70,6 +78,14 @@ for:
   - 
     matrix:
       only:
+        - PYTHON_VERSION: 3.8
+          PYTHON_ARCH: 32
+    install:
+        - python setup.py bdist_wheel --python-tag cp38 --plat-name win32
+        
+  - 
+    matrix:
+      only:
         - PYTHON_VERSION: 3.5
           PYTHON_ARCH: 64
     install:
@@ -90,6 +106,14 @@ for:
           PYTHON_ARCH: 64
     install:
         - python setup.py bdist_wheel --python-tag cp37 --plat-name win_amd64
+
+  - 
+    matrix:
+      only:
+        - PYTHON_VERSION: 3.8
+          PYTHON_ARCH: 64
+    install:
+        - python setup.py bdist_wheel --python-tag cp38 --plat-name win_amd64
 
 # Not a project with an msbuild file, build done at install.
 build: off
