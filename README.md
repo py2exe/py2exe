@@ -6,7 +6,7 @@ Windows executable programs (32-bit and 64-bit) from Python scripts.
 It can build console executables, windows (GUI) executables, windows
 services, and DLL/EXE COM servers.
 
-This repository extends the support of py2exe to Python 3.5-3.6-3.7. 
+This repository extends the support of py2exe to Python 3.5--3.8.
 
 For further information see [the original README](README_ORIGINAL.rst).
 
@@ -17,6 +17,9 @@ How to install:
 
 Version History
 -------
+Version 0.9.4.0:
+read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.4.0).
+
 Version 0.9.3.2:
 read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
 
