@@ -141,23 +141,22 @@ if __name__ == "__main__":
           long_description=open("README_ORIGINAL.rst").read(),
           author="Thomas Heller",
           author_email="theller@ctypes.org",
-    ##      maintainer="Jimmy Retzlaff",
-    ##      maintainer_email="jimmy@retzlaff.com",
+          maintainer="Alberto Sottile",
+          maintainer_email="alby128@gmail.com",
           url="http://www.py2exe.org/",
           license="MIT/X11",
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
-    ##      download_url="http://sourceforge.net/project/showfiles.php?group_id=15583",
 
           classifiers=[
               "Development Status :: 4 - Beta",
               "Environment :: Console",
               "License :: OSI Approved :: MIT License",
               "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
+              "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: C",
               "Programming Language :: Python :: 3",
-              "Programming Language :: Python :: 3.7",
               "Programming Language :: Python :: Implementation :: CPython",
               "Topic :: Software Development",
               "Topic :: Software Development :: Libraries",
@@ -175,6 +174,7 @@ if __name__ == "__main__":
           interpreters = interpreters,
           py_modules=['zipextimporter'],
           packages=['py2exe'],
+          include_package_data=True,
           )
 
 # Local Variables:
