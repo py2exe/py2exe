@@ -17,8 +17,8 @@ How to install:
 
 Version History
 -------
-Version 0.9.4.0:
-read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.4.0).
+Version 0.10.0.0:
+read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.0).
 
 Version 0.9.3.2:
 read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
