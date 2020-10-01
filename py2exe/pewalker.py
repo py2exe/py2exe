@@ -4,9 +4,14 @@
 pewalker
 Methods used to determine the libraries linked by binary files (e.g. .pyd and .dll)
 
-This file is distributed under the terms of the GNU General Public License v2,
-see GPL2-License.txt.
-
+#-----------------------------------------------------------------------------------
+# Copyright (c) 2013-2020, PyInstaller Development Team.
+#
+# This file is distributed under the terms of the GNU General Public License 
+# (version 2 or later) with exception for distributing the bootloader.
+#
+# The full license is in the file GPL2-License.txt, distributed with this software.
+#-----------------------------------------------------------------------------------
 """
 import pefile
 
