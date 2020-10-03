@@ -20,7 +20,8 @@ Version History
 Version 0.10.0.0:
 - support for Python 3.8.
 - new walker for binary dependencies based on `pefile`.
-read the full [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.0).
+
+Read the full [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.0).
 
 Version 0.9.3.2:
 read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
