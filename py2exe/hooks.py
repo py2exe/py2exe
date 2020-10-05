@@ -95,12 +95,11 @@ def hook_certifi(finder, module):
     finder.add_bootcode("""
 def patch_certifi():
     import certifi
-    from certifi.core import where
 
     def override_where():
         # change this to match the location of cacert.pem
         import os.path
-        pt = where()
+        pt = os.path.dirname(certifi.__file__)
         while not os.path.exists(pt):
             pt = os.path.dirname(pt)
         pt = os.path.dirname(pt)
