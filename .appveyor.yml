@@ -133,6 +133,7 @@ test_script:
   - python maketest.py
   - cd functional
   - runner tk_test
+  - del "C:\Program Files\Amazon\AWSCLI\sqlite3.dll" /F
   - runner sqlite_test
   - runner certifi_test
   - runner certifi_zip_test
