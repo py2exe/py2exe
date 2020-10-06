@@ -139,6 +139,7 @@ test_script:
   - runner certifi_zip_test
   - runner pywin32_test
   - runner ssl_test
+  - runner numpy_test
   
 artifacts:
   - path: 'dist/$(wheelname)'
