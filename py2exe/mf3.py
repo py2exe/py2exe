@@ -366,6 +366,8 @@ class ModuleFinder:
                 loader = None
             else:
                 raise
+        except KeyError:
+            loader = None
         if loader is None:
             self._add_badmodule(name)
             raise ImportError(name)

@@ -384,6 +384,10 @@ def hook_nose(finder, module):
 def hook_sysconfig(finder, module):
     finder.ignore("_sysconfigdata")
 
+def hook_numpy_random(finder, module):
+    finder.ignore("_examples")
+    finder.ignore("tests")
+
 def hook_numpy_random_mtrand(finder, module):
     """the numpy.random.mtrand module is an extension module and the
     numpy.random module imports * from this module; define the list of
