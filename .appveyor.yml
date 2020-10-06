@@ -132,6 +132,7 @@ test_script:
   - cd tests
   - python maketest.py
   - cd functional
+  - runner numpy_test
   - runner tk_test
   - del "C:\Program Files\Amazon\AWSCLI\sqlite3.dll" /F
   - runner sqlite_test
@@ -139,7 +140,6 @@ test_script:
   - runner certifi_zip_test
   - runner pywin32_test
   - runner ssl_test
-  - runner numpy_test
   
 artifacts:
   - path: 'dist/$(wheelname)'
