@@ -153,7 +153,6 @@ if __name__ == "__main__":
               "Environment :: Console",
               "License :: OSI Approved :: MIT License",
               "License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)",
-              "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: C",
               "Programming Language :: Python :: 3",
@@ -174,7 +173,7 @@ if __name__ == "__main__":
           interpreters = interpreters,
           py_modules=['zipextimporter'],
           packages=['py2exe'],
-          package_data={'py2exe':['MIT-License.txt', 'MPL2-License.txt', 'GPL2-License.txt']},
+          package_data={'py2exe':['MIT-License.txt', 'MPL2-License.txt']},
           )
 
 # Local Variables:
