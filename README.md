@@ -17,12 +17,12 @@ How to install:
 
 Version History
 -------
-Version 0.10.0.1:
-read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.1).
+Version 0.10.0.2: 
+read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.2)
 
-Version 0.10.0.0: [(changelog)](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.0).
-- support for Python 3.8.
-- new walker for binary dependencies based on `pefile`.
+Version 0.10.0.1 - removed
+
+Version 0.10.0.0 - removed
 
 Version 0.9.3.2:
 read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
