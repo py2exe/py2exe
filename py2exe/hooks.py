@@ -293,8 +293,10 @@ def hook_tkinter(finder, module):
     finder.add_bootcode("""
 def tk_env_paths():
     import os
-    tcl_dir = os.path.join(os.getcwd(), 'lib', 'tcl')
-    tk_dir = os.path.join(os.getcwd(), 'lib', 'tk')
+    import _tkinter
+    basepath = os.path.dirname(_tkinter.__file__)
+    tcl_dir = os.path.join(basepath, 'lib', 'tcl')
+    tk_dir = os.path.join(basepath, 'lib', 'tk')
     os.environ["TCL_LIBRARY"] = tcl_dir
     os.environ["TK_LIBRARY"] = tk_dir
 
