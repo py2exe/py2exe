@@ -3,7 +3,7 @@
 """dllfinder
 """
 from . import _wapi
-from . import pewalker
+from . import pescan
 import collections
 from importlib.machinery import EXTENSION_SUFFIXES
 import os
@@ -130,8 +130,8 @@ class DllFinder:
         os.environ["PATH"] = old_path
 
         if not result:
-            # Backup method based on pewaklker
-            dlls = pewalker.getImports(imagename)
+            # Backup method based on pefile
+            dlls = pescan.find_loaded_dlls(imagename)
 
             for lib in dlls:
                 pt = self.search_path(lib, path)
