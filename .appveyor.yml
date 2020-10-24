@@ -38,6 +38,11 @@ environment:
        PYTHON_VERSION: 3.8
        PYTHON_ARCH: 64
 
+    -  PYTHON: "C:\\Python38-x64"
+       PYTHON_VERSION: 3.8
+       PYTHON_ARCH: 64
+       SDIST: yes
+
 configuration: Release
 
 init:
@@ -107,13 +112,22 @@ for:
     install:
         - python setup.py bdist_wheel --python-tag cp37 --plat-name win_amd64
 
-  - 
+  -
     matrix:
       only:
         - PYTHON_VERSION: 3.8
           PYTHON_ARCH: 64
     install:
         - python setup.py bdist_wheel --python-tag cp38 --plat-name win_amd64
+
+  -
+    matrix:
+      only:
+        - SDIST: yes
+    install:
+        - python setup.py sdist
+    test_script:
+        - dir dist
 
 # Not a project with an msbuild file, build done at install.
 build: off
