@@ -1,60 +1,64 @@
 py2exe for Python 3
 ===================
 
-`py2exe` is a distutils extension that allows to build standalone
-Windows executable programs (32-bit and 64-bit) from Python scripts.
-It can build console executables, windows (GUI) executables, windows
-services, and DLL/EXE COM servers.
+`py2exe` is a distutils extension which allows to build standalone
+Windows executable programs (32-bit and 64-bit) from Python scripts;
+Python 3.5 and later are supported. It can build console executables
+and windows (GUI) executables. Building windows services, and DLL/EXE
+COM servers might work but it is not actively supported.
 
-This repository extends the support of py2exe to Python 3.5--3.8.
+py2exe for Python 2 is still available at
+http://sourceforge.net/project/showfiles.php?group_id=15583.
 
-For further information see [the original README](README_ORIGINAL.rst).
+Changes (from versions 0.9.x)
+----------------------------
 
-How to install:
--------
-- Get the latest wheels for your Python version/architecture from [releases](https://github.com/albertosottile/py2exe/releases).
-- Install the downloaded wheel using `pip install` followed by the wheel filename. 
+Version 0.10.0.2:
+- Introduce compatibility with Python 3.5, 3.6, 3.7, and 3.8.
+- Dropped compatibility with Python 3.4 and earlier.
+- New or updated hooks for `certifi`, `numpy`, `tkinter`, `socket`, 
+`ssl`, and `six`.
+- The `zipfile` option has been removed.
+- `runtime`: the Python interpreter DLL is no longer altered before 
+being inserted in the executable bundle.
+- Several bugfixes, better error messages.
 
-Version History
--------
-Version 0.10.0.2: 
-read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.10.0.2)
 
-Version 0.10.0.1 - removed
+Installation
+------------
 
-Version 0.10.0.0 - removed
+```pip install py2exe```
 
-Version 0.9.3.2:
-read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.2).
 
-Version 0.9.3.1:
-read the [changelog](https://github.com/albertosottile/py2exe/releases/tag/v0.9.3.1).
+Using a setup-script
+--------------------
 
-Version 0.9.3.0:
-- introduce compatibility with Python 3.7.
-- automatic wheels building for cp35-cp36-cp37 on win32 and win_amd64.
-- restored automatic tests on AppVeyor for all the platforms.
+Documentation about the setup-script and other usage tips are in the
+wiki pages at http://www.py2exe.org.
 
-Version 0.9.2.9 (not released):
-- build wheels for Python 3.5 and Python 3.6.
-- fix a bug experienced when embedding `six.moves.urllib`.
-- introduce a `add_datafile` method in runtime for hooks.
-- new hook for `certifi`.
 
-Version 0.9.2.8 (not released): introduce compatibility with Python 3.5.
+Using the builder
+-----------------
 
-Version 0.9.2.7: last version from upstream.
+The `build_exe` CLI is not actively supported at the moment. Users are 
+encouraged to create their own `setup.py` files. Documentation
+on how to use the CLI it can be found [here](https://github.com/py2exe/py2exe/blob/master/README_ORIGINAL.rst).
 
-How to manually build and install:
--------
-- Install VS2015 or VC++ Build Tools (details available [here](https://wiki.python.org/moin/WindowsCompilers#Microsoft_Visual_C.2B-.2B-_14.2_standalone:_Build_Tools_for_Visual_Studio_2019_.28x86.2C_x64.2C_ARM.2C_ARM64.29))
-- Open the "VS2015 x64 Native Tools Command Prompt" 
-- Navigate to the py2exe folder
-- Install the dependencies `pip install pefile cachetools wheel`
-- Execute `python setup.py bdist_wheel`
-- Install the built wheel with `pip`
+Known issues
+------------
+
+- The modulefinder does not fully support PEP420 implicit namespace packages.
+- Building isapi extensions is not supported.
+- Unit tests rely on `importlib.find_loader(name, path)` which has been
+deprecated since Python 3.4.
+- High-level methods or hooks to embed Qt plugins in the bundle (needed by 
+PysSide2/PyQt5) are missing.
 
 Credits
 --------
-Credits to [mitre/caldera-py2exe](https://github.com/mitre/caldera-py2exe) for the 
-original fixes for Python 3.5.
+
+Credits to [mitre/caldera-py2exe](https://github.com/mitre/caldera-py2exe) 
+for the  original fixes for Python 3.5.
+
+Further informations about the original development of `py2exe` and other
+usage guidelines can be found [in the original README](https://github.com/py2exe/py2exe/blob/master/README_ORIGINAL.rst).
