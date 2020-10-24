@@ -6,6 +6,9 @@ environment:
   LIB: "C:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\lib;C:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\lib;C:\\Program Files (x86)\\Windows Kits\\10\\Lib\\10.0.10586.0\\ucrt\\x86"
   
   matrix:
+    -  PYTHON: "C:\\Python38-x64"
+       SDIST: yes
+
     -  PYTHON: "C:\\Python35"
        PYTHON_VERSION: 3.5
        PYTHON_ARCH: 32
@@ -38,11 +41,6 @@ environment:
        PYTHON_VERSION: 3.8
        PYTHON_ARCH: 64
 
-    -  PYTHON: "C:\\Python38-x64"
-       PYTHON_VERSION: 3.8
-       PYTHON_ARCH: 64
-       SDIST: yes
-
 configuration: Release
 
 init:
@@ -56,6 +54,15 @@ init:
   - python -m pip install -U cachetools pefile
 
 for:
+  -
+    matrix:
+      only:
+        - SDIST: yes
+    install:
+        - python setup.py sdist
+    test_script:
+        - dir dist
+
   - 
     matrix:
       only:
@@ -119,15 +126,6 @@ for:
           PYTHON_ARCH: 64
     install:
         - python setup.py bdist_wheel --python-tag cp38 --plat-name win_amd64
-
-  -
-    matrix:
-      only:
-        - SDIST: yes
-    install:
-        - python setup.py sdist
-    test_script:
-        - dir dist
 
 # Not a project with an msbuild file, build done at install.
 build: off
