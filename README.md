@@ -7,8 +7,8 @@ Python 3.5 and later are supported. It can build console executables
 and windows (GUI) executables. Building windows services, and DLL/EXE
 COM servers might work but it is not actively supported.
 
-py2exe for Python 2 is still available at
-http://sourceforge.net/project/showfiles.php?group_id=15583.
+Development of `py2exe`is hosted here:
+https://github.com/py2exe/py2exe.
 
 Changes (from versions 0.9.x)
 ----------------------------
