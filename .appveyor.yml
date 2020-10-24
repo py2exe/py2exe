@@ -148,13 +148,12 @@ artifacts:
 # Deploy build to BinTray
 deploy:
   provider: BinTray
-  username: alby128
+  username: albertosottile
   api_key:
-    secure: lAocj5KA9Z9x4BefQBIgNlQJbeW4qPBfCgYVBHMyOP3NgyhnMLmvR57ZCqtCKBlQ
-  subject: alby128
+    secure: XYmBCFZPoLq1hZazcxKJfMx2ueWDBXQg8h3rnOD8z/m/Kv11HuSVTFRDaDtGwKQz
+  subject: py2exe
   repo: py2exe
   package: py2exe
   version: $(ver)
   publish: true
   override: true
-    
