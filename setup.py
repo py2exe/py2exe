@@ -139,6 +139,7 @@ if __name__ == "__main__":
           version=py2exe.__version__,
           description="Build standalone executables for Windows (python 3 version)",
           long_description=open("README.md").read(),
+          long_description_content_type="text/markdown",
           author="Thomas Heller",
           author_email="theller@ctypes.org",
           maintainer="Alberto Sottile",
