@@ -26,11 +26,11 @@ def _is_debug_build():
     return False
 
 if _is_debug_build():
-    macros = [("PYTHONDLL", '\\"python%d%d_d.dll\\"' % sys.version_info[:2]),
+    macros = [("PYTHONDLL", '\"python%d%d_d.dll\"' % sys.version_info[:2]),
 ##              ("PYTHONCOM", '\\"pythoncom%d%d_d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1')]
 else:
-    macros = [("PYTHONDLL", '\\"python%d%d.dll\\"' % sys.version_info[:2]),
+    macros = [("PYTHONDLL", '\"python%d%d.dll\"' % sys.version_info[:2]),
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
