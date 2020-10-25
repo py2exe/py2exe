@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """py2exe package
 """
-__version__ = '0.10.0.2'
+__version__ = '0.10.1.0'
 
 from .patch_distutils import patch_distutils
 
