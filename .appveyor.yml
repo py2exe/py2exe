@@ -151,6 +151,7 @@ test_script:
   - runner certifi_test
   - runner certifi_zip_test
   - runner pywin32_test
+  - runner requests_test
   - runner ssl_test
   
 artifacts:
