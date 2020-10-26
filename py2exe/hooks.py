@@ -249,6 +249,11 @@ def hook_urllib_request(finder, module):
     """
     finder.excludes.append("_scproxy")
 
+def hook_urllib3(finder, module):
+    """urllib3 embeds a copy of six that requires queue.
+    """
+    finder.import_hook("queue")
+
 def hook_pythoncom(finder, module):
     """pythoncom is a Python extension module with .dll extension,
     usually in the windows system directory as pythoncom3X.dll.
@@ -344,8 +349,6 @@ def hook_six(finder, module):
                     None, "six.moves", finder._optimize)
     finder._add_module("six.moves", m)
     
-
-
 def hook_matplotlib(finder, module):
     """matplotlib requires data files in a 'mpl-data' subdirectory in
     the same directory as the executable.
