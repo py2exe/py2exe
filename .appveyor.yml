@@ -9,10 +9,6 @@ environment:
     -  PYTHON: "C:\\Python38-x64"
        SDIST: yes
 
-    -  PYTHON: "C:\\Python35"
-       PYTHON_VERSION: 3.5
-       PYTHON_ARCH: 32
-
     -  PYTHON: "C:\\Python36"
        PYTHON_VERSION: 3.6
        PYTHON_ARCH: 32
@@ -24,10 +20,6 @@ environment:
     -  PYTHON: "C:\\Python38"
        PYTHON_VERSION: 3.8
        PYTHON_ARCH: 32
-
-    -  PYTHON: "C:\\Python35-x64"
-       PYTHON_VERSION: 3.5
-       PYTHON_ARCH: 64
 
     -  PYTHON: "C:\\Python36-x64"
        PYTHON_VERSION: 3.6
@@ -67,14 +59,6 @@ for:
   - 
     matrix:
       only:
-        - PYTHON_VERSION: 3.5
-          PYTHON_ARCH: 32
-    install:
-        - python setup.py bdist_wheel --python-tag cp35 --plat-name win32
-
-  - 
-    matrix:
-      only:
         - PYTHON_VERSION: 3.6
           PYTHON_ARCH: 32
     install:
@@ -95,14 +79,6 @@ for:
           PYTHON_ARCH: 32
     install:
         - python setup.py bdist_wheel --python-tag cp38 --plat-name win32
-        
-  - 
-    matrix:
-      only:
-        - PYTHON_VERSION: 3.5
-          PYTHON_ARCH: 64
-    install:
-        - python setup.py bdist_wheel --python-tag cp35 --plat-name win_amd64
 
   - 
     matrix:
