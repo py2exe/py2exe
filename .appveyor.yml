@@ -52,6 +52,7 @@ init:
   - python -m site
   - python -m pip install -U pip setuptools wheel
   - python -m pip install -U cachetools pefile
+  - set PATH=%PATH:C:\Program Files\Meson\;=%  
 
 for:
   -
