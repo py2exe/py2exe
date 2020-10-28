@@ -1,4 +1,4 @@
-#!/usr/bin/python3.3
+#!/usr/bin/python3.6
 # -*- coding: utf-8 -*-
 """setup script for py2exe.
 """
@@ -6,17 +6,23 @@
 import os
 import sys
 
-if sys.version_info < (3, 3):
-    raise RuntimeError("This package requires Python 3.3 or later")
+if sys.version_info < (3, 6):
+    raise RuntimeError("This package requires Python 3.6 or later")
 
 ############################################################################
 
 from setuptools import setup
-##from distutils.core import setup
 
 from py2exe.py2exe_distutils import Dist, Interpreter, BuildInterpreters
 
 ############################################################################
+
+if sys.version_info < (3, 9):
+    python_dll_name = '\\"python%d%d.dll\\"' % sys.version_info[:2]
+    python_dll_name_debug = '\\"python%d%d_d.dll\\"' % sys.version_info[:2]
+else:
+    python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
 
 def _is_debug_build():
     import imp
@@ -26,11 +32,11 @@ def _is_debug_build():
     return False
 
 if _is_debug_build():
-    macros = [("PYTHONDLL", '\"python%d%d_d.dll\"' % sys.version_info[:2]),
+    macros = [("PYTHONDLL", python_dll_name_debug),
 ##              ("PYTHONCOM", '\\"pythoncom%d%d_d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1')]
 else:
-    macros = [("PYTHONDLL", '\"python%d%d.dll\"' % sys.version_info[:2]),
+    macros = [("PYTHONDLL", python_dll_name),
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
@@ -137,7 +143,7 @@ if __name__ == "__main__":
 
     setup(name="py2exe",
           version=py2exe.__version__,
-          description="Build standalone executables for Windows (python 3 version)",
+          description="Build standalone executables for Windows",
           long_description=open("README.md").read(),
           long_description_content_type="text/markdown",
           author="Thomas Heller",
@@ -157,6 +163,10 @@ if __name__ == "__main__":
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: C",
               "Programming Language :: Python :: 3",
+              "Programming Language :: Python :: 3.6",
+              "Programming Language :: Python :: 3.7",
+              "Programming Language :: Python :: 3.8",
+              "Programming Language :: Python :: 3.9",
               "Programming Language :: Python :: Implementation :: CPython",
               "Topic :: Software Development",
               "Topic :: Software Development :: Libraries",
@@ -176,10 +186,3 @@ if __name__ == "__main__":
           packages=['py2exe'],
           package_data={'py2exe':['MIT-License.txt', 'MPL2-License.txt']},
           )
-
-# Local Variables:
-# compile-command: "py -3.3 setup.py bdist_egg"
-# End:
-
-# c:\python33-64\lib\site-packages
-# c:\python33-64\scripts
