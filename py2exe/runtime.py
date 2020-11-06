@@ -535,7 +535,11 @@ class Runtime(object):
             else:
                 extdlldir = destdir            
             dst = os.path.join(extdlldir, name)
-            os.makedirs(os.path.dirname(extdlldir), exist_ok=True)
+            # extdlldir can point to a subfolder if it was defined from the `zipfile` option
+            if os.path.dirname(extdlldir):
+                os.makedirs(os.path.dirname(extdlldir), exist_ok=True)
+            else:
+                os.makedirs(extdlldir, exist_ok=True)
             if self.options.verbose:
                 print("Copy lib file %s to %s" % (src, extdlldir))
             shutil.copy2(src, dst)
