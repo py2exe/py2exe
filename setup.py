@@ -154,6 +154,7 @@ if __name__ == "__main__":
           license="MIT/X11",
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
+          python_requires='>=3.6, <3.10',
 
           classifiers=[
               "Development Status :: 4 - Beta",
