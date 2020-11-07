@@ -15,17 +15,19 @@ https://github.com/py2exe/py2exe.
 Changes
 ----------------------------
 
+Detailed changelog is published on [GitHub](https://pypi.org/project/py2exe/).
+
 Version 0.10.1.0:
 - Add support for Python 3.9.
 - Drop support for Python 3.5.
-- New hook for `urllib3`.
+- New hooks for `urllib3` and `pandas`.
 
 Version 0.10.0.2 (from versions 0.9.x):
 - Introduce compatibility with Python 3.5, 3.6, 3.7, and 3.8.
 - Drop compatibility with Python 3.4 and earlier.
 - New or updated hooks for `certifi`, `numpy`, `tkinter`, `socket`,
 `ssl`, and `six`.
-- The `zipfile` option has been removed.
+- `build_exe`: the `zipfile` option has been removed.
 - `runtime`: the Python interpreter DLL is no longer altered before
 being inserted in the executable bundle.
 - Several bugfixes, better error messages.
