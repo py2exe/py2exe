@@ -15,7 +15,7 @@ https://github.com/py2exe/py2exe.
 Changes
 ----------------------------
 
-Detailed changelog is published on [GitHub](https://pypi.org/project/py2exe/).
+Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
 Version 0.10.1.0:
 - Add support for Python 3.9.
