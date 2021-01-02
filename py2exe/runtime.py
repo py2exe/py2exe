@@ -224,7 +224,7 @@ class Runtime(object):
         for i, target in enumerate(self.targets):
             # basename of the exe to create
             dest_base = target.get_dest_base()
-            
+
             if target.exe_type in ("ctypes_comdll"):
                 # full path to exe-file
                 exe_path = os.path.join(destdir, dest_base + ".dll")
@@ -326,7 +326,7 @@ class Runtime(object):
             zippath = b""
         else:
             zippath = libname.encode("mbcs")
-            
+
 
         script_info = struct.pack("IIII",
                                   0x78563412,
@@ -372,7 +372,7 @@ class Runtime(object):
                                   private_build = get("private_build"),
                                   special_build = get("special_build"))
 
-                                  
+
                 from ._wapi import RT_VERSION
                 res_writer.add(type=RT_VERSION,
                              name=1,
@@ -533,7 +533,7 @@ class Runtime(object):
             if self.options.bundle_files == 3:
                 extdlldir = libdir
             else:
-                extdlldir = destdir            
+                extdlldir = destdir
             dst = os.path.join(extdlldir, name)
             # extdlldir can point to a subfolder if it was defined from the `zipfile` option
             if os.path.dirname(extdlldir):
@@ -542,6 +542,9 @@ class Runtime(object):
                 os.makedirs(extdlldir, exist_ok=True)
             if self.options.verbose:
                 print("Copy lib file %s to %s" % (src, extdlldir))
+            if os.path.sep in name:
+                # name can contain subfolders, if so we need to create them
+                os.makedirs(os.path.join(extdlldir, os.path.dirname(name)), exist_ok=True)
             shutil.copy2(src, dst)
 
         if self.options.bundle_files == 3:

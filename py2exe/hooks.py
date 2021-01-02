@@ -560,6 +560,41 @@ def hook_pandas(finder, module):
         finder.import_hook("pandas._libs.tslibs.base")
         finder.recursion_depth_pandas = depth
 
+def hook_Crypto(finder, module):
+    # copy all the "pyd" files from pycryptodome to the bundle directory with the correct folder structure
+    crypto_path = os.path.dirname(module.__loader__.path)
+    from pathlib import Path
+    for path in Path(crypto_path).rglob('*.pyd'):
+        #print(f'{path} to be copied in {path.relative_to(crypto_path)}')
+        finder.add_libfile(str(path.relative_to(os.path.dirname(crypto_path))), path)
+
+    # patch pycryptodome to look for its "pyd" files in the bundle directory
+    finder.add_bootcode("""
+def patch_Crypto():
+    import os
+    import sys
+
+    try:
+        import Crypto.Util._file_system
+    except ImportError:
+        # the hook should not work for pycrypto
+        return
+
+    def override_filename(dir_comps, filename):
+        if dir_comps[0] != "Crypto":
+            raise ValueError("Only available for modules under 'Crypto'")
+
+        dir_comps = list(dir_comps[1:]) + [filename]
+        root_lib = os.path.join(os.path.dirname(sys.executable), 'Crypto')
+
+        return os.path.join(root_lib, *dir_comps)
+
+    Crypto.Util._file_system.pycryptodome_filename = override_filename
+
+patch_Crypto()
+del patch_Crypto
+""")
+
 def hook_scipy_special(finder, module):
     #import pdb;pdb.set_trace()
     depth = getattr(finder,"recursion_depth_special",0)
