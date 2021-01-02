@@ -148,6 +148,7 @@ test_script:
   - cd functional
   - runner numpy_test
   - runner pandas_test
+  - runner pycryptodome_test
   - runner tk_test
   - del "C:\Program Files\Amazon\AWSCLI\sqlite3.dll" /F
   - runner sqlite_test
