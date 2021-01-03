@@ -7,9 +7,9 @@ import tempfile
 import unittest
 
 ##import modulefinder
-import py2exe.mf3 as modulefinder
+import py2exe.mf34 as modulefinder
 
-TEST_DIR = tempfile.mkdtemp()
+TEST_DIR = 'synthetic'
 TEST_PATH = [TEST_DIR]#, os.path.dirname(tempfile.__file__)]
 
 print("TEST_PATH is", TEST_PATH)
@@ -79,6 +79,27 @@ a/c.py
                                 from sys import version_info
 """]
 
+namespace_package_test = [
+    "a.module",
+    ["a", "a.b", "a.c", "a.module", "sys", "q", "q.pkg"],
+    ["blahblah", "z"], [],
+    """\
+a/__init__.py
+                                from a import b
+a/module.py
+                                import sys
+                                from a import b as x
+                                from a.c import sillyname
+                                from q import pkg
+                                import blahblah
+a/b.py
+a/c.py
+                                from a.module import x
+                                from sys import version_info
+q/pkg.py
+                                import z
+"""]
+
 absolute_import_test = [
     "a.module",
     ["a", "a.module",
@@ -92,6 +113,7 @@ a/module.py
                                 from __future__ import absolute_import
                                 import sys # sys
                                 import blahblah # fails
+                                import z # fails
                                 import gc # gc
                                 import b.x # b.x
                                 from b import y # b.y
@@ -99,12 +121,8 @@ a/module.py
 a/gc.py
 a/sys.py
                                 import mymodule
-a/b/__init__.py
-a/b/x.py
-a/b/y.py
-a/b/z.py
 b/__init__.py
-                                import z
+                                from . import z
 b/unused.py
 b/x.py
 b/y.py
@@ -260,8 +278,13 @@ class ModuleFinderTest(unittest.TestCase):
             sys.path = sys_path
             shutil.rmtree(TEST_DIR)
 
+    #@unittest.skip("test_package")
     def test_package(self):
         self._do_test(package_test)
+
+    #@unittest.skip("test_namespace_package")
+    def test_namespace_package(self):
+        self._do_test(namespace_package_test)
 
     #@unittest.skip("test_maybe")
     def test_maybe(self):
@@ -271,15 +294,19 @@ class ModuleFinderTest(unittest.TestCase):
     def test_maybe_new(self):
         self._do_test(maybe_test_new)
 
+    #@unittest.skip("test_absolute_imports")
     def test_absolute_imports(self):
         self._do_test(absolute_import_test)
 
+    #@unittest.skip("test_relative_imports")
     def test_relative_imports(self):
         self._do_test(relative_import_test)
 
+    #@unittest.skip("test_relative_imports_2")
     def test_relative_imports_2(self):
         self._do_test(relative_import_test_2)
 
+    #@unittest.skip("test_relative_imports_3")
     def test_relative_imports_3(self):
         self._do_test(relative_import_test_3)
 
