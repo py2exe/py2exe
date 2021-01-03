@@ -3,8 +3,6 @@
 """ModuleFinder based on importlib
 """
 
-# XXX XXX XXX Does not yet support PEP 452 namespace packages!
-
 from collections import defaultdict
 import dis
 import importlib
@@ -16,13 +14,13 @@ import sys
 import textwrap
 import warnings
 
-# XXX Clean up once str8's cstor matches bytes.
-LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
-IMPORT_NAME = bytes([dis.opname.index('IMPORT_NAME')])
-STORE_NAME = bytes([dis.opname.index('STORE_NAME')])
-STORE_GLOBAL = bytes([dis.opname.index('STORE_GLOBAL')])
+LOAD_CONST = dis.opname.index('LOAD_CONST')
+IMPORT_NAME = dis.opname.index('IMPORT_NAME')
+STORE_NAME = dis.opname.index('STORE_NAME')
+STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
+EXTENDED_ARG = dis.opname.index('EXTENDED_ARG')
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
-HAVE_ARGUMENT = bytes([dis.HAVE_ARGUMENT])
+HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
 
 class ModuleFinder:
@@ -56,11 +54,8 @@ class ModuleFinder:
         """
         assert "__SCRIPT__" not in sys.modules
         ldr = importlib.machinery.SourceFileLoader("__SCRIPT__", path)
-        if sys.version_info >= (3, 4):
-            spec = importlib.machinery.ModuleSpec("__SCRIPT__", ldr)
-            mod = Module(spec, "__SCRIPT__", self._optimize)
-        else:
-            mod = Module(ldr, "__SCRIPT__", self._optimize)
+        spec = importlib.machinery.ModuleSpec("__SCRIPT__", ldr)
+        mod = Module(spec, "__SCRIPT__", self._optimize)
         # Do NOT add it...
         # self._add_module("__SCRIPT__", mod)
         self._scan_code(mod.__code__, mod)
@@ -368,28 +363,27 @@ class ModuleFinder:
     def _scan_opcodes(self, co, unpack=struct.unpack):
         """
         Scan the code object, and yield 'interesting' opcode combinations
-
         """
-        code = co.co_code
-        names = co.co_names
-        consts = co.co_consts
-        LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
-        while code:
-            c = bytes([code[0]])
-            if c in STORE_OPS:
-                oparg, = unpack('<H', code[1:3])
-                yield "store", (names[oparg],)
-                code = code[3:]
-                continue
-            if code[:9:3] == LOAD_LOAD_AND_IMPORT:
-                oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
-                yield "import", (consts[oparg_1], consts[oparg_2], names[oparg_3])
-                code = code[9:]
-                continue
-            if c >= HAVE_ARGUMENT:
-                code = code[3:]
-            else:
-                code = code[1:]
+        instructions = []
+        for inst in dis.get_instructions(co):
+            instructions.append(inst)
+            c = inst.opcode
+            if c == IMPORT_NAME:
+                ind = len(instructions) - 2
+                while instructions[ind].opcode == EXTENDED_ARG:
+                    ind -= 1
+                assert instructions[ind].opcode == LOAD_CONST
+                fromlist = instructions[ind].argval
+                ind -= 1
+                while instructions[ind].opcode == EXTENDED_ARG:
+                    ind -= 1
+                assert instructions[ind].opcode == LOAD_CONST
+                level = instructions[ind].argval
+                name = inst.argval
+                yield "import", (level, fromlist, name)
+            elif c in STORE_OPS:
+                yield "store", (inst.argval,)
+
 
     def ignore(self, name):
         """If the module or package with the given name is not found,
@@ -569,7 +563,7 @@ class Module:
             self.__file__ = fnm
             if loader.is_package(name):
                 self.__path__ = [os.path.dirname(fnm)]
-        elif spec.origin == "namespace":
+        elif loader is None and hasattr(spec, "submodule_search_locations"):
             # namespace modules have no loader
             self.__path__ = spec.submodule_search_locations
         else:
@@ -680,6 +674,11 @@ def usage(script):
         --summary
             Print a single line listing how many modules were found
             and how many modules are missing
+
+        -m
+        --missing
+            Print detailed report about missing modules
+
     """
 
     text = textwrap.dedent(helptext.format(os.path.basename(script)))
@@ -689,7 +688,7 @@ def main():
     import getopt
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "x:f:hi:Op:rsv",
+                                       "x:f:hi:Op:rsvm",
                                        ["exclude=",
                                         "from=",
                                         "help",
@@ -699,6 +698,7 @@ def main():
                                         "report",
                                         "summary",
                                         "verbose",
+                                        "missing",
                                         ])
     except getopt.GetoptError as err:
         print("Error: %s." % err)
@@ -712,6 +712,7 @@ def main():
     optimize = 0
     summary = 0
     packages = []
+    missing = 0
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(sys.argv[0])
@@ -732,6 +733,8 @@ def main():
             summary = 1
         elif o in ("-p", "--package"):
             packages.append(a)
+        elif o in ("-m", "--missing"):
+            missing = 1
 
     mf = ModuleFinder(
         excludes=excludes,
@@ -750,6 +753,8 @@ def main():
         mf.run_script(path)
     if report:
         mf.report()
+    if missing:
+        mf.report_missing()
     if summary:
         mf.report_summary()
     for modname in show_from:
