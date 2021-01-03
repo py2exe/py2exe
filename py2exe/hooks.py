@@ -561,11 +561,14 @@ def hook_pandas(finder, module):
         finder.recursion_depth_pandas = depth
 
 def hook_Crypto(finder, module):
+    """pycryptodome includes compiled libraries as if they were Python C extensions (as .pyd files).
+    However, they are not, as they cannot be imported by Python. Hence, those files should be treated
+    as .dll files. Furthermore, pycryptodome needs to be patched to import those libraries from an external
+    path, as their import mechanism will not work from the zip file nor from the executable."""
     # copy all the "pyd" files from pycryptodome to the bundle directory with the correct folder structure
     crypto_path = os.path.dirname(module.__loader__.path)
     from pathlib import Path
     for path in Path(crypto_path).rglob('*.pyd'):
-        #print(f'{path} to be copied in {path.relative_to(crypto_path)}')
         finder.add_libfile(str(path.relative_to(os.path.dirname(crypto_path))), path)
 
     # patch pycryptodome to look for its "pyd" files in the bundle directory
