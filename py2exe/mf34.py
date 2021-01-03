@@ -622,23 +622,34 @@ class Module:
 
     @property
     def __code__(self):
-        if self.__code_object__ is None and self.__loader__ is not None:
-            if self.__optimize__ == sys.flags.optimize:
-                self.__code_object__ = self.__loader__.get_code(self.__name__)
-            else:
-                source = self.__source__
+        if self.__code_object__ is None:
+            if self.__loader__ is None: # implicit namespace packages
+                return None
+            if self.__loader__.__class__ == importlib.machinery.ExtensionFileLoader:
+                return None
+            try:
+                try:
+                    source = self.__source__
+                except Exception:
+                    import traceback; traceback.print_exc()
+                    raise RuntimeError("loading %r" % self) from None
                 if source is not None:
-                    __file__ = self.__file__ \
+                    __file__ = self.__dest_file__ \
                                if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
                                                        optimize=self.__optimize__)
-                    except Exception as details:
+                    except Exception:
                         import traceback; traceback.print_exc()
                         raise RuntimeError("compiling %r" % self) from None
                 elif hasattr(self, "__file__") and not self.__file__.endswith(".pyd"):
                     # XXX Remove the following line if the Bug is never triggered!
                     raise RuntimeError("should read __file__ to get the source???")
+            except RuntimeError:
+                if self.__optimize__ != sys.flags.optimize:
+                    raise
+                print("Falling back to loader to get code for module %s" % self.__name__)
+                self.__code_object__ = self.__loader__.get_code(self.__name__)
         return self.__code_object__
 
 
