@@ -145,7 +145,6 @@ test_script:
   - python -c "import py2exe"
   - cd tests
   - python maketest.py
-  - python test_modulefinder.py
   - cd functional
   - runner numpy_test
   - runner pandas_test
