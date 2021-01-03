@@ -224,7 +224,7 @@ class Runtime(object):
         for i, target in enumerate(self.targets):
             # basename of the exe to create
             dest_base = target.get_dest_base()
-            
+
             if target.exe_type in ("ctypes_comdll"):
                 # full path to exe-file
                 exe_path = os.path.join(destdir, dest_base + ".dll")
@@ -326,7 +326,7 @@ class Runtime(object):
             zippath = b""
         else:
             zippath = libname.encode("mbcs")
-            
+
 
         script_info = struct.pack("IIII",
                                   0x78563412,
@@ -372,7 +372,7 @@ class Runtime(object):
                                   private_build = get("private_build"),
                                   special_build = get("special_build"))
 
-                                  
+
                 from ._wapi import RT_VERSION
                 res_writer.add(type=RT_VERSION,
                              name=1,
@@ -430,7 +430,6 @@ class Runtime(object):
                 stream.write(b"\0\0\0\0") # null size
                 marshal.dump(mod.__code__, stream)
                 arc.writestr(path, stream.getvalue())
-
             elif hasattr(mod, "__file__"):
                 assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
                 if self.options.bundle_files <= 2:
@@ -463,6 +462,20 @@ class Runtime(object):
                     stream.write(b"\0\0\0\0") # null size
                     marshal.dump(code, stream)
                     arc.writestr(path, stream.getvalue())
+            elif hasattr(mod, "__spec__") and mod.__spec__.origin == 'namespace':
+                # implicit namespace packages, create empty __init__.py for zipimport
+                if self.options.verbose > 1:
+                    print("Add empty __init__ for implicit namespace package %s to %s" % (mod.__name__, libpath))
+                path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+                code = compile(r"", path, "exec", optimize=self.options.optimize)
+                stream = io.BytesIO()
+                stream.write(imp.get_magic())
+                if sys.version_info >= (3,7,0):
+                    stream.write(b"\0\0\0\0") # null flags
+                stream.write(b"\0\0\0\0") # null timestamp
+                stream.write(b"\0\0\0\0") # null size
+                marshal.dump(code, stream)
+                arc.writestr(path, stream.getvalue())
 
         if self.options.bundle_files == 0:
             # put everything into the arc
@@ -533,7 +546,7 @@ class Runtime(object):
             if self.options.bundle_files == 3:
                 extdlldir = libdir
             else:
-                extdlldir = destdir            
+                extdlldir = destdir
             dst = os.path.join(extdlldir, name)
             # extdlldir can point to a subfolder if it was defined from the `zipfile` option
             if os.path.dirname(extdlldir):
