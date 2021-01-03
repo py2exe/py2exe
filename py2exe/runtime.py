@@ -431,7 +431,11 @@ class Runtime(object):
                 marshal.dump(mod.__code__, stream)
                 arc.writestr(path, stream.getvalue())
             elif hasattr(mod, "__file__"):
-                assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                try:
+                    assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                except AssertionError:
+                    # never put DLLs in the archive
+                    continue
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
                     arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_TARGET_SUFFIX
@@ -519,7 +523,12 @@ class Runtime(object):
                     # nothing to do for python modules.
                     continue
                 if hasattr(mod, "__file__"):
-                    assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                    try:
+                        assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                    except AssertionError:
+                        # check if the DLL will be copied afterwards
+                        assert (mod.__file__ in self.mf.real_dlls() or mod.__file__ in  self.mf.extension_dlls())
+                        continue
                     pydfile = mod.__name__ + EXTENSION_TARGET_SUFFIX
 
                     dst = os.path.join(libdir, pydfile)
