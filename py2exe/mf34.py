@@ -13,6 +13,7 @@ import struct
 import sys
 import textwrap
 import warnings
+from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
 LOAD_CONST = dis.opname.index('LOAD_CONST')
 IMPORT_NAME = dis.opname.index('IMPORT_NAME')
@@ -266,16 +267,30 @@ class ModuleFinder:
                 return self.modules[name]
             # Backwards-compatibility; be nicer to skip the dict lookup.
             parent_module = self.modules[parent]
+
+            try:
+                # try lazy imports via attribute access (six.moves
+                # does this)...
+                getattr(parent_module, name.rpartition('.')[2])
+                module = self.modules[name]
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if hasattr(module, "__code__"):
+                    self._scan_code(module.__code__, module)
+                return module
+
             try:
                 path = parent_module.__path__
             except AttributeError:
-                # this fixes 'import os.path'. Does it create other problems?
-                child = name.rpartition('.')[2]
-                if child in parent_module.__globalnames__:
-                    return parent_module
+                # # this fixes 'import os.path'. Does it create other problems?
+                # child = name.rpartition('.')[2]
+                # if child in parent_module.__globalnames__:
+                #     return parent_module
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)
                 raise ImportError(msg, name=name)
+
         try:
             spec = importlib.util.find_spec(name, path)
         except ValueError as details:
@@ -287,9 +302,19 @@ class ModuleFinder:
                 import imp
                 _ = __import__(name, path)
                 imp.reload(_)
-                spec = importlib.util.find_spec(name, path)
+                try:
+                    spec = importlib.util.find_spec(name, path)
+                except ValueError:
+                    spec = None
             else:
                 raise
+        except AssertionError as details:
+            # numpy/pandas and similar packages attempt to embed setuptools
+            if 'distutils has already been patched by' in details.args[0]:
+                spec = None
+            else:
+                raise
+
         if spec is None:
             self._add_badmodule(name)
             raise ImportError(name)
@@ -549,7 +574,10 @@ class Module:
         self.__spec__ = spec
         self.__code_object__ = None
 
-        loader = self.__loader__ = spec.loader
+        try:
+            loader = self.__loader__ = spec.loader
+        except AttributeError:
+            loader = self.__loader__ = None
 
         if hasattr(loader, "get_filename"):
             # python modules
@@ -566,7 +594,7 @@ class Module:
         elif loader is None and hasattr(spec, "submodule_search_locations"):
             # namespace modules have no loader
             self.__path__ = spec.submodule_search_locations
-        else:
+        elif hasattr(loader, "is_package"):
             # frozen or builtin modules
             if loader.is_package(name):
                 self.__path__ = [name]
@@ -578,6 +606,18 @@ class Module:
                     self.__package__ = self.__package__.rpartition('.')[0]
             except AttributeError:
                 pass
+
+    @property
+    def __dest_file__(self):
+        """Gets the destination path for the module that will be used at compilation time."""
+        if self.__optimize__:
+            bytecode_suffix = OPTIMIZED_BYTECODE_SUFFIXES[0]
+        else:
+            bytecode_suffix = DEBUG_BYTECODE_SUFFIXES[0]
+        if hasattr(self, "__path__"):
+            return self.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+        else:
+            return self.__name__.replace(".", "\\") + bytecode_suffix
 
 
     @property
