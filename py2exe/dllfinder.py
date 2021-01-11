@@ -40,6 +40,9 @@ def SearchPath(imagename, path=None):
         return _buf.value
     return None
 
+# global accessed by BindImageEx callback
+TEMP = set()
+
 ################################
 
 class DllFinder:
@@ -100,43 +103,55 @@ class DllFinder:
         path = ";".join([os.path.dirname(imagename),
                          os.path.dirname(sys.executable),
                          pth])
-        result = set()
 
-        @_wapi.PIMAGEHLP_STATUS_ROUTINE
-        def status_routine(reason, img_name, dllname, va, parameter):
-            if reason == _wapi.BindImportModule: # 5
-                assert img_name.decode("mbcs") == imagename
-                # imagename binds to dllname
-                dllname = self.search_path(dllname.decode("mbcs"), path)
-                result.add(dllname)
-            return True
-
-        # BindImageEx uses the PATH environment variable to find
-        # dependend dlls; set it to our changed PATH:
+        # apply path
         old_path = os.environ["PATH"]
         assert isinstance(path, str)
         os.environ["PATH"] = path
 
-        self._loaded_dlls[os.path.basename(imagename).lower()] = imagename
-        _wapi.BindImageEx(_wapi.BIND_ALL_IMAGES
-                          | _wapi.BIND_CACHE_IMPORT_DLLS
-                          | _wapi.BIND_NO_UPDATE,
-                          imagename.encode("mbcs"),
-                          None,
-                          ##path.encode("mbcs"),
-                          None,
-                          status_routine)
+        # scan path with pefile first, append found directories to path
+        pefile_dlls = pescan.find_loaded_dlls(imagename)
+
+        bound = set()
+        for lib in pefile_dlls:
+            pt = self.search_path(lib, path)
+            if pt is not None:
+                bound.add(pt)
+
+        # probe results with BindImageEx
+        result = set()
+
+        for name in bound:
+            ret = 0
+            TEMP.clear()
+
+            @_wapi.PIMAGEHLP_STATUS_ROUTINE
+            def status_routine(reason, img_name, dllname, va, parameter):
+                if reason == _wapi.BindImportModule: # 5
+                    if img_name.decode("mbcs") == name:
+                        # name binds to dllname
+                        dllname = self.search_path(dllname.decode("mbcs"), path)
+                        TEMP.add(dllname)
+                return True
+
+            # BindImageEx uses the PATH environment variable to find
+            # dependend dlls; set it to our changed PATH:
+            # self._loaded_dlls[os.path.basename(name).lower()] = name
+            ret =  _wapi.BindImageEx(_wapi.BIND_ALL_IMAGES
+                            | _wapi.BIND_CACHE_IMPORT_DLLS
+                            | _wapi.BIND_NO_UPDATE,
+                            name.encode("mbcs"),
+                            None,
+                            ##path.encode("mbcs"),
+                            None,
+                            status_routine)
+
+            if ret == 1:
+                result.add(name)
+                result.update(TEMP)
+
         # Be a good citizen and cleanup:
         os.environ["PATH"] = old_path
-
-        if not result:
-            # Backup method based on pefile
-            dlls = pescan.find_loaded_dlls(imagename)
-
-            for lib in dlls:
-                pt = self.search_path(lib, path)
-                if pt is not None:
-                    result.add(pt)
 
         return result
 
