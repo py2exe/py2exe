@@ -13,7 +13,7 @@ import sys
 
 from cachetools import cached, LFUCache
 
-from . mf3 import ModuleFinder
+from . mf34 import ModuleFinder
 from . import hooks
 
 ################################
@@ -95,7 +95,7 @@ class DllFinder:
             pth = ";".join([p for p in os.environ["PATH"].split(';') if not "ia32_win" in p])
         else:
             pth = os.environ["PATH"]
-            
+
         #import pdb;pdb.set_trace()
         path = ";".join([os.path.dirname(imagename),
                          os.path.dirname(sys.executable),
@@ -299,7 +299,7 @@ class Scanner(ModuleFinder):
                                   level=level)
 
 ################################################################
-    
+
 if __name__ == "__main__":
     # test script and usage example
     #

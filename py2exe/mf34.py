@@ -3,8 +3,6 @@
 """ModuleFinder based on importlib
 """
 
-# XXX XXX XXX Does not yet support PEP 452 namespace packages!
-
 from collections import defaultdict
 import dis
 import importlib
@@ -15,14 +13,15 @@ import struct
 import sys
 import textwrap
 import warnings
+from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
-# XXX Clean up once str8's cstor matches bytes.
-LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
-IMPORT_NAME = bytes([dis.opname.index('IMPORT_NAME')])
-STORE_NAME = bytes([dis.opname.index('STORE_NAME')])
-STORE_GLOBAL = bytes([dis.opname.index('STORE_GLOBAL')])
+LOAD_CONST = dis.opname.index('LOAD_CONST')
+IMPORT_NAME = dis.opname.index('IMPORT_NAME')
+STORE_NAME = dis.opname.index('STORE_NAME')
+STORE_GLOBAL = dis.opname.index('STORE_GLOBAL')
+EXTENDED_ARG = dis.opname.index('EXTENDED_ARG')
 STORE_OPS = [STORE_NAME, STORE_GLOBAL]
-HAVE_ARGUMENT = bytes([dis.HAVE_ARGUMENT])
+HAVE_ARGUMENT = dis.HAVE_ARGUMENT
 
 
 class ModuleFinder:
@@ -56,11 +55,8 @@ class ModuleFinder:
         """
         assert "__SCRIPT__" not in sys.modules
         ldr = importlib.machinery.SourceFileLoader("__SCRIPT__", path)
-        if sys.version_info >= (3, 4):
-            spec = importlib.machinery.ModuleSpec("__SCRIPT__", ldr)
-            mod = Module(spec, "__SCRIPT__", self._optimize)
-        else:
-            mod = Module(ldr, "__SCRIPT__", self._optimize)
+        spec = importlib.machinery.ModuleSpec("__SCRIPT__", ldr)
+        mod = Module(spec, "__SCRIPT__", self._optimize)
         # Do NOT add it...
         # self._add_module("__SCRIPT__", mod)
         self._scan_code(mod.__code__, mod)
@@ -271,16 +267,30 @@ class ModuleFinder:
                 return self.modules[name]
             # Backwards-compatibility; be nicer to skip the dict lookup.
             parent_module = self.modules[parent]
+
+            try:
+                # try lazy imports via attribute access (six.moves
+                # does this)...
+                getattr(parent_module, name.rpartition('.')[2])
+                module = self.modules[name]
+            except (AttributeError, KeyError):
+                pass
+            else:
+                if hasattr(module, "__code__"):
+                    self._scan_code(module.__code__, module)
+                return module
+
             try:
                 path = parent_module.__path__
             except AttributeError:
-                # this fixes 'import os.path'. Does it create other problems?
-                child = name.rpartition('.')[2]
-                if child in parent_module.__globalnames__:
-                    return parent_module
+                # # this fixes 'import os.path'. Does it create other problems?
+                # child = name.rpartition('.')[2]
+                # if child in parent_module.__globalnames__:
+                #     return parent_module
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)
                 raise ImportError(msg, name=name)
+
         try:
             spec = importlib.util.find_spec(name, path)
         except ValueError as details:
@@ -292,9 +302,19 @@ class ModuleFinder:
                 import imp
                 _ = __import__(name, path)
                 imp.reload(_)
-                spec = importlib.util.find_spec(name, path)
+                try:
+                    spec = importlib.util.find_spec(name, path)
+                except ValueError:
+                    spec = None
             else:
                 raise
+        except AssertionError as details:
+            # numpy/pandas and similar packages attempt to embed setuptools
+            if 'distutils has already been patched by' in details.args[0]:
+                spec = None
+            else:
+                raise
+
         if spec is None:
             self._add_badmodule(name)
             raise ImportError(name)
@@ -368,28 +388,27 @@ class ModuleFinder:
     def _scan_opcodes(self, co, unpack=struct.unpack):
         """
         Scan the code object, and yield 'interesting' opcode combinations
-
         """
-        code = co.co_code
-        names = co.co_names
-        consts = co.co_consts
-        LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
-        while code:
-            c = bytes([code[0]])
-            if c in STORE_OPS:
-                oparg, = unpack('<H', code[1:3])
-                yield "store", (names[oparg],)
-                code = code[3:]
-                continue
-            if code[:9:3] == LOAD_LOAD_AND_IMPORT:
-                oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
-                yield "import", (consts[oparg_1], consts[oparg_2], names[oparg_3])
-                code = code[9:]
-                continue
-            if c >= HAVE_ARGUMENT:
-                code = code[3:]
-            else:
-                code = code[1:]
+        instructions = []
+        for inst in dis.get_instructions(co):
+            instructions.append(inst)
+            c = inst.opcode
+            if c == IMPORT_NAME:
+                ind = len(instructions) - 2
+                while instructions[ind].opcode == EXTENDED_ARG:
+                    ind -= 1
+                assert instructions[ind].opcode == LOAD_CONST
+                fromlist = instructions[ind].argval
+                ind -= 1
+                while instructions[ind].opcode == EXTENDED_ARG:
+                    ind -= 1
+                assert instructions[ind].opcode == LOAD_CONST
+                level = instructions[ind].argval
+                name = inst.argval
+                yield "import", (level, fromlist, name)
+            elif c in STORE_OPS:
+                yield "store", (inst.argval,)
+
 
     def ignore(self, name):
         """If the module or package with the given name is not found,
@@ -555,7 +574,10 @@ class Module:
         self.__spec__ = spec
         self.__code_object__ = None
 
-        loader = self.__loader__ = spec.loader
+        try:
+            loader = self.__loader__ = spec.loader
+        except AttributeError:
+            loader = self.__loader__ = None
 
         if hasattr(loader, "get_filename"):
             # python modules
@@ -569,10 +591,10 @@ class Module:
             self.__file__ = fnm
             if loader.is_package(name):
                 self.__path__ = [os.path.dirname(fnm)]
-        elif spec.origin == "namespace":
+        elif loader is None and hasattr(spec, "submodule_search_locations"):
             # namespace modules have no loader
             self.__path__ = spec.submodule_search_locations
-        else:
+        elif hasattr(loader, "is_package"):
             # frozen or builtin modules
             if loader.is_package(name):
                 self.__path__ = [name]
@@ -585,26 +607,49 @@ class Module:
             except AttributeError:
                 pass
 
+    @property
+    def __dest_file__(self):
+        """Gets the destination path for the module that will be used at compilation time."""
+        if self.__optimize__:
+            bytecode_suffix = OPTIMIZED_BYTECODE_SUFFIXES[0]
+        else:
+            bytecode_suffix = DEBUG_BYTECODE_SUFFIXES[0]
+        if hasattr(self, "__path__"):
+            return self.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+        else:
+            return self.__name__.replace(".", "\\") + bytecode_suffix
+
 
     @property
     def __code__(self):
-        if self.__code_object__ is None and self.__loader__ is not None:
-            if self.__optimize__ == sys.flags.optimize:
-                self.__code_object__ = self.__loader__.get_code(self.__name__)
-            else:
-                source = self.__source__
+        if self.__code_object__ is None:
+            if self.__loader__ is None: # implicit namespace packages
+                return None
+            if self.__loader__.__class__ == importlib.machinery.ExtensionFileLoader:
+                return None
+            try:
+                try:
+                    source = self.__source__
+                except Exception:
+                    import traceback; traceback.print_exc()
+                    raise RuntimeError("loading %r" % self) from None
                 if source is not None:
-                    __file__ = self.__file__ \
+                    __file__ = self.__dest_file__ \
                                if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
                                                        optimize=self.__optimize__)
-                    except Exception as details:
+                    except Exception:
                         import traceback; traceback.print_exc()
                         raise RuntimeError("compiling %r" % self) from None
                 elif hasattr(self, "__file__") and not self.__file__.endswith(".pyd"):
                     # XXX Remove the following line if the Bug is never triggered!
                     raise RuntimeError("should read __file__ to get the source???")
+            except RuntimeError:
+                if self.__optimize__ != sys.flags.optimize:
+                    raise
+                print("Falling back to loader to get code for module %s" % self.__name__)
+                self.__code_object__ = self.__loader__.get_code(self.__name__)
         return self.__code_object__
 
 
@@ -680,6 +725,11 @@ def usage(script):
         --summary
             Print a single line listing how many modules were found
             and how many modules are missing
+
+        -m
+        --missing
+            Print detailed report about missing modules
+
     """
 
     text = textwrap.dedent(helptext.format(os.path.basename(script)))
@@ -689,7 +739,7 @@ def main():
     import getopt
     try:
         opts, args = getopt.gnu_getopt(sys.argv[1:],
-                                       "x:f:hi:Op:rsv",
+                                       "x:f:hi:Op:rsvm",
                                        ["exclude=",
                                         "from=",
                                         "help",
@@ -699,6 +749,7 @@ def main():
                                         "report",
                                         "summary",
                                         "verbose",
+                                        "missing",
                                         ])
     except getopt.GetoptError as err:
         print("Error: %s." % err)
@@ -712,6 +763,7 @@ def main():
     optimize = 0
     summary = 0
     packages = []
+    missing = 0
     for o, a in opts:
         if o in ("-h", "--help"):
             usage(sys.argv[0])
@@ -732,6 +784,8 @@ def main():
             summary = 1
         elif o in ("-p", "--package"):
             packages.append(a)
+        elif o in ("-m", "--missing"):
+            missing = 1
 
     mf = ModuleFinder(
         excludes=excludes,
@@ -750,6 +804,8 @@ def main():
         mf.run_script(path)
     if report:
         mf.report()
+    if missing:
+        mf.report_missing()
     if summary:
         mf.report_summary()
     for modname in show_from:

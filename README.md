@@ -17,6 +17,10 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.10.2.0:
+- New module finder with support for implicit namespace packages (PEP 420).
+- New hook for `pycryptodome`.
+
 Version 0.10.1.0:
 - Add support for Python 3.9.
 - Drop support for Python 3.5.
@@ -27,7 +31,7 @@ Version 0.10.0.2 (from versions 0.9.x):
 - Drop compatibility with Python 3.4 and earlier.
 - New or updated hooks for `certifi`, `numpy`, `tkinter`, `socket`,
 `ssl`, and `six`.
-- `build_exe`: the `zipfile` option has been removed.
+- `build_exe`: the `zipfile=None` option has been removed.
 - `runtime`: the Python interpreter DLL is no longer altered before
 being inserted in the executable bundle.
 - Several bugfixes, better error messages.
@@ -57,12 +61,9 @@ on how to use the CLI it can be found [here](https://github.com/py2exe/py2exe/bl
 Known issues
 ------------
 
-- The modulefinder does not fully support PEP420 implicit namespace packages.
 - Building isapi extensions is not supported.
-- Unit tests rely on `importlib.find_loader(name, path)` which has been
-deprecated since Python 3.4.
 - High-level methods or hooks to embed Qt plugins in the bundle (needed by
-PysSide2/PyQt5) are missing.
+PySide2/PyQt5) are missing.
 
 
 Credits

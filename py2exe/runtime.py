@@ -430,9 +430,12 @@ class Runtime(object):
                 stream.write(b"\0\0\0\0") # null size
                 marshal.dump(mod.__code__, stream)
                 arc.writestr(path, stream.getvalue())
-
             elif hasattr(mod, "__file__"):
-                assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                try:
+                    assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                except AssertionError:
+                    # never put DLLs in the archive
+                    continue
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
                     arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_TARGET_SUFFIX
@@ -463,6 +466,20 @@ class Runtime(object):
                     stream.write(b"\0\0\0\0") # null size
                     marshal.dump(code, stream)
                     arc.writestr(path, stream.getvalue())
+            elif mod.__spec__ is not None and mod.__spec__.origin == 'namespace':
+                # implicit namespace packages, create empty __init__.py for zipimport
+                if self.options.verbose > 1:
+                    print("Add empty __init__ for implicit namespace package %s to %s" % (mod.__name__, libpath))
+                path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+                code = compile(r"", path, "exec", optimize=self.options.optimize)
+                stream = io.BytesIO()
+                stream.write(imp.get_magic())
+                if sys.version_info >= (3,7,0):
+                    stream.write(b"\0\0\0\0") # null flags
+                stream.write(b"\0\0\0\0") # null timestamp
+                stream.write(b"\0\0\0\0") # null size
+                marshal.dump(code, stream)
+                arc.writestr(path, stream.getvalue())
 
         if self.options.bundle_files == 0:
             # put everything into the arc
@@ -506,7 +523,12 @@ class Runtime(object):
                     # nothing to do for python modules.
                     continue
                 if hasattr(mod, "__file__"):
-                    assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                    try:
+                        assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
+                    except AssertionError:
+                        # check if the DLL will be copied afterwards
+                        assert (mod.__file__ in self.mf.real_dlls() or mod.__file__ in  self.mf.extension_dlls())
+                        continue
                     pydfile = mod.__name__ + EXTENSION_TARGET_SUFFIX
 
                     dst = os.path.join(libdir, pydfile)

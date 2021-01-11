@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, with_statement, absolute_import, print_function
 
-from py2exe.mf3 import ModuleFinder
+from py2exe.mf34 import ModuleFinder
 
 import errno
 import os
@@ -116,6 +116,71 @@ class Test_NamesImport(_TestPackageBase):
             self.assertNotIn(name, sys.modules)
 
 
+class Test_ImplicitNamespaceImport(_TestPackageBase):
+    data = """
+    explicit/test_tools.py
+            from explicit.tools import bar
+            from explicit.tools import baz
+            from explicit.tools import spam
+            from explicit.tools import foo
+            from explicit.implicit import stuff
+            try: from explicit.tools import spam_and_eggs
+            except ImportError: pass
+
+    explicit/__init__.py
+            # empty
+
+    explicit/tools/spamfoo.py
+            spam = 'spam'
+            foo = 'foo'
+
+    explicit/tools/bazbar.py
+            baz = 'baz'
+            bar = 'bar'
+
+    explicit/tools/__init__.py
+            from .bazbar import *
+            from .spamfoo import spam
+            from .spamfoo import foo
+
+    explicit/implicit/stuff.py
+            # empty
+    """
+
+    modules = {"explicit",
+               "explicit.test_tools",
+               "explicit.tools",
+               "explicit.tools.bazbar",
+               "explicit.tools.spamfoo",
+               "explicit.implicit",
+               "explicit.implicit.stuff"}
+
+    missing = {"explicit.tools.spam_and_eggs"}
+
+    def test_modulefinder(self):
+        mf = ModuleFinder()
+        mf.import_hook("explicit.test_tools")
+        found = mf.modules.keys()
+        self.assertEqual(set(found), self.modules)
+        self.assertEqual(mf.missing(), self.missing)
+
+    def test_imports(self):
+        for name in self.modules:
+            self.assertNotIn(name, sys.modules)
+
+        import explicit.test_tools
+        with self.assertRaises(ImportError):
+            import explicit.tools.spam_and_eggs
+        for name in self.modules:
+            self.assertIn(name, sys.modules)
+
+        for name in self.modules:
+            del sys.modules[name]
+
+        for name in self.modules:
+            self.assertNotIn(name, sys.modules)
+
+
 class Test_NestedStarImports(_TestPackageBase):
     data = """
     nested/test_tools.py
@@ -163,6 +228,7 @@ class Test_NestedStarImports(_TestPackageBase):
         with self.assertRaises(ImportError):
             import nested.test_tools
         from nested import bar, baz
+
 
 class Test_PEP328(_TestPackageBase):
     data = """
