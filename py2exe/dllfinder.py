@@ -11,10 +11,15 @@ import os
 import platform
 import sys
 
+from fnmatch import fnmatch
+
 from cachetools import cached, LFUCache
 
 from . mf34 import ModuleFinder
 from . import hooks
+
+WINDOWSCRTPATTERN = "api-ms-win-*.dll"
+VCRUNTIMEPATTERN = "vcruntime*.dll"
 
 ################################
 # XXX Move these into _wapi???
@@ -136,7 +141,6 @@ class DllFinder:
 
             # BindImageEx uses the PATH environment variable to find
             # dependend dlls; set it to our changed PATH:
-            # self._loaded_dlls[os.path.basename(name).lower()] = name
             ret =  _wapi.BindImageEx(_wapi.BIND_ALL_IMAGES
                             | _wapi.BIND_CACHE_IMPORT_DLLS
                             | _wapi.BIND_NO_UPDATE,
@@ -147,6 +151,7 @@ class DllFinder:
                             status_routine)
 
             if ret == 1:
+                self._loaded_dlls[os.path.basename(name).lower()] = name
                 result.add(name)
                 result.update(TEMP)
 
@@ -160,20 +165,29 @@ class DllFinder:
 
         For any dll in the Windows or System directory or any
         subdirectory thereof return None, except when the dll binds to
-        or IS the current python dll.
+        or IS the current python dll. Additionally, return None for DLLs
+        that belong to either the Visual C++ redistributable or the
+        Universal C Runtime.
 
         Return "DLL" when the image binds to the python dll, return
-        None when the image is in the windows or system directory,
-        return "EXT" otherwise.
+        None when the image is in the windows or system directory or belongs
+        to a windows framework, return "EXT" otherwise.
         """
         fnm = imagename.lower()
+
         if fnm == pydll.lower():
             return "DLL"
+
         deps = self.bind_image(imagename)
         if pydll in [d.lower() for d in deps]:
             return "EXT"
-        if fnm.startswith(windir + os.sep) or fnm.startswith(sysdir + os.sep):
+
+        if fnm.startswith(windir + os.sep) or \
+            fnm.startswith(sysdir + os.sep) or \
+            fnmatch(os.path.basename(fnm), WINDOWSCRTPATTERN) or \
+            fnmatch(os.path.basename(fnm), VCRUNTIMEPATTERN):
             return None
+
         return "DLL"
 
     def search_path(self, imagename, path):
