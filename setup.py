@@ -49,7 +49,7 @@ extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\I
 extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
 extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
 
-if 0:
+if 1:
     # enable this to debug a release build
     extra_compile_args.append("/Od")
     extra_compile_args.append("/Z7")
