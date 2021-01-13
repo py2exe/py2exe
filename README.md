@@ -19,6 +19,7 @@ Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/rel
 
 Version 0.10.2.0:
 - New module finder with support for implicit namespace packages (PEP 420).
+- `DLLFinder` automatically excludes VC++ redist and Windows CRT DLLs from bundles
 - New hook for `pycryptodome`.
 
 Version 0.10.1.0:
