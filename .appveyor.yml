@@ -148,6 +148,7 @@ test_script:
   - cd functional
   - runner bundlefiles2_test
   - runner bundlefiles1_test
+  - runner bundlefiles0_test
   - runner numpy_test
   - runner pandas_test
   - runner pycryptodome_test
