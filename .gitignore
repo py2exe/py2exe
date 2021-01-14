@@ -1,6 +1,7 @@
 *.py[co]
 .*.sw[po]
 *.exe
+*.whl
 venv
 
 /build
