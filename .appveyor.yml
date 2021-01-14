@@ -146,6 +146,7 @@ test_script:
   - cd tests
   - python maketest.py
   - cd functional
+  - runner bundlefiles_test
   - runner numpy_test
   - runner pandas_test
   - runner pycryptodome_test
