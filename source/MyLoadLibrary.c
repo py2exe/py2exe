@@ -4,7 +4,7 @@
 #include "MemoryModule.h"
 #include "MyLoadLibrary.h"
 
-/* #define VERBOSE /* enable to print debug output */
+// #define VERBOSE /* enable to print debug output */
 
 /*
 
@@ -59,7 +59,7 @@ static int dprintf(char *fmt, ...)
 #ifdef VERBOSE
 	va_list marker;
 	int i;
-	
+
 	va_start(marker, fmt);
 	for (i = 0; i < level; ++i) {
 		putchar(' ');

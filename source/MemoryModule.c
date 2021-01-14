@@ -30,6 +30,8 @@
  * These portions are Copyright (C) 2013 Thomas Heller.
  */
 
+// #define DEBUG_OUTPUT /* enable to print debug output */
+
 #ifndef __GNUC__
 // disable warnings about pointer <-> DWORD conversions
 #pragma warning( disable : 4311 4312 )
@@ -161,7 +163,7 @@ FinalizeSections(PMEMORYMODULE module)
 #else
     #define imageOffset 0
 #endif
-    
+
     // loop through all sections and change access flags
     for (i=0; i<module->headers->FileHeader.NumberOfSections; i++, section++) {
         DWORD protect, oldProtect, size;
@@ -206,10 +208,10 @@ FinalizeSections(PMEMORYMODULE module)
 }
 
 static void
-ExecuteTLS(PMEMORYMODULE module) 
+ExecuteTLS(PMEMORYMODULE module)
 {
     unsigned char *codeBase = module->codeBase;
-    
+
     PIMAGE_DATA_DIRECTORY directory = GET_HEADER_DICTIONARY(module, IMAGE_DIRECTORY_ENTRY_TLS);
     if (directory->VirtualAddress > 0) {
         PIMAGE_TLS_DIRECTORY tls = (PIMAGE_TLS_DIRECTORY) (codeBase + directory->VirtualAddress);
@@ -246,7 +248,7 @@ PerformBaseRelocation(PMEMORYMODULE module, SIZE_T delta)
                 type = *relInfo >> 12;
                 // the lower 12 bits define the offset
                 offset = *relInfo & 0xfff;
-                
+
                 switch (type)
                 {
                 case IMAGE_REL_BASED_ABSOLUTE:
@@ -258,7 +260,7 @@ PerformBaseRelocation(PMEMORYMODULE module, SIZE_T delta)
                     patchAddrHL = (DWORD *) (dest + offset);
                     *patchAddrHL += (DWORD) delta;
                     break;
-                
+
 #ifdef _WIN64
                 case IMAGE_REL_BASED_DIR64:
                     patchAddr64 = (ULONGLONG *) (dest + offset);
@@ -346,7 +348,7 @@ static HCUSTOMMODULE _LoadLibrary(LPCSTR filename, void *userdata)
     if (result == NULL) {
         return NULL;
     }
-    
+
     return (HCUSTOMMODULE) result;
 }
 
@@ -410,7 +412,7 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data,
             return NULL;
         }
     }
-    
+
     result = (PMEMORYMODULE)HeapAlloc(GetProcessHeap(), 0, sizeof(MEMORYMODULE));
     if (result == NULL) {
         SetLastError(ERROR_OUTOFMEMORY);
@@ -435,7 +437,7 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data,
         old_header->OptionalHeader.SizeOfHeaders,
         MEM_COMMIT,
         PAGE_READWRITE);
-    
+
     // copy PE header to code
     memcpy(headers, dos_header, old_header->OptionalHeader.SizeOfHeaders);
     result->headers = (PIMAGE_NT_HEADERS)&((const unsigned char *)(headers))[dos_header->e_lfanew];
@@ -568,7 +570,7 @@ FARPROC MemoryGetProcAddress(HMEMORYMODULE module, LPCSTR name)
 	}
     } else
 	idx = (int)name;
-#endif    
+#endif
 
     if (idx == -1) {
         // exported symbol not found
@@ -642,7 +644,7 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
     DWORD start;
     DWORD end;
     DWORD middle;
-    
+
     if (!IS_INTRESOURCE(key) && key[0] == TEXT('#')) {
         // special case: resource id given as string
         TCHAR *endpos = NULL;
@@ -655,7 +657,7 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
             key = MAKEINTRESOURCE(tmpkey);
         }
     }
-    
+
     // entries are stored as ordered list of named entries,
     // followed by an ordered list of id entries - we can do
     // a binary search to find faster...
@@ -663,7 +665,7 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
         WORD check = (WORD) (POINTER_TYPE) key;
         start = resources->NumberOfNamedEntries;
         end = start + resources->NumberOfIdEntries;
-        
+
         while (end > start) {
             WORD entryName;
             middle = (start + end) >> 1;
@@ -696,7 +698,7 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
                 if (tmp == NULL) {
                     break;
                 }
-                
+
                 searchKey = (char *) tmp;
             }
             wcstombs(searchKey, resourceString->NameString, resourceString->Length);
@@ -717,8 +719,8 @@ static PIMAGE_RESOURCE_DIRECTORY_ENTRY _MemorySearchResourceEntry(
         free(searchKey);
 #endif
     }
-    
-    
+
+
     return result;
 }
 
@@ -737,7 +739,7 @@ HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR typ
         SetLastError(ERROR_RESOURCE_DATA_NOT_FOUND);
         return NULL;
     }
-    
+
     if (language == DEFAULT_LANGUAGE) {
         // use language from current thread
         language = LANGIDFROMLCID(GetThreadLocale());
@@ -753,14 +755,14 @@ HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR typ
         SetLastError(ERROR_RESOURCE_TYPE_NOT_FOUND);
         return NULL;
     }
-    
+
     typeResources = (PIMAGE_RESOURCE_DIRECTORY) (codeBase + directory->VirtualAddress + (foundType->OffsetToData & 0x7fffffff));
     foundName = _MemorySearchResourceEntry(rootResources, typeResources, name);
     if (foundName == NULL) {
         SetLastError(ERROR_RESOURCE_NAME_NOT_FOUND);
         return NULL;
     }
-    
+
     nameResources = (PIMAGE_RESOURCE_DIRECTORY) (codeBase + directory->VirtualAddress + (foundName->OffsetToData & 0x7fffffff));
     foundLanguage = _MemorySearchResourceEntry(rootResources, nameResources, (LPCTSTR) (POINTER_TYPE) language);
     if (foundLanguage == NULL) {
@@ -769,17 +771,17 @@ HMEMORYRSRC MemoryFindResourceEx(HMEMORYMODULE module, LPCTSTR name, LPCTSTR typ
             SetLastError(ERROR_RESOURCE_LANG_NOT_FOUND);
             return NULL;
         }
-        
+
         foundLanguage = (PIMAGE_RESOURCE_DIRECTORY_ENTRY) (nameResources + 1);
     }
-    
+
     return (codeBase + directory->VirtualAddress + (foundLanguage->OffsetToData & 0x7fffffff));
 }
 
 DWORD MemorySizeofResource(HMEMORYMODULE module, HMEMORYRSRC resource)
 {
     PIMAGE_RESOURCE_DATA_ENTRY entry = (PIMAGE_RESOURCE_DATA_ENTRY) resource;
-    
+
     return entry->Size;
 }
 
@@ -787,7 +789,7 @@ LPVOID MemoryLoadResource(HMEMORYMODULE module, HMEMORYRSRC resource)
 {
     unsigned char *codeBase = ((PMEMORYMODULE) module)->codeBase;
     PIMAGE_RESOURCE_DATA_ENTRY entry = (PIMAGE_RESOURCE_DATA_ENTRY) resource;
-    
+
     return codeBase + entry->OffsetToData;
 }
 
@@ -806,13 +808,13 @@ MemoryLoadStringEx(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize, WO
     if (maxsize == 0) {
         return 0;
     }
-    
+
     resource = MemoryFindResourceEx(module, MAKEINTRESOURCE((id >> 4) + 1), RT_STRING, language);
     if (resource == NULL) {
         buffer[0] = 0;
         return 0;
     }
-    
+
     data = MemoryLoadResource(module, resource);
     id = id & 0x0f;
     while (id--) {
@@ -823,7 +825,7 @@ MemoryLoadStringEx(HMEMORYMODULE module, UINT id, LPTSTR buffer, int maxsize, WO
         buffer[0] = 0;
         return 0;
     }
-    
+
     size = data->Length;
     if (size >= (DWORD) maxsize) {
         size = maxsize;

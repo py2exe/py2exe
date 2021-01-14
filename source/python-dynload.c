@@ -206,7 +206,7 @@ PyObject *PyEval_EvalCode(PyObject *co, PyObject *globals, PyObject *locals)
   return proc(co, globals, locals);
 }
 
-int PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void)) 
+int PyImport_AppendInittab(const char *name, PyObject* (*initfunc)(void))
 {
   FUNC(int, PyImport_AppendInittab, (const char *, PyObject *(*)(void)));
   return proc(name, initfunc);
@@ -278,10 +278,17 @@ PyObject *PyUnicode_FromString(const char *u)
 
 #undef _Py_Dealloc
 
-void _Py_Dealloc(PyObject *ob)
+void _Py_Dealloc(PyObject *op)
 {
-  FUNC(void, _Py_Dealloc_inline, (PyObject *));
-  proc(ob);
+    destructor dealloc = Py_TYPE(op)->tp_dealloc;
+#ifdef Py_TRACE_REFS
+    _Py_ForgetReference(op);
+#else
+  #if (PY_VERSION_HEX < 0x03090000)
+    _Py_INC_TPFREES(op);
+  #endif
+#endif
+    (*dealloc)(op);
 }
 
 char *PyBytes_AsString(PyObject *string)
