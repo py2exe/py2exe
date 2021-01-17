@@ -634,6 +634,12 @@ def hook_scipy_optimize(finder, module):
         finder.import_hook("scipy.optimize.minpack2")
         finder.recursion_depth_optimize = depth
 
+def hook_shapely(finder, module):
+    import glob
+    import shapely
+    for dll_path in glob.glob(os.path.join(os.path.abspath(os.path.join(os.path.dirname(shapely.__file__), 'DLLs')), '*.dll')):
+        finder.add_dll(dll_path)
+
 def hook__ssl(finder, module):
     """
     On Python 3.7 and above, _ssl.pyd requires additional dll's to load.
