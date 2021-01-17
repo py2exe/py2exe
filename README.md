@@ -58,7 +58,7 @@ Using the builder
 
 The `build_exe` CLI is not actively supported at the moment. Users are
 encouraged to create their own `setup.py` files. Documentation
-on how to use the CLI it can be found [here](https://github.com/py2exe/py2exe/blob/master/README_ORIGINAL.rst).
+on how to use the CLI can be found [here](https://github.com/py2exe/py2exe/blob/master/README_ORIGINAL.rst).
 
 
 Known issues
