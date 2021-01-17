@@ -291,15 +291,16 @@ def hook_tkinter(finder, module):
     tk_dir = os.path.join(os.path.dirname(tcl_dir), 'tk{}'.format(TK_VERSION))
     assert os.path.isdir(tk_dir)
     finder.add_datadirectory("lib/tk", tk_dir, recursive=True)
-    finder.set_min_bundle("tkinter", 2)
     if sys.version_info >= (3,6,0):
         finder.import_hook("imp")
+
     # add environment variables that point to the copied paths at runtime
     finder.add_bootcode("""
 def tk_env_paths():
     import os
+    import sys
     import _tkinter
-    basepath = os.path.dirname(_tkinter.__file__)
+    basepath = os.path.dirname(sys.executable)
     tcl_dir = os.path.join(basepath, 'lib', 'tcl')
     tk_dir = os.path.join(basepath, 'lib', 'tk')
     os.environ["TCL_LIBRARY"] = tcl_dir
@@ -635,14 +636,19 @@ def hook_scipy_optimize(finder, module):
 
 def hook__ssl(finder, module):
     """
-    On python 3.7 and above, _ssl.pyd requires additional dll's to load.
+    On Python 3.7 and above, _ssl.pyd requires additional dll's to load.
     Based on code by Sebastian Krause: https://github.com/anthony-tuininga/cx_Freeze/pull/470
     Apparently, even with the new DLL finder system, this hook is still needed on cp37-win32
+
+    On Python 3.7 an above, _ssl is incompatible with bundle_files=0.
     """
     if sys.version_info < (3, 7, 0):
         return
+
     import glob
     for dll_search in ["libcrypto-*.dll", "libssl-*.dll"]:
         for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
+
+    finder.set_min_bundle("_ssl", 1)
