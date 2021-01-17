@@ -19,7 +19,9 @@ Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/rel
 
 Version 0.10.2.0:
 - New module finder with support for implicit namespace packages (PEP 420).
-- `DLLFinder` automatically excludes VC++ redist and Windows CRT DLLs from bundles
+- `DLLFinder` automatically excludes VC++ redist and Windows CRT DLLs from bundles.
+- Several fixes for bundling software with `bundle_files<=2` (only the standard library
+  is supported, other dependencies may or may not work).
 - New hook for `pycryptodome`.
 
 Version 0.10.1.0:
@@ -62,6 +64,7 @@ on how to use the CLI it can be found [here](https://github.com/py2exe/py2exe/bl
 Known issues
 ------------
 
+- The option `bundle_files=0` is incompatible with `ssl`.
 - Building isapi extensions is not supported.
 - High-level methods or hooks to embed Qt plugins in the bundle (needed by
 PySide2/PyQt5) are missing.
