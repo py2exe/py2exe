@@ -627,6 +627,8 @@ class Module:
                 return None
             if self.__loader__.__class__ == importlib.machinery.ExtensionFileLoader:
                 return None
+            if 'VendorImporter' in str(self.__loader__.__class__):
+                return None
             try:
                 try:
                     source = self.__source__
