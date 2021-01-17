@@ -22,7 +22,7 @@ Version 0.10.2.0:
 - `DLLFinder` automatically excludes VC++ redist and Windows CRT DLLs from bundles.
 - Several fixes for bundling software with `bundle_files<=2` (only the standard library
   is supported, other dependencies may or may not work).
-- New hook for `pycryptodome`.
+- New hooks for `pycryptodome` and `shapely`.
 
 Version 0.10.1.0:
 - Add support for Python 3.9.
