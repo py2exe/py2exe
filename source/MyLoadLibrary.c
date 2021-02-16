@@ -235,6 +235,15 @@ BOOL MyFreeLibrary(HMODULE module)
 	}
 }
 
+BOOL WINAPI MyGetModuleHandleExW(DWORD flags, LPCWSTR modname, HMODULE *pmodule) 
+{
+	if (flags & GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS && pmodule != NULL) {
+		*pmodule = GetModuleHandle(NULL);
+		return TRUE;
+	}
+	return GetModuleHandleExW(flags, modname, pmodule);
+}
+
 FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 {
 	FARPROC proc;
@@ -244,6 +253,8 @@ FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 	else {
 		SetLastError(0);
 		proc = GetProcAddress(module, procname);
+		if (proc == &GetModuleHandleExW)
+			proc = (FARPROC)MyGetModuleHandleExW;
 	}
 	return proc;
 }
