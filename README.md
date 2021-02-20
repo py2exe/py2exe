@@ -17,6 +17,9 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.10.2.1:
+- Patch `MyLoadLibrary` to support `ssl` with `bundle_files=0`.
+
 Version 0.10.2.0:
 - New module finder with support for implicit namespace packages (PEP 420).
 - `DLLFinder` automatically excludes VC++ redist and Windows CRT DLLs from bundles.
@@ -64,7 +67,6 @@ on how to use the CLI can be found [here](https://github.com/py2exe/py2exe/blob/
 Known issues
 ------------
 
-- The option `bundle_files=0` is incompatible with `ssl`.
 - Building isapi extensions is not supported.
 - High-level methods or hooks to embed Qt plugins in the bundle (needed by
 PySide2/PyQt5) are missing.
