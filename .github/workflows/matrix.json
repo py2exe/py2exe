@@ -1,0 +1,10 @@
+[
+    {"python-version": "3.6", "python-arch": "x86"},
+    {"python-version": "3.7", "python-arch": "x86"},
+    {"python-version": "3.8", "python-arch": "x86"},
+    {"python-version": "3.9", "python-arch": "x86"},
+    {"python-version": "3.6", "python-arch": "x64"},
+    {"python-version": "3.7", "python-arch": "x64"},
+    {"python-version": "3.8", "python-arch": "x64"},
+    {"python-version": "3.9", "python-arch": "x64"},
+]
