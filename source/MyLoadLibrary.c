@@ -15,7 +15,7 @@ HMODULE LoadLibraryA(LPCSTR)
 HMODULE GetModuleHandleA(LPCSTR)
 BOOL FreeLibrary(HMODULE)
 FARPROC GetProcAddress(HMODULE, LPCSTR)
-
+BOOL GetModuleHandleExW(DWORD, LPCWSTR, HMODULE *);
 
 MemoryModule API:
 =================
@@ -24,7 +24,7 @@ HMEMORYMODULE MemoryLoadLibrary(void *)
 void MemoryFreeLibrary(HMEMORYMODULE)
 FARPROC MemoryGetProcAddress(HMEMORYMODULE, LPCSTR)
 
-HMEMORYMODULE MemoryLoadLibrayEx(void *,
+HMEMORYMODULE MemoryLoadLibraryEx(void *,
                                  load_func, getproc_func, free_func, userdata)
 
 (there are also some resource functions which are not used here...)
@@ -36,8 +36,9 @@ HMODULE MyLoadLibrary(LPCSTR, void *, userdata)
 HMODULE MyGetModuleHandle(LPCSTR)
 BOOL MyFreeLibrary(HMODULE)
 FARPROC MyGetProcAddress(HMODULE, LPCSTR)
+BOOL WINAPI MyGetModuleHandleExW(DWORD, LPCWSTR, HMODULE *)
 
- */
+*/
 
 /****************************************************************
  * A linked list of loaded MemoryModules.
@@ -235,7 +236,7 @@ BOOL MyFreeLibrary(HMODULE module)
 	}
 }
 
-BOOL WINAPI MyGetModuleHandleExW(DWORD flags, LPCWSTR modname, HMODULE *pmodule) 
+BOOL WINAPI MyGetModuleHandleExW(DWORD flags, LPCWSTR modname, HMODULE *pmodule)
 {
 	if (flags & GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS && pmodule != NULL) {
 		*pmodule = GetModuleHandle(NULL);
