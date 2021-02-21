@@ -36,7 +36,11 @@ class Dist(Distribution):
         return self.interpreters and len(self.interpreters) > 0
 
     def has_extensions(self):
-        return False
+        return self.has_interpreters()
+
+    def has_ext_modules(self):
+        return self.has_interpreters()
+
 
 class BuildInterpreters(build_ext.build_ext):
     description = "build special python interpreter stubs"
