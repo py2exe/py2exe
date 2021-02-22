@@ -182,7 +182,7 @@ import_module(PyObject *self, PyObject *args)
 	 * numpy is such an example).
 	 */
 	res = SetDllDirectoryW(dirname); // Add a directory to the search path
-	hmem = MyLoadLibrary(pathname, NULL, findproc);
+	hmem = MyLoadLibrary(pathname, NULL, 0, findproc);
 	if (res)
 		SetDllDirectory(NULL); // restore the default dll directory search path
 	_My_DeactivateActCtx(cookie);

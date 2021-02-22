@@ -289,7 +289,7 @@ HMODULE load_pythondll(void)
 		hgbl = LoadResource(hmod, hrsrc);
 		size = SizeofResource(hmod, hrsrc);
 		ptr = LockResource(hgbl);
-		hmod_pydll = MyLoadLibrary(PYTHONDLL, ptr, NULL);
+		hmod_pydll = MyLoadLibrary(PYTHONDLL, ptr, size, NULL);
 	} else
 		/*
 		  XXX We should probably call LoadLibraryEx with

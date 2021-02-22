@@ -164,9 +164,10 @@ static HCUSTOMMODULE _LoadLibrary(LPCSTR filename, void *userdata)
 //		PyObject *res = PyObject_CallFunction(findproc, "s", filename);
 		PyObject *res = CallFindproc(findproc, filename);
 		if (res && PyBytes_AsString(res)) {
-			result = MemoryLoadLibraryEx(PyBytes_AsString(res),
-						     _LoadLibrary, _GetProcAddress, _FreeLibrary,
-						     userdata);
+			result = MemoryLoadLibraryEx(PyBytes_AsString(res), PyBytes_GET_SIZE(res),
+				MemoryDefaultAlloc, MemoryDefaultFree,
+				_LoadLibrary, _GetProcAddress, _FreeLibrary,
+				userdata);
 			Py_DECREF(res);
 			if (result) {
 				lib = _AddMemoryModule(filename, result);
@@ -203,14 +204,15 @@ HMODULE MyGetModuleHandle(LPCSTR name)
 	//return GetModuleHandle(name);
 }
 
-HMODULE MyLoadLibrary(LPCSTR name, void *bytes, void *userdata)
+HMODULE MyLoadLibrary(LPCSTR name, void *bytes, size_t size, void *userdata)
 {
 	if (userdata) {
 		HCUSTOMMODULE mod = _LoadLibrary(name, userdata);
 		if (mod)
 			return mod;
 	} else if (bytes) {
-		HCUSTOMMODULE mod = MemoryLoadLibraryEx(bytes,
+		HCUSTOMMODULE mod = MemoryLoadLibraryEx(bytes, size,
+							MemoryDefaultAlloc, MemoryDefaultFree,
 							_LoadLibrary,
 							_GetProcAddress,
 							_FreeLibrary,
