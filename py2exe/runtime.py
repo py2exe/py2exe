@@ -466,7 +466,7 @@ class Runtime(object):
                     stream.write(b"\0\0\0\0") # null size
                     marshal.dump(code, stream)
                     arc.writestr(path, stream.getvalue())
-            elif mod.__spec__ is not None and mod.__spec__.origin == 'namespace':
+            elif mod.__spec__ is not None and (mod.__spec__.origin is None or mod.__spec__.origin == 'namespace'):
                 # implicit namespace packages, create empty __init__.py for zipimport
                 if self.options.verbose > 1:
                     print("Add empty __init__ for implicit namespace package %s to %s" % (mod.__name__, libpath))
