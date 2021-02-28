@@ -243,7 +243,7 @@ class ModuleFinder:
         self._depgraph[name].add(caller)
 
         if name in self.excludes:
-            raise ImportError('No module named {!r}'.format(name), name=name)
+            raise ImportError('Moduke {!r} is explicitely required but is in the "excludes" list!'.format(name), name=name)
 
         if name in self.modules:
             return self.modules[name]
