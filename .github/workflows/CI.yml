@@ -161,10 +161,15 @@ jobs:
           pip install ${{ env.WHEELNAME }}
           python -c "import py2exe"
 
-      - name: Test
+      - name: Test (synthetic)
         run: |
           cd tests
           python maketest.py
+
+      - name: Test (functional)
+        shell: cmd
+        run: |
+          cd tests
           cd functional
           .\runner.bat bundlefiles2_test
           .\runner.bat bundlefiles1_test
