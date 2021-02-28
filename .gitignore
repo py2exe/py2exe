@@ -6,6 +6,7 @@ venv
 
 /build
 /dist
+/*.egg-info
 .*
 !.travis.yml
 !.appveyor.yml
