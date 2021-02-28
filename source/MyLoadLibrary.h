@@ -1,7 +1,7 @@
 #ifndef GENERALLOADLIBRARY_H
 #define GENERALLOADLIBRARY_H
 
-HMODULE MyLoadLibrary(LPCSTR, void *, void *);
+HMODULE MyLoadLibrary(LPCSTR, void *, size_t, void *);
 
 HMODULE MyGetModuleHandle(LPCSTR);
 
