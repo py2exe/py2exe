@@ -13,7 +13,7 @@ if sys.version_info < (3, 6):
 
 from setuptools import setup
 
-from py2exe.py2exe_distutils import Dist, Interpreter, BuildInterpreters
+from py2exe_distutils import Dist, Interpreter, BuildInterpreters
 
 ############################################################################
 
@@ -137,12 +137,10 @@ interpreters = [run, run_w, resource_dll,
 
 
 if __name__ == "__main__":
-    import py2exe
-
     cmdclass = {'build_interpreters': BuildInterpreters}
 
     setup(name="py2exe",
-          version=py2exe.__version__,
+          version=open("py2exe/version.py").read().split("'")[1],
           description="Build standalone executables for Windows",
           long_description=open("README.md").read(),
           long_description_content_type="text/markdown",
@@ -152,6 +150,7 @@ if __name__ == "__main__":
           maintainer_email="alby128@gmail.com",
           url="http://www.py2exe.org/",
           license="MIT/X11",
+          setup_requires=["wheel"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
           python_requires='>=3.6, <3.10',
