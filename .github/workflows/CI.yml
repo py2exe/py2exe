@@ -167,23 +167,7 @@ jobs:
           python maketest.py
 
       - name: Test (functional)
-        shell: cmd
         run: |
           cd tests
           cd functional
-          .\runner.bat bundlefiles2_test
-          .\runner.bat bundlefiles1_test
-          .\runner.bat bundlefiles0_test
-          .\runner.bat bundlefiles0_sqlite_test
-          .\runner.bat bundlefiles0_ssl_test
-          .\runner.bat numpy_test
-          .\runner.bat pandas_test
-          .\runner.bat pycryptodome_test
-          .\runner.bat tk_test
-          .\runner.bat sqlite_test
-          .\runner.bat certifi_test
-          .\runner.bat certifi_zip_test
-          .\runner.bat pywin32_test
-          .\runner.bat requests_test
-          .\runner.bat zope_interface_test
-          .\runner.bat ssl_test
+          .\runner.ps1
