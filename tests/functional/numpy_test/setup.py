@@ -1,6 +1,6 @@
-from distutils.core import setup
+import setuptools
 import py2exe
 
-setup(console=[{ "script": "numpy_test.py"}],
-      options={"py2exe": {
-            "packages": ['numpy']}})
+setuptools.setup(console=[{ "script": "numpy_test.py"}],
+                 options={"py2exe": {
+                              "packages": ['numpy']}})

@@ -5,6 +5,6 @@
 
 from .version import __version__
 
-from .patch_distutils import patch_distutils
+from .patch_setuptools import patch_setuptools
 
-patch_distutils()
+patch_setuptools()
