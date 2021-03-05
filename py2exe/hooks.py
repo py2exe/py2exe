@@ -354,13 +354,30 @@ def hook_matplotlib(finder, module):
     """matplotlib requires data files in a 'mpl-data' subdirectory in
     the same directory as the executable.
     """
-    # c:\Python33\lib\site-packages\matplotlib
-    mpl_data_path = os.path.join(os.path.dirname(module.__loader__.path),
-                                 "mpl-data")
+    import ast
+    import matplotlib
+
+    mpl_data_path = matplotlib.get_data_path()
     finder.add_datadirectory("mpl-data", mpl_data_path, recursive=True)
+
     finder.excludes.append("wx")
     # XXX matplotlib requires tkinter which modulefinder does not
     # detect because of the six bug.
+
+    # matplotlib requires a patch in its __init__ to correctly locate the `mpi-data` folder from where we put it
+    # see issue #71 fof further details
+    tree = ast.parse(module.__source__)
+
+    class ChangeDef(ast.NodeTransformer):
+        def visit_FunctionDef(self, node: ast.FunctionDef):
+            if node.name == '_get_data_path':
+                node.body = ast.parse('return os.path.join(os.path.dirname(sys.executable), "mpl-data")').body
+            return node
+
+    t = ChangeDef()
+    patched_tree = t.visit(tree)
+
+    module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
