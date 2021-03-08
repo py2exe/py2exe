@@ -47,7 +47,7 @@ void SystemError(int error, char *msg)
 		Buffer[0] = '\0';
 	n = lstrlenA(Buffer);
 	_snprintf(Buffer+n, sizeof(Buffer)-n, msg);
-	MessageBoxA(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
+	MessageBoxA(NULL, Buffer, NULL, MB_OK | MB_ICONSTOP);
 }
 
 extern int init(char *);
