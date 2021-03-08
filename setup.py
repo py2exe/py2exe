@@ -48,6 +48,7 @@ extra_link_args = []
 extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
 extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
 extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
+extra_compile_args.append("/FIhideimpt.h")
 
 if 0:
     # enable this to debug a release build
@@ -65,6 +66,7 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                               "source/MyLoadLibrary.c",
                               "source/_memimporter.c",
                               "source/actctx.c",
+                              "source/hideimpt.c",
 
                               "source/python-dynload.c",
                               ],
@@ -89,6 +91,7 @@ run = Interpreter("py2exe.run",
                    "source/MyLoadLibrary.c",
                    "source/_memimporter.c",
                    "source/actctx.c",
+                   "source/hideimpt.c",
 
                    "source/python-dynload.c",
                    ],
@@ -107,6 +110,7 @@ run_w = Interpreter("py2exe.run_w",
                      "source/MyLoadLibrary.c",
                      "source/_memimporter.c",
                      "source/actctx.c",
+                     "source/hideimpt.c",
 
                      "source/python-dynload.c",
                      ],
