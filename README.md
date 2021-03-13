@@ -8,7 +8,7 @@ Python versions included in the  official development cycle are supported
 and windows (GUI) executables. Building windows services, and DLL/EXE
 COM servers might work but it is not actively supported.
 
-Development of `py2exe`is hosted here:
+Development of `py2exe` is hosted here:
 https://github.com/py2exe/py2exe.
 
 
@@ -16,6 +16,10 @@ Changes
 ----------------------------
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
+
+Version 0.10.3.0:
+- New hook for supporting `matplotlib` 3.2 and higher.
+- Fix for including implicit namespace packages as per PEP420.
 
 Version 0.10.2.1:
 - Patch `MyLoadLibrary` to support `ssl` with `bundle_files=0`.
