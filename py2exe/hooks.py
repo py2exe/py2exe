@@ -671,3 +671,11 @@ def hook__ssl(finder, module):
         for dll_path in glob.glob(os.path.join(sys.base_prefix, "DLLs", dll_search)):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
+
+def hook_wx(finder, module):
+    """
+    Avoid `wxPyDeprecationWarning: wx.lib.pubsub has been deprecated` and
+    `RuntimeError: Should not import this directly, used by pubsub.core if applicable`
+    when importing the full wx package
+    """
+    finder.excludes.append("wx.lib.pubsub")
