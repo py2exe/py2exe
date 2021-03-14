@@ -65,11 +65,19 @@ class ModuleFinder:
         """Import a complete package.
 
         """
-        self.import_hook(name)
-        package = self.modules[name]
+        self.safe_import_hook(name)
+
+        try:
+            package = self.modules[name]
+        except KeyError:
+            if name not in self.excludes:
+                raise
+            return
+
         if not hasattr(package, "__path__"):
             # Hm, should we raise ImportError instead?
             raise TypeError("{0} is not a package".format(name))
+
         for finder, modname, ispkg in pkgutil.iter_modules(package.__path__):
             self.safe_import_hook("%s.%s" % (name, modname))
             if ispkg:
@@ -243,7 +251,7 @@ class ModuleFinder:
         self._depgraph[name].add(caller)
 
         if name in self.excludes:
-            raise ImportError('Moduke {!r} is explicitely required but is in the "excludes" list!'.format(name), name=name)
+            raise ImportError('Module {!r} is in the "excludes" list'.format(name), name=name)
 
         if name in self.modules:
             return self.modules[name]
