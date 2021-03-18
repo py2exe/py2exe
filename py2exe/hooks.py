@@ -578,6 +578,10 @@ def hook_pandas(finder, module):
         finder.import_hook("pandas._libs.tslibs.base")
         finder.recursion_depth_pandas = depth
 
+def hook_Cryptodome(finder, module):
+    """pycryptodomex distributes the same package as pycryptodome under a different package name"""
+    hook_Crypto(finder, module)
+
 def hook_Crypto(finder, module):
     """pycryptodome includes compiled libraries as if they were Python C extensions (as .pyd files).
     However, they are not, as they cannot be imported by Python. Hence, those files should be treated
@@ -589,28 +593,30 @@ def hook_Crypto(finder, module):
     for path in Path(crypto_path).rglob('*.pyd'):
         finder.add_libfile(str(path.relative_to(os.path.dirname(crypto_path))), path)
 
+    package_name = module.__name__
+
     # patch pycryptodome to look for its "pyd" files in the bundle directory
-    finder.add_bootcode("""
+    finder.add_bootcode(f"""
 def patch_Crypto():
     import os
     import sys
 
     try:
-        import Crypto.Util._file_system
+        import {package_name}.Util._file_system
     except ImportError:
         # the hook should not work for pycrypto
         return
 
     def override_filename(dir_comps, filename):
-        if dir_comps[0] != "Crypto":
-            raise ValueError("Only available for modules under 'Crypto'")
+        if dir_comps[0] != "{package_name}":
+            raise ValueError("Only available for modules under '{package_name}'")
 
         dir_comps = list(dir_comps[1:]) + [filename]
-        root_lib = os.path.join(os.path.dirname(sys.executable), 'Crypto')
+        root_lib = os.path.join(os.path.dirname(sys.executable), '{package_name}')
 
         return os.path.join(root_lib, *dir_comps)
 
-    Crypto.Util._file_system.pycryptodome_filename = override_filename
+    {package_name}.Util._file_system.pycryptodome_filename = override_filename
 
 patch_Crypto()
 del patch_Crypto
