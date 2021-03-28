@@ -355,6 +355,8 @@ def hook_matplotlib(finder, module):
     the same directory as the executable.
     """
     import ast
+    from pkg_resources._vendor.packaging import version as pkgversion
+
     import matplotlib
 
     mpl_data_path = matplotlib.get_data_path()
@@ -368,9 +370,14 @@ def hook_matplotlib(finder, module):
     # see issue #71 fof further details
     tree = ast.parse(module.__source__)
 
+    # matplotlib <=3.3.4 requires '_get_data_path' to be patched
+    # matplotlib >= 3.4.0 requires 'get_data_path' to be patched
+    mpl_version = pkgversion.parse(matplotlib.__version__)
+    node_to_be_patched = 'get_data_path' if mpl_version >= pkgversion.parse('3.4.0') else '_get_data_path'
+
     class ChangeDef(ast.NodeTransformer):
         def visit_FunctionDef(self, node: ast.FunctionDef):
-            if node.name == '_get_data_path':
+            if node.name == node_to_be_patched:
                 node.body = ast.parse('return os.path.join(os.path.dirname(sys.executable), "mpl-data")').body
             return node
 
