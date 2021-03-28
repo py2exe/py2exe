@@ -4,7 +4,11 @@
 """
 
 import os
+import platform
 import sys
+
+if platform.system() != 'Windows':
+    raise RuntimeError("This package requires Windows")
 
 if sys.version_info < (3, 6):
     raise RuntimeError("This package requires Python 3.6 or later")
