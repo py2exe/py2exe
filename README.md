@@ -17,6 +17,11 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.10.3.1:
+- New hook for `pycryptodomex`
+- `ModuleFinder`: respect excludes list in `import_package`
+- Updated hook for `matplotlib` >= 3.4.0
+
 Version 0.10.3.0:
 - New hook for supporting `matplotlib` 3.2 and higher.
 - Fix for including implicit namespace packages as per PEP420.
