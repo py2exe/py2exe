@@ -235,6 +235,7 @@ class Scanner(ModuleFinder):
         self.dllfinder = DllFinder()
         self._data_directories = {}
         self._data_files = {}
+        self._data_files_to_zip = {}
         self._lib_files = {}
         self._min_bundle = {}
         self._import_package_later = []
@@ -283,11 +284,23 @@ class Scanner(ModuleFinder):
     def extension_dlls(self):
         return self.dllfinder.extension_dlls()
 
+    def data_files(self):
+        return self._data_files.items()
+
+    def data_directories(self):
+        return self._data_directories.items()
+
+    def data_files_to_zip(self):
+        return self._data_files_to_zip.items()
+
     def add_datadirectory(self, name, path, recursive):
         self._data_directories[name] = (path, recursive)
 
     def add_datafile(self, name, path):
         self._data_files[name] = path
+
+    def add_datafile_to_zip(self, name, path):
+        self._data_files_to_zip[name] = path
 
     def add_dll(self, path):
         self.dllfinder._add_dll(path)

@@ -481,6 +481,12 @@ class Runtime(object):
                 marshal.dump(code, stream)
                 arc.writestr(path, stream.getvalue())
 
+        # data files to be zipped from modulefinder
+        for name, src in self.mf.data_files_to_zip():
+            if self.options.verbose > 1:
+                print("Add data file %s to %s" % (name, libpath))
+            arc.write(src, name)
+
         if self.options.bundle_files == 0:
             # put everything into the arc
             files = self.mf.all_dlls()
