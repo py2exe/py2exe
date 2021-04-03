@@ -664,6 +664,17 @@ def hook_scipy_optimize(finder, module):
         finder.import_hook("scipy.optimize.minpack2")
         finder.recursion_depth_optimize = depth
 
+def hook_selenium(finder, module):
+    from pathlib import Path
+
+    import selenium
+
+    # add all *.js data files in the zip archive
+    for path in Path(selenium.__file__).parent.rglob('*.js'):
+        sep = path.parts.index('selenium')
+        name = str(Path(*path.parts[sep:]))
+        finder.add_datafile_to_zip(name, path)
+
 def hook_shapely(finder, module):
     import glob
     import shapely
