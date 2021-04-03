@@ -267,7 +267,7 @@ class Runtime(object):
         self.copy_files(destdir)
 
         # data directories from modulefinder
-        for name, (src, recursive) in self.mf._data_directories.items():
+        for name, (src, recursive) in self.mf.data_directories():
             if recursive:
                 dst = os.path.join(destdir, name)
                 if os.path.isdir(dst):
@@ -278,7 +278,7 @@ class Runtime(object):
                 raise RuntimeError("not yet supported")
 
         # data files from modulefinder
-        for name, src in self.mf._data_files.items():
+        for name, src in self.mf.data_files():
             dst = os.path.join(destdir, name)
             os.makedirs(os.path.dirname(dst), exist_ok=True)
             shutil.copy2(src, dst)
