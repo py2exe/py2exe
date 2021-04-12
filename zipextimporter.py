@@ -42,6 +42,7 @@ True
 
 """
 import imp
+import importlib
 import sys
 import zipimport
 
@@ -75,7 +76,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
 
     def load_module(self, fullname):
         verbose = _memimporter.get_verbose_flag()
-        
+
         if fullname in sys.modules:
             mod = sys.modules[fullname]
             if verbose:
@@ -107,9 +108,10 @@ class ZipExtensionImporter(zipimport.zipimporter):
                     if verbose > 1:
                         sys.stderr.write("# found %s in zipfile %s\n"
                                          % (path, self.archive))
+                    spec = importlib.util.find_spec(fullname, path)
                     mod = _memimporter.import_module(fullname, path,
                                                      initname,
-                                                     self.get_data)
+                                                     self.get_data, spec)
                     mod.__file__ = "%s\\%s" % (self.archive, path)
                     mod.__loader__ = self
                     if verbose:

@@ -60,6 +60,11 @@ char **__Py_PackageContext_PTR()
   DATA(char **, _Py_PackageContext);
 }
 
+PyTypeObject *PyModuleDef_Type_PTR()
+{
+  DATA(PyTypeObject *, PyModuleDef_Type);
+}
+
 ////////////////////////////////////////////////////////////////
 
 int Py_IsInitialized(void)
@@ -218,6 +223,30 @@ PyObject *PyModule_Create2(PyModuleDef *module, int module_api_version)
   return proc(module, module_api_version);
 }
 
+PyObject *PyModuleDef_Init(PyModuleDef *module)
+{
+  FUNC(PyObject *, PyModuleDef_Init, (PyModuleDef *));
+  return proc(module);
+}
+
+int PyType_IsSubtype(PyTypeObject *a, PyTypeObject *b)
+{
+  FUNC(int, PyType_IsSubtype, (PyTypeObject *, PyTypeObject *));
+  return proc(a, b);
+}
+
+PyObject *PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api_version)
+{
+  FUNC(PyObject *, PyModule_FromDefAndSpec2, (struct PyModuleDef *, PyObject *, int));
+  return proc(def, spec, module_api_version);
+}
+
+PyObject *PyImport_ReloadModule(PyObject *m)
+{
+  FUNC(PyObject *, PyImport_ReloadModule, (PyObject *));
+  return proc(m);
+}
+
 PyObject *PyLong_FromLong(long n)
 {
   FUNC(PyObject *, PyLong_FromLong, (long));
@@ -312,6 +341,12 @@ PyObject *PyImport_GetModuleDict(void)
 }
 
 #endif
+
+PyObject *PyModule_New(const char *name)
+{
+  FUNC(PyObject *, PyModule_New, (const char *));
+  return proc(name);
+}
 
 PyObject *PyImport_ImportModule(const char *name)
 {

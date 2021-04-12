@@ -43,10 +43,9 @@ static int dprintf(char *fmt, ...)
    dictionary, to avoid loading shared libraries twice.
 */
 
-
 /* c:/users/thomas/devel/code/cpython-3.4/Python/importdl.c 73 */
 
-int do_import(FARPROC init_func, char *modname)
+int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 {
 	int res = -1;
 	PyObject* (*p)(void);
@@ -89,6 +88,15 @@ int do_import(FARPROC init_func, char *modname)
 		Py_DECREF(name);
 		return -1;
 	}
+
+	/* multi-phase initialization - PEP 489 */
+    if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
+		Py_DECREF(name);
+		*mod = PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+		return 2;
+    }
+
+	/* fall back to single-phase initialization */
 
 	/* Remember pointer to module init function. */
 	def = PyModule_GetDef(m);
@@ -139,18 +147,24 @@ import_module(PyObject *self, PyObject *args)
 
 	ULONG_PTR cookie = 0;
 	PyObject *findproc;
+	PyObject *spec;
 	BOOL res;
+
+	int imp_res = -1;
 
 	//	MessageBox(NULL, "ATTACH", "NOW", MB_OK);
 	//	DebugBreak();
 
-	/* code, initfuncname, fqmodulename, path */
-	if (!PyArg_ParseTuple(args, "sssO:import_module",
+	/* code, initfuncname, fqmodulename, path, spec */
+	if (!PyArg_ParseTuple(args, "sssOO:import_module",
 			      &modname, &pathname,
 			      &initfuncname,
-			      &findproc))
+			      &findproc,
+				  &spec))
 		return NULL;
-    
+
+	PyObject *m = PyModule_New(modname);
+
 	cookie = _My_ActivateActCtx(); // some windows manifest magic...
 	/*
 	 * The following problem occurs when we are a ctypes COM dll server
@@ -212,10 +226,16 @@ import_module(PyObject *self, PyObject *args)
 	}
 
 	init_func = MyGetProcAddress(hmem, initfuncname);
-	if (do_import(init_func, modname) < 0) {
+	imp_res = do_import(init_func, modname, spec, &m);
+
+	if (imp_res < 0) {
 		MyFreeLibrary(hmem);
 		return NULL;
+	} else if (imp_res == 2) {
+		return PyImport_ReloadModule(m);
 	}
+
+	Py_DECREF(m);
 
 	/* Retrieve from sys.modules */
 	return PyImport_ImportModule(modname);
@@ -229,7 +249,7 @@ get_verbose_flag(PyObject *self, PyObject *args)
 
 static PyMethodDef methods[] = {
 	{ "import_module", import_module, METH_VARARGS,
-	  "import_module(modname, pathname, initfuncname, finder) -> module" },
+	  "import_module(modname, pathname, initfuncname, finder, spec) -> module" },
 	{ "get_verbose_flag", get_verbose_flag, METH_NOARGS,
 	  "Return the Py_Verbose flag" },
 	{ NULL, NULL },		/* Sentinel */
