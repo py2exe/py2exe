@@ -17,6 +17,11 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.10.4.0:
+- `zipextimporter` supports external modules that use multi-phase initialization (PEP 489)
+- New hook for `selenium`
+- `dllfinder` provides a new method to add data files in the zip archive
+
 Version 0.10.3.1:
 - New hook for `pycryptodomex`
 - `ModuleFinder`: respect excludes list in `import_package`
