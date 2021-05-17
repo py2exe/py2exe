@@ -606,6 +606,19 @@ class Module:
             # frozen or builtin modules
             if loader.is_package(name):
                 self.__path__ = [name]
+        elif 'VendorImporter' in str(loader.__class__):
+            # used by pkg_resources for vendored packages or modules
+            vendored = loader.load_module(spec.name)
+            if hasattr(vendored, "__path__"):
+                # vendored package
+                self.__path__ = vendored.__path__
+                self.__vendored_mod_loader__ = None
+            else:
+                # vendored module
+                self.__file__ = vendored.__file__
+                self.__vendored_mod_loader__ = vendored.__loader__ # keep the actual module loader for use in __code__
+            # unload
+            sys.modules.pop(spec.name, None)
 
         if getattr(self, '__package__', None) is None:
             try:
@@ -631,21 +644,27 @@ class Module:
     @property
     def __code__(self):
         if self.__code_object__ is None:
+            source = None
             if self.__loader__ is None: # implicit namespace packages
                 return None
             if self.__loader__.__class__ == importlib.machinery.ExtensionFileLoader:
                 return None
             if 'VendorImporter' in str(self.__loader__.__class__):
-                return None
+                if self.__vendored_mod_loader__ is not None:
+                    # for vendored modules, we need to load the sources via the actual loader
+                    source = self.__vendored_mod_loader__.get_source(self.__vendored_mod_loader__.name)
+                else:
+                    # vendored packages do not need this
+                    return None
             try:
-                try:
-                    source = self.__source__
-                except Exception:
-                    import traceback; traceback.print_exc()
-                    raise RuntimeError("loading %r" % self) from None
+                if source is None:
+                    try:
+                        source = self.__source__
+                    except Exception:
+                        import traceback; traceback.print_exc()
+                        raise RuntimeError("loading %r" % self) from None
                 if source is not None:
-                    __file__ = self.__dest_file__ \
-                               if hasattr(self, "__file__") else "<string>"
+                    __file__ = self.__dest_file__ if hasattr(self, "__file__") else "<string>"
                     try:
                         self.__code_object__ = compile(source, __file__, "exec",
                                                        optimize=self.__optimize__)

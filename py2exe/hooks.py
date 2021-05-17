@@ -585,6 +585,13 @@ def hook_pandas(finder, module):
         finder.import_hook("pandas._libs.tslibs.base")
         finder.recursion_depth_pandas = depth
 
+def hook_pkg_resources(finder, module):
+    depth = getattr(finder,"recursion_depth_pkg_resources", 0)
+    if depth==0:
+        finder.recursion_depth_pkg_resources = depth + 1
+        finder.import_package("pkg_resources._vendor")
+        finder.recursion_depth_pkg_resources = depth
+
 def hook_Cryptodome(finder, module):
     """pycryptodomex distributes the same package as pycryptodome under a different package name"""
     hook_Crypto(finder, module)
