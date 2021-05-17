@@ -581,6 +581,7 @@ class Module:
         self.__name__ = name
         self.__spec__ = spec
         self.__code_object__ = None
+        self.__vendored_mod_loader__ = None
 
         try:
             loader = self.__loader__ = spec.loader
@@ -608,11 +609,12 @@ class Module:
                 self.__path__ = [name]
         elif 'VendorImporter' in str(loader.__class__):
             # used by pkg_resources for vendored packages or modules
+            if 'setuptools' in spec.name:
+                return None
             vendored = loader.load_module(spec.name)
             if hasattr(vendored, "__path__"):
                 # vendored package
                 self.__path__ = vendored.__path__
-                self.__vendored_mod_loader__ = None
             else:
                 # vendored module
                 self.__file__ = vendored.__file__
