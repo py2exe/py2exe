@@ -350,6 +350,12 @@ def hook_six(finder, module):
                     None, "six.moves", finder._optimize)
     finder._add_module("six.moves", m)
 
+def hook_infi(finder, module):
+    """Thw whole infi namespace package relies on pkg_resources for
+    loading modules and data files.
+    """
+    finder.import_hook("pkg_resources")
+
 def hook_matplotlib(finder, module):
     """matplotlib requires data files in a 'mpl-data' subdirectory in
     the same directory as the executable.
