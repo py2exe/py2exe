@@ -78,10 +78,10 @@ class DllFinder:
 
         while todo:
             dll = todo.pop() # get one and check it
-            if dll in self._loaded_dlls:
+            if os.path.basename(dll).lower() in self._loaded_dlls:
                 continue
             for dep_dll in self.bind_image(dll):
-                if dep_dll in self._loaded_dlls:
+                if os.path.basename(dep_dll).lower() in self._loaded_dlls:
                     continue
                 dll_type = self.determine_dll_type(dep_dll)
                 if dll_type is None:
