@@ -6,6 +6,7 @@
 import os
 import platform
 import sys
+from distutils.util import get_platform
 
 if platform.system() != 'Windows':
     raise RuntimeError("This package requires Windows")
@@ -21,7 +22,10 @@ from py2exe_distutils import Dist, Interpreter, BuildInterpreters
 
 ############################################################################
 
-if sys.version_info < (3, 9):
+if get_platform() == "mingw":
+    python_dll_name = '\"libpython%d.%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"libpython%d.%d_d.dll\"' % sys.version_info[:2]
+elif sys.version_info < (3, 9):
     python_dll_name = '\\"python%d%d.dll\\"' % sys.version_info[:2]
     python_dll_name_debug = '\\"python%d%d_d.dll\\"' % sys.version_info[:2]
 else:
@@ -48,10 +52,17 @@ macros.append(("Py_BUILD_CORE", '1'))
 
 extra_compile_args = []
 extra_link_args = []
+console_link_args = []
+dll_link_args = []
 
 extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
 extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
 extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
+
+if get_platform() == "mingw":
+    console_link_args = ["-municode"]
+else:
+    dll_link_args = ["/DLL"]
 
 if 0:
     # enable this to debug a release build
@@ -81,7 +92,7 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                              target_desc = "shared_library",
                              define_macros=macros,
                              extra_compile_args=extra_compile_args,
-                             extra_link_args=extra_link_args + ["/DLL"],
+                             extra_link_args=extra_link_args + dll_link_args,
                              )
 
 run = Interpreter("py2exe.run",
@@ -99,7 +110,7 @@ run = Interpreter("py2exe.run",
                   libraries=["user32", "shell32"],
                   define_macros=macros,
                   extra_compile_args=extra_compile_args,
-                  extra_link_args=extra_link_args,
+                  extra_link_args=extra_link_args + console_link_args,
                   )
 
 run_w = Interpreter("py2exe.run_w",
@@ -133,7 +144,7 @@ resource_dll = Interpreter("py2exe.resources",
                            ["source/dll.c",
                             "source/icon.rc"],
                            target_desc = "shared_library",
-                           extra_link_args=["/DLL"],
+                           extra_link_args=dll_link_args,
                            )
 
 interpreters = [run, run_w, resource_dll,
