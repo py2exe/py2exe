@@ -53,6 +53,7 @@ wchar_t modulename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // from GetModuleName()
 wchar_t dirname[_MAX_PATH]; // directory part of GetModuleName()
 // Hm, do we need this? wchar_t libdirname[_MAX_PATH]; // library directory - probably same as above.
 wchar_t libfilename[_MAX_PATH + _MAX_FNAME + _MAX_EXT]; // library filename
+wchar_t syspath[_MAX_PATH * 2 + 2];
 struct scriptinfo *p_script_info;
 
 /*
@@ -346,7 +347,8 @@ int init_with_instance(HMODULE hmod_exe, char *frozen)
 	  Start the ball rolling.
 	*/
 	Py_SetProgramName(modulename);
-	Py_SetPath(libfilename);
+	snwprintf(syspath, sizeof(syspath), L"%S;%S", dirname, libfilename);
+	Py_SetPath(syspath);
 	Py_Initialize();
 
 
