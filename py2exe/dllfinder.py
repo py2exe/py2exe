@@ -21,18 +21,26 @@ from . import hooks
 WINDOWSCRTPATTERN = "api-ms-win-*.dll"
 VCRUNTIMEPATTERN = "vcruntime*.dll"
 
+def normPath(path):
+    """ normalize path separator and case, so filenames can be compared as strings"""
+    return os.path.normpath(os.path.normcase(path))
+
+def normBasename(path):
+    """ extract basename and normalize case"""
+    return os.path.basename(os.path.normcase(path))
+
 ################################
 # XXX Move these into _wapi???
 _buf = _wapi.create_unicode_buffer(260)
 
 _wapi.GetWindowsDirectoryW(_buf, len(_buf))
-windir = _buf.value.lower()
+windir = normPath(_buf.value)
 
 _wapi.GetSystemDirectoryW(_buf, len(_buf))
-sysdir = _buf.value.lower()
+sysdir = normPath(_buf.value)
 
 _wapi.GetModuleFileNameW(sys.dllhandle, _buf, len(_buf))
-pydll = _buf.value.lower()
+pydll = normPath(_buf.value)
 
 def SearchPath(imagename, path=None):
     pfile = _wapi.c_wchar_p()
@@ -75,14 +83,12 @@ class DllFinder:
 
         """
         todo = {pyd} # todo contains the dlls that we have to examine
+        already_examined = set()
 
         while todo:
             dll = todo.pop() # get one and check it
-            if dll in self._loaded_dlls:
-                continue
+            already_examined.add(dll)
             for dep_dll in self.bind_image(dll):
-                if dep_dll in self._loaded_dlls:
-                    continue
                 dll_type = self.determine_dll_type(dep_dll)
                 if dll_type is None:
                     continue
@@ -90,7 +96,8 @@ class DllFinder:
                 ##     print("EXT", dep_dll)
                 ## elif dll_type == "DLL":
                 ##     print("DLL", dep_dll)
-                todo.add(dep_dll)
+                if dep_dll not in already_examined:
+                    todo.add(dep_dll)
                 self._dlls[dep_dll].add(dll)
 
     @cached(cache=LFUCache(maxsize=128))
@@ -151,7 +158,7 @@ class DllFinder:
                             status_routine)
 
             if ret == 1:
-                self._loaded_dlls[os.path.basename(name).lower()] = name
+                self._loaded_dlls[normBasename(name)] = name
                 result.add(name)
                 result.update(TEMP)
 
@@ -173,17 +180,19 @@ class DllFinder:
         None when the image is in the windows or system directory or belongs
         to a windows framework, return "EXT" otherwise.
         """
-        fnm = imagename.lower()
+        fnm = normPath(imagename)
 
         if fnm == pydll.lower():
             return "DLL"
 
         deps = self.bind_image(imagename)
-        if pydll in [d.lower() for d in deps]:
+        if pydll in [normPath(d) for d in deps]:
             return "EXT"
 
         if fnm.startswith(windir + os.sep) or \
+            fnm.startswith(windir + os.altsep) or \
             fnm.startswith(sysdir + os.sep) or \
+            fnm.startswith(sysdir + os.altsep) or \
             fnmatch(os.path.basename(fnm), WINDOWSCRTPATTERN) or \
             fnmatch(os.path.basename(fnm), VCRUNTIMEPATTERN):
             return None
@@ -192,8 +201,8 @@ class DllFinder:
 
     def search_path(self, imagename, path):
         """Find an image (exe or dll) on the PATH."""
-        if imagename.lower() in self._loaded_dlls:
-            return self._loaded_dlls[imagename.lower()]
+        if normBasename(imagename) in self._loaded_dlls:
+            return self._loaded_dlls[normBasename(imagename)]
         # SxS files (like msvcr90.dll or msvcr100.dll) are only found in
         # the SxS directory when the PATH is NULL.
         if path is not None:
