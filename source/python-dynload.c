@@ -31,7 +31,7 @@ static HMODULE hmod_pydll;
 
 #define FUNC(res, name, args) \
   static res(*proc)args; \
-  if (!proc) (FARPROC)proc = MyGetProcAddress(hmod_pydll, #name)
+  if (!proc) proc = (res (*) args) MyGetProcAddress(hmod_pydll, #name)
 
 #define DATA(type, name)				\
   static type pflag; \
@@ -163,9 +163,9 @@ void PyErr_Print(void)
   proc();
 }
 
-void Py_SetProgramName(wchar_t *name)
+void Py_SetProgramName(const wchar_t *name)
 {
-  FUNC(void, Py_SetProgramName, (wchar_t *));
+  FUNC(void, Py_SetProgramName, (const wchar_t *));
   proc(name);
 }
 

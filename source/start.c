@@ -128,7 +128,7 @@ BOOL locate_script(HMODULE hmod)
 		SystemError(GetLastError(), "Could not load script resource:");
 		return FALSE;
 	}
-	p_script_info = (struct scriptinfo *)pScript = LockResource(hgbl);
+	p_script_info = (struct scriptinfo *)(pScript = LockResource(hgbl));
 	if (!pScript)  {
 		SystemError(GetLastError(), "Could not lock script resource:");
 		return FALSE;
