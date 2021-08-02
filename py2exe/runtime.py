@@ -466,20 +466,6 @@ class Runtime(object):
                     stream.write(b"\0\0\0\0") # null size
                     marshal.dump(code, stream)
                     arc.writestr(path, stream.getvalue())
-            elif mod.__spec__ is not None and (mod.__spec__.origin is None or mod.__spec__.origin == 'namespace'):
-                # implicit namespace packages, create empty __init__.py for zipimport
-                if self.options.verbose > 1:
-                    print("Add empty __init__ for implicit namespace package %s to %s" % (mod.__name__, libpath))
-                path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
-                code = compile(r"", path, "exec", optimize=self.options.optimize)
-                stream = io.BytesIO()
-                stream.write(imp.get_magic())
-                if sys.version_info >= (3,7,0):
-                    stream.write(b"\0\0\0\0") # null flags
-                stream.write(b"\0\0\0\0") # null timestamp
-                stream.write(b"\0\0\0\0") # null size
-                marshal.dump(code, stream)
-                arc.writestr(path, stream.getvalue())
 
         # data files to be zipped from modulefinder
         for name, src in self.mf.data_files_to_zip():
