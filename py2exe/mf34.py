@@ -593,7 +593,7 @@ class Module:
             self.__file__ = fnm
             if loader.is_package(name):
                 self.__path__ = [os.path.dirname(fnm)]
-        elif hasattr(loader, "path"):
+        elif hasattr(loader, "path") and hasattr(loader, "is_package"):
             # extension modules
             fnm = loader.path
             self.__file__ = fnm
@@ -665,7 +665,10 @@ class Module:
 
     @property
     def __source__(self):
-        return self.__loader__.get_source(self.__name__)
+        if hasattr(self.__loader__, 'get_source'):
+            return self.__loader__.get_source(self.__name__)
+        else:
+            return None
 
 
     def __repr__(self):
