@@ -17,6 +17,10 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.10.4.1:
+- `ModuleFinder`: add support for the `pkg_resources.extern.VendorImporter` loader
+- New hooks for `pkg_resources` and `infi`
+
 Version 0.10.4.0:
 - `zipextimporter` supports external modules that use multi-phase initialization (PEP 489)
 - New hook for `selenium`
