@@ -642,6 +642,17 @@ patch_Crypto()
 del patch_Crypto
 """)
 
+def hook_scipy(finder, module):
+    #add numpy external DLLs to the bundle
+    scipy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
+    if os.path.isdir(scipy_libs_path):
+        from os import listdir
+        dlls = [os.path.join(scipy_libs_path, fln)
+                for fln in listdir(scipy_libs_path)
+                if fln.endswith('.dll')]
+        for dll in dlls:
+            finder.add_dll(dll)
+
 def hook_scipy_special(finder, module):
     #import pdb;pdb.set_trace()
     depth = getattr(finder,"recursion_depth_special",0)
