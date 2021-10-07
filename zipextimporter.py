@@ -131,38 +131,44 @@ class ZipExtensionImporter(zipimport.zipimporter):
             raise zipimport.ZipImportError("can't find module %s" % fullname) from err
 
     def create_module(self, spec):
-        mod =  super().create_module(spec)
-        if mod is None:
-            verbose = _memimporter.get_verbose_flag()
-            fullname = spec.name
+        if sys.version_info >= (3, 10):
+            mod =  super().create_module(spec)
+            if mod is None:
+                verbose = _memimporter.get_verbose_flag()
+                fullname = spec.name
 
-            filename = fullname.replace(".", "\\")
-            suffixes = self._suffixes
-            initname = "PyInit_" + fullname.split(".")[-1]
+                filename = fullname.replace(".", "\\")
+                suffixes = self._suffixes
+                initname = "PyInit_" + fullname.split(".")[-1]
 
-            for s in suffixes:
-                path = filename + s
-                if path in self._files:
-                    if verbose > 1:
-                        sys.stderr.write("# found %s in zipfile %s\n"
-                                         % (path, self.archive))
-                    mod = _memimporter.import_module(fullname, path,
-                                                     initname,
-                                                     self.get_data, spec)
-                    mod.__file__ = "%s\\%s" % (self.archive, path)
-                    mod.__loader__ = self
-                    mod.__memimported__ = True
-                    if verbose:
-                        sys.stderr.write("import %s # loaded from zipfile %s\n"
-                                         % (fullname, mod.__file__))
-                    return mod
-            # raise zipimport.ZipImportError("can't find module %s" % fullname)
+                for s in suffixes:
+                    path = filename + s
+                    if path in self._files:
+                        if verbose > 1:
+                            sys.stderr.write("# found %s in zipfile %s\n"
+                                            % (path, self.archive))
+                        mod = _memimporter.import_module(fullname, path,
+                                                        initname,
+                                                        self.get_data, spec)
+                        mod.__file__ = "%s\\%s" % (self.archive, path)
+                        mod.__loader__ = self
+                        mod.__memimported__ = True
+                        if verbose:
+                            sys.stderr.write("import %s # loaded from zipfile %s\n"
+                                            % (fullname, mod.__file__))
+                        return mod
+                # raise zipimport.ZipImportError("can't find module %s" % fullname)
+        else:
+            raise NotImplementedError
 
     def exec_module(self, module):
-        if hasattr(module, '__memimported__'):
-            pass
+        if sys.version_info >= (3, 10):
+            if hasattr(module, '__memimported__'):
+                pass
+            else:
+                super().exec_module(module)
         else:
-            super().exec_module(module)
+            raise NotImplementedError
 
     def __repr__(self):
         return "<%s object %r>" % (self.__class__.__name__, self.archive)
