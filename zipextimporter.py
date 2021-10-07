@@ -130,8 +130,8 @@ class ZipExtensionImporter(zipimport.zipimporter):
                     return mod
             raise zipimport.ZipImportError("can't find module %s" % fullname) from err
 
-    def create_module(self, spec):
-        if sys.version_info >= (3, 10):
+    if sys.version_info >= (3, 10):
+        def create_module(self, spec):
             mod =  super().create_module(spec)
             if mod is None:
                 verbose = _memimporter.get_verbose_flag()
@@ -158,17 +158,13 @@ class ZipExtensionImporter(zipimport.zipimporter):
                                             % (fullname, mod.__file__))
                         return mod
                 # raise zipimport.ZipImportError("can't find module %s" % fullname)
-        else:
-            raise NotImplementedError
 
-    def exec_module(self, module):
-        if sys.version_info >= (3, 10):
+    if sys.version_info >= (3, 10):
+        def exec_module(self, module):
             if hasattr(module, '__memimported__'):
                 pass
             else:
                 super().exec_module(module)
-        else:
-            raise NotImplementedError
 
     def __repr__(self):
         return "<%s object %r>" % (self.__class__.__name__, self.archive)
