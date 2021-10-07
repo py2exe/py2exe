@@ -332,6 +332,18 @@ PyModuleDef *PyModule_GetDef(PyObject *module)
   return proc(module);
 }
 
+void *PyModule_GetState(PyObject *module)
+{
+  FUNC(void *, PyModule_GetState, (PyObject *));
+  return proc(module);
+}
+
+int PyModule_ExecDef(PyObject *module, PyModuleDef *def)
+{
+  FUNC(int, PyModule_ExecDef, (PyObject *, PyModuleDef *));
+  return proc(module, def);
+}
+
 #if (PY_VERSION_HEX >= 0x03070000)
 
 PyObject *PyImport_GetModuleDict(void)

@@ -156,6 +156,8 @@ import_module(PyObject *self, PyObject *args)
 	BOOL res;
 
 	int imp_res = -1;
+	struct PyModuleDef *def;
+	PyObject *state;
 
 	//	MessageBox(NULL, "ATTACH", "NOW", MB_OK);
 	//	DebugBreak();
@@ -240,7 +242,12 @@ import_module(PyObject *self, PyObject *args)
 		MyFreeLibrary(hmem);
 		return NULL;
 	} else if (imp_res == 2) {
-		return PyImport_ReloadModule(m);
+		def = PyModule_GetDef(m);
+		state = PyModule_GetState(m);
+		if (state == NULL) {
+			PyModule_ExecDef(m, def);
+		}
+		return m;
 	}
 
 	Py_DECREF(m);
