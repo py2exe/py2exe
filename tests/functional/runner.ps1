@@ -2,6 +2,10 @@ $testfailed = 0
 
 Get-ChildItem -Recurse -Directory | ForEach-Object {
     $testname = $_.Name
+    if ($testname.Substring(0, 1) -eq '_') {
+        Write-Host "Skipping $testname as it is disabled."
+        return
+    }
     Write-Host "Running $testname..."
     cd $testname
     if (Test-Path -path .\requirements.txt -PathType Leaf) {
