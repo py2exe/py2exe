@@ -124,6 +124,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
                     mod.__file__ = "%s\\%s" % (self.archive, path)
                     mod.__loader__ = self
                     mod.__memimported__ = True
+                    sys.modules[fullname] = mod
                     if verbose:
                         sys.stderr.write("import %s # loaded from zipfile %s\n"
                                          % (fullname, mod.__file__))
