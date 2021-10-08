@@ -9,7 +9,10 @@ static char module_doc[] =
 
 #include "MyLoadLibrary.h"
 #include "actctx.h"
+
+#ifndef STANDALONE
 #include "python-dynload.h"
+#endif
 
 /*
 static int dprintf(char *fmt, ...)
@@ -134,7 +137,9 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 
 #endif
 
+#ifndef STANDALONE
 extern wchar_t dirname[]; // executable/dll directory
+#endif
 
 static PyObject *
 import_module(PyObject *self, PyObject *args)
@@ -195,7 +200,10 @@ import_module(PyObject *self, PyObject *args)
 	 * to avoid that since it fails for other dlls (libiomp5.dll from
 	 * numpy is such an example).
 	 */
+	#ifndef STANDALONE
 	res = SetDllDirectoryW(dirname); // Add a directory to the search path
+	#endif
+
 	hmem = MyLoadLibrary(pathname, NULL, 0, findproc);
 	if (res)
 		SetDllDirectory(NULL); // restore the default dll directory search path
