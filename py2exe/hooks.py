@@ -670,22 +670,23 @@ def hook_scipy_linalg(finder, module):
         finder.import_hook("scipy.linalg.cython_blas")
         finder.import_hook("scipy.linalg.cython_lapack")
         finder.import_hook("scipy.integrate")
+        finder.import_hook("scipy")
         finder.recursion_depth_linalg = depth
-
 
 def hook_scipy_sparse_csgraph(finder, module):
     depth = getattr(finder,"recursion_depth_sparse",0)
     if depth==0:
         finder.recursion_depth_sparse = depth + 1
         finder.import_hook("scipy.sparse.csgraph._validation")
+        finder.import_hook("scipy")
         finder.recursion_depth_sparse = depth
 
 def hook_scipy_optimize(finder, module):
-    #import pdb;pdb.set_trace()
     depth = getattr(finder,"recursion_depth_optimize",0)
     if depth==0:
         finder.recursion_depth_optimize = depth + 1
         finder.import_hook("scipy.optimize.minpack2")
+        finder.import_hook("scipy")
         finder.recursion_depth_optimize = depth
 
 def hook_selenium(finder, module):
