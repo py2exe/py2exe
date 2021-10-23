@@ -170,4 +170,5 @@ jobs:
         run: |
           cd tests
           cd functional
+          python .\enable_tests.py
           .\runner.ps1

@@ -4,6 +4,8 @@
 *.whl
 venv
 
+enabled_tests.txt
+
 /build
 /dist
 /*.egg-info

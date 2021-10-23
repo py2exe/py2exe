@@ -1,11 +1,8 @@
 $testfailed = 0
 
-Get-ChildItem -Recurse -Directory | ForEach-Object {
-    $testname = $_.Name
-    if ($testname.Substring(0, 1) -eq '_') {
-        Write-Host "Skipping $testname as it is disabled."
-        return
-    }
+Get-Content .\enabled_tests.txt | ForEach-Object {
+    $testname = $_
+
     Write-Host "Running $testname..."
     cd $testname
     if (Test-Path -path .\requirements.txt -PathType Leaf) {
@@ -13,7 +10,14 @@ Get-ChildItem -Recurse -Directory | ForEach-Object {
     }
     python setup.py py2exe
     cd dist
-    & ".\$testname.exe"
+
+    if ($testname.Substring(0, 1) -eq '_') {
+        $testexe = $testname.Substring(1)
+    } else {
+        $testexe = $testname
+    }
+
+    & ".\$testexe.exe"
     $testfailed = $LastExitcode
     Write-Host "$testname exited with $testfailed"
 
