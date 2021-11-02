@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import division, with_statement, absolute_import, print_function
 
-from py2exe.mf34 import ModuleFinder
+from py2exe.mf310 import ModuleFinder
 
 import errno
 import os
@@ -265,7 +265,7 @@ class SimpleTests(unittest.TestCase):
     def test_sys(self):
         mf = ModuleFinder(excludes=["posix"])
         mf.import_hook("os", None, ["path"])
-        mf.import_hook("sys", None, ["spam"])
+        mf.import_hook("sys", None, ["modules"])
         self.assertNotIn("os.path", mf.missing())
         self.assertNotIn("posix", mf.missing())
 

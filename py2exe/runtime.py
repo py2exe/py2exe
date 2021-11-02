@@ -148,7 +148,7 @@ class Runtime(object):
         if self.options.bundle_files < 3:
             self.bootstrap_modules.add("zipextimporter")
 
-        self.options.excludes = self.options.excludes if self.options.excludes else ()
+        self.options.excludes = self.options.excludes if self.options.excludes else []
         self.options.optimize = self.options.optimize if self.options.optimize else 0
 
     def analyze(self):
@@ -181,7 +181,7 @@ class Runtime(object):
 
         mf.finish()
 
-        missing, maybe = mf.missing_maybe()
+        missing, maybe = mf.any_missing_maybe()
         logger.info("Found %d modules, %d are missing, %d may be missing",
                     len(mf.modules), len(missing), len(maybe))
 
@@ -420,17 +420,17 @@ class Runtime(object):
         # The same modules may be in self.ms.modules under different
         # keys; we only need one of them in the archive.
         for mod in set(self.mf.modules.values()):
-            if mod.__code__:
-                path =mod.__dest_file__
+            if mod.get_code_runtime():
+                path = mod.__dest_file__
                 stream = io.BytesIO()
                 stream.write(imp.get_magic())
                 if sys.version_info >= (3,7,0):
                     stream.write(b"\0\0\0\0") # null flags
                 stream.write(b"\0\0\0\0") # null timestamp
                 stream.write(b"\0\0\0\0") # null size
-                marshal.dump(mod.__code__, stream)
+                marshal.dump(mod.get_code_runtime(), stream)
                 arc.writestr(path, stream.getvalue())
-            elif hasattr(mod, "__file__"):
+            elif hasattr(mod, "__file__") and mod.__file__ is not None:
                 try:
                     assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
                 except AssertionError:
@@ -454,10 +454,7 @@ class Runtime(object):
 
                     code = compile(loader, "<loader>", "exec",
                                    optimize=self.options.optimize)
-                    if hasattr(mod, "__path__"):
-                        path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
-                    else:
-                        path = mod.__name__.replace(".", "\\") + bytecode_suffix
+                    path = mod.__dest_file__
                     stream = io.BytesIO()
                     stream.write(imp.get_magic())
                     if sys.version_info >= (3,7,0):
@@ -525,10 +522,10 @@ class Runtime(object):
         if self.options.bundle_files == 3:
             # copy extension modules; they go to libdir
             for mod in self.mf.modules.values():
-                if mod.__code__:
+                if mod.get_code_runtime():
                     # nothing to do for python modules.
                     continue
-                if hasattr(mod, "__file__"):
+                if hasattr(mod, "__file__") and mod.__file__ is not None:
                     try:
                         assert mod.__file__.endswith(EXTENSION_TARGET_SUFFIX)
                     except AssertionError:
@@ -614,9 +611,9 @@ class Runtime(object):
 
         if self.options.bundle_files < 3:
             # XXX do we need this one?
-            ## obj = compile("import sys, os; sys.path.append(os.path.dirname(sys.path[0])); del sys, os",
-            ##               "<bootstrap>", "exec")
-            ## code_objects.append(obj)
+            # obj = compile("import sys, os; sys.path.append(os.path.dirname(sys.path[0])); del sys, os",
+            #               "<bootstrap>", "exec")
+            # code_objects.append(obj)
             obj = compile("import zipextimporter; zipextimporter.install(); del zipextimporter",
                           "<install zipextimporter>", "exec",
                           optimize=self.options.optimize)

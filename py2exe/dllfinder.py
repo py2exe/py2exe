@@ -15,7 +15,7 @@ from fnmatch import fnmatch
 
 from cachetools import cached, LFUCache
 
-from . mf34 import ModuleFinder
+from . mf310 import ModuleFinder
 from . import hooks
 
 WINDOWSCRTPATTERN = "api-ms-win-*.dll"
@@ -231,7 +231,7 @@ class Scanner(ModuleFinder):
     dependencies.
     """
     def __init__(self, path=None, verbose=0, excludes=[], optimize=0):
-        super().__init__(path, verbose, excludes, optimize)
+        super().__init__(path=path, verbose=verbose, excludes=excludes, optimize=optimize)
         self.dllfinder = DllFinder()
         self._data_directories = {}
         self._data_files = {}
@@ -262,16 +262,11 @@ class Scanner(ModuleFinder):
     def _add_module(self, name, mod):
         self.hook(mod)
         super()._add_module(name, mod)
-        if hasattr(mod, "__file__") \
-               and mod.__file__.endswith(tuple(EXTENSION_SUFFIXES)):
-            callers = {self.modules[n]
-                       for n in self._depgraph[name]
-                       # self._depgraph can contain '-' entries!
-                       if n in self.modules}
-            self._add_pyd(mod.__file__, callers)
+        if mod.__file__ is not None and mod.__file__.endswith(tuple(EXTENSION_SUFFIXES)):
+            self._add_pyd(mod.__file__)
 
-    def _add_pyd(self, name, callers):
-        self.dllfinder.import_extension(name, callers)
+    def _add_pyd(self, name):
+        self.dllfinder.import_extension(name)
 
 ##    def required_dlls(self):
 ##        return self.dllfinder.required_dlls()
@@ -335,7 +330,7 @@ class Scanner(ModuleFinder):
         while self._safe_import_hook_later:
             args = self._safe_import_hook_later.pop()
             name, caller, fromlist, level = args
-            self.safe_import_hook(name,
+            self._safe_import_hook(name,
                                   caller=caller,
                                   fromlist=fromlist,
                                   level=level)
