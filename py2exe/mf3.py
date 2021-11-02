@@ -311,7 +311,7 @@ class ModuleFinder:
             except AttributeError:
                 ## # this fixes 'import os.path'. Does it create other problems?
                 ## child = name.rpartition('.')[2]
-                ## if child in parent_module.__globalnames__:
+                ## if child in parent_module.globalnames:
                 ##     return parent_module
                 msg = ('No module named {!r}; {} is not a package').format(name, parent)
                 self._add_badmodule(name)

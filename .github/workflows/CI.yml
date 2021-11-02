@@ -164,7 +164,7 @@ jobs:
       - name: Test (synthetic)
         run: |
           cd tests
-          python maketest.py
+          python test_modulefinder.py
 
       - name: Test (functional)
         run: |

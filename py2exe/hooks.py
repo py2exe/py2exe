@@ -187,21 +187,21 @@ del patch_cffi
 
 
 def hook_multiprocessing(finder, module):
-    module.__globalnames__.add("AuthenticationError")
-    module.__globalnames__.add("BufferTooShort")
-    module.__globalnames__.add("Manager")
-    module.__globalnames__.add("TimeoutError")
-    module.__globalnames__.add("cpu_count")
-    module.__globalnames__.add("current_process")
-    module.__globalnames__.add("get_context")
-    module.__globalnames__.add("get_start_method")
-    module.__globalnames__.add("set_start_method")
+    module.globalnames["AuthenticationError"] = 1
+    module.globalnames["BufferTooShort"] = 1
+    module.globalnames["Manager"] = 1
+    module.globalnames["TimeoutError"] = 1
+    module.globalnames["cpu_count"] = 1
+    module.globalnames["current_process"] = 1
+    module.globalnames["get_context"] = 1
+    module.globalnames["get_start_method"] = 1
+    module.globalnames["set_start_method"] = 1
 
-    module.__globalnames__.add("JoinableQueue")
-    module.__globalnames__.add("Lock")
-    module.__globalnames__.add("Process")
-    module.__globalnames__.add("Queue")
-    module.__globalnames__.add("freeze_support")
+    module.globalnames["JoinableQueue"] = 1
+    module.globalnames["Lock"] = 1
+    module.globalnames["Process"] = 1
+    module.globalnames["Queue"] = 1
+    module.globalnames["freeze_support"] = 1
 
 def import_psutil(finder, module):
     """Exclude stuff for other operating systems."""
@@ -347,7 +347,7 @@ def hook_six(finder, module):
                 raise AttributeError(name)
 
     m = SixImporter(finder,
-                    None, "six.moves", finder._optimize)
+                    "six.moves", None, finder._optimize)
     finder._add_module("six.moves", m)
 
 def hook_infi(finder, module):
@@ -392,6 +392,8 @@ def hook_matplotlib(finder, module):
 
     module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
+    finder.import_hook("mpl_toolkits")
+
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
     exclude them."""
@@ -431,56 +433,56 @@ def hook_numpy_random_mtrand(finder, module):
     global names available to this module in order to avoid spurious
     errors about missing modules.
     """
-    module.__globalnames__.add('RandomState')
-    module.__globalnames__.add('beta')
-    module.__globalnames__.add('binomial')
-    module.__globalnames__.add('bytes')
-    module.__globalnames__.add('chisquare')
-    module.__globalnames__.add('choice')
-    module.__globalnames__.add('dirichlet')
-    module.__globalnames__.add('exponential')
-    module.__globalnames__.add('f')
-    module.__globalnames__.add('gamma')
-    module.__globalnames__.add('geometric')
-    module.__globalnames__.add('get_state')
-    module.__globalnames__.add('gumbel')
-    module.__globalnames__.add('hypergeometric')
-    module.__globalnames__.add('laplace')
-    module.__globalnames__.add('logistic')
-    module.__globalnames__.add('lognormal')
-    module.__globalnames__.add('logseries')
-    module.__globalnames__.add('multinomial')
-    module.__globalnames__.add('multivariate_normal')
-    module.__globalnames__.add('negative_binomial')
-    module.__globalnames__.add('noncentral_chisquare')
-    module.__globalnames__.add('noncentral_f')
-    module.__globalnames__.add('normal')
-    module.__globalnames__.add('np')
-    module.__globalnames__.add('operator')
-    module.__globalnames__.add('pareto')
-    module.__globalnames__.add('permutation')
-    module.__globalnames__.add('poisson')
-    module.__globalnames__.add('power')
-    module.__globalnames__.add('rand')
-    module.__globalnames__.add('randint')
-    module.__globalnames__.add('randn')
-    module.__globalnames__.add('random_integers')
-    module.__globalnames__.add('random_sample')
-    module.__globalnames__.add('rayleigh')
-    module.__globalnames__.add('seed')
-    module.__globalnames__.add('set_state')
-    module.__globalnames__.add('shuffle')
-    module.__globalnames__.add('standard_cauchy')
-    module.__globalnames__.add('standard_exponential')
-    module.__globalnames__.add('standard_gamma')
-    module.__globalnames__.add('standard_normal')
-    module.__globalnames__.add('standard_t')
-    module.__globalnames__.add('triangular')
-    module.__globalnames__.add('uniform')
-    module.__globalnames__.add('vonmises')
-    module.__globalnames__.add('wald')
-    module.__globalnames__.add('weibull')
-    module.__globalnames__.add('zipf')
+    module.globalnames['RandomState'] = 1
+    module.globalnames['beta'] = 1
+    module.globalnames['binomial'] = 1
+    module.globalnames['bytes'] = 1
+    module.globalnames['chisquare'] = 1
+    module.globalnames['choice'] = 1
+    module.globalnames['dirichlet'] = 1
+    module.globalnames['exponential'] = 1
+    module.globalnames['f'] = 1
+    module.globalnames['gamma'] = 1
+    module.globalnames['geometric'] = 1
+    module.globalnames['get_state'] = 1
+    module.globalnames['gumbel'] = 1
+    module.globalnames['hypergeometric'] = 1
+    module.globalnames['laplace'] = 1
+    module.globalnames['logistic'] = 1
+    module.globalnames['lognormal'] = 1
+    module.globalnames['logseries'] = 1
+    module.globalnames['multinomial'] = 1
+    module.globalnames['multivariate_normal'] = 1
+    module.globalnames['negative_binomial'] = 1
+    module.globalnames['noncentral_chisquare'] = 1
+    module.globalnames['noncentral_f'] = 1
+    module.globalnames['normal'] = 1
+    module.globalnames['np'] = 1
+    module.globalnames['operator'] = 1
+    module.globalnames['pareto'] = 1
+    module.globalnames['permutation'] = 1
+    module.globalnames['poisson'] = 1
+    module.globalnames['power'] = 1
+    module.globalnames['rand'] = 1
+    module.globalnames['randint'] = 1
+    module.globalnames['randn'] = 1
+    module.globalnames['random_integers'] = 1
+    module.globalnames['random_sample'] = 1
+    module.globalnames['rayleigh'] = 1
+    module.globalnames['seed'] = 1
+    module.globalnames['set_state'] = 1
+    module.globalnames['shuffle'] = 1
+    module.globalnames['standard_cauchy'] = 1
+    module.globalnames['standard_exponential'] = 1
+    module.globalnames['standard_gamma'] = 1
+    module.globalnames['standard_normal'] = 1
+    module.globalnames['standard_t'] = 1
+    module.globalnames['triangular'] = 1
+    module.globalnames['uniform'] = 1
+    module.globalnames['vonmises'] = 1
+    module.globalnames['wald'] = 1
+    module.globalnames['weibull'] = 1
+    module.globalnames['zipf'] = 1
 
 def hook_numpy_distutils(finder, module):
     """In a 'if sys.version_info[0] < 3:' block numpy.distutils does
@@ -499,77 +501,77 @@ def hook_numpy_core_umath(finder, module):
        imports * from this module; define the list of global names available
        to this module in order to avoid spurious errors about missing
        modules"""
-    module.__globalnames__.add("add")
-    module.__globalnames__.add("absolute")
-    module.__globalnames__.add("arccos")
-    module.__globalnames__.add("arccosh")
-    module.__globalnames__.add("arcsin")
-    module.__globalnames__.add("arcsinh")
-    module.__globalnames__.add("arctan")
-    module.__globalnames__.add("arctanh")
-    module.__globalnames__.add("bitwise_and")
-    module.__globalnames__.add("bitwise_or")
-    module.__globalnames__.add("bitwise_xor")
-    module.__globalnames__.add("ceil")
-    module.__globalnames__.add("conjugate")
-    module.__globalnames__.add("cosh")
-    module.__globalnames__.add("divide")
-    module.__globalnames__.add("exp")
-    module.__globalnames__.add("e")
-    module.__globalnames__.add("fabs")
-    module.__globalnames__.add("floor")
-    module.__globalnames__.add("floor_divide")
-    module.__globalnames__.add("fmod")
-    module.__globalnames__.add("geterrobj")
-    module.__globalnames__.add("greater")
-    module.__globalnames__.add("hypot")
-    module.__globalnames__.add("invert")
-    module.__globalnames__.add("isfinite")
-    module.__globalnames__.add("isinf")
-    module.__globalnames__.add("isnan")
-    module.__globalnames__.add("less")
-    module.__globalnames__.add("left_shift")
-    module.__globalnames__.add("log")
-    module.__globalnames__.add("logical_and")
-    module.__globalnames__.add("logical_not")
-    module.__globalnames__.add("logical_or")
-    module.__globalnames__.add("logical_xor")
-    module.__globalnames__.add("maximum")
-    module.__globalnames__.add("minimum")
-    module.__globalnames__.add("multiarray")
-    module.__globalnames__.add("multiply")
-    module.__globalnames__.add("negative")
-    module.__globalnames__.add("not_equal")
-    module.__globalnames__.add("power")
-    module.__globalnames__.add("remainder")
-    module.__globalnames__.add("right_shift")
-    module.__globalnames__.add("sign")
-    module.__globalnames__.add("signbit")
-    module.__globalnames__.add("sinh")
-    module.__globalnames__.add("sqrt")
-    module.__globalnames__.add("tan")
-    module.__globalnames__.add("tanh")
-    module.__globalnames__.add("true_divide")
+    module.globalnames["add"] = 1
+    module.globalnames["absolute"] = 1
+    module.globalnames["arccos"] = 1
+    module.globalnames["arccosh"] = 1
+    module.globalnames["arcsin"] = 1
+    module.globalnames["arcsinh"] = 1
+    module.globalnames["arctan"] = 1
+    module.globalnames["arctanh"] = 1
+    module.globalnames["bitwise_and"] = 1
+    module.globalnames["bitwise_or"] = 1
+    module.globalnames["bitwise_xor"] = 1
+    module.globalnames["ceil"] = 1
+    module.globalnames["conjugate"] = 1
+    module.globalnames["cosh"] = 1
+    module.globalnames["divide"] = 1
+    module.globalnames["exp"] = 1
+    module.globalnames["e"] = 1
+    module.globalnames["fabs"] = 1
+    module.globalnames["floor"] = 1
+    module.globalnames["floor_divide"] = 1
+    module.globalnames["fmod"] = 1
+    module.globalnames["geterrobj"] = 1
+    module.globalnames["greater"] = 1
+    module.globalnames["hypot"] = 1
+    module.globalnames["invert"] = 1
+    module.globalnames["isfinite"] = 1
+    module.globalnames["isinf"] = 1
+    module.globalnames["isnan"] = 1
+    module.globalnames["less"] = 1
+    module.globalnames["left_shift"] = 1
+    module.globalnames["log"] = 1
+    module.globalnames["logical_and"] = 1
+    module.globalnames["logical_not"] = 1
+    module.globalnames["logical_or"] = 1
+    module.globalnames["logical_xor"] = 1
+    module.globalnames["maximum"] = 1
+    module.globalnames["minimum"] = 1
+    module.globalnames["multiarray"] = 1
+    module.globalnames["multiply"] = 1
+    module.globalnames["negative"] = 1
+    module.globalnames["not_equal"] = 1
+    module.globalnames["power"] = 1
+    module.globalnames["remainder"] = 1
+    module.globalnames["right_shift"] = 1
+    module.globalnames["sign"] = 1
+    module.globalnames["signbit"] = 1
+    module.globalnames["sinh"] = 1
+    module.globalnames["sqrt"] = 1
+    module.globalnames["tan"] = 1
+    module.globalnames["tanh"] = 1
+    module.globalnames["true_divide"] = 1
 
 def hook_numpy_core_numerictypes(finder, module):
     """the numpy.core.numerictypes module adds a number of items to itself
        dynamically; define these to avoid spurious errors about missing
        modules"""
-    module.__globalnames__.add("bool_")
-    module.__globalnames__.add("cdouble")
-    module.__globalnames__.add("complexfloating")
-    module.__globalnames__.add("csingle")
-    module.__globalnames__.add("double")
-    module.__globalnames__.add("longdouble")
-    module.__globalnames__.add("float32")
-    module.__globalnames__.add("float64")
-    module.__globalnames__.add("float_")
-    module.__globalnames__.add("inexact")
-    module.__globalnames__.add("integer")
-    module.__globalnames__.add("intc")
-    module.__globalnames__.add("int32")
-    module.__globalnames__.add("number")
-    module.__globalnames__.add("single")
+    module.globalnames["bool_"] = 1
+    module.globalnames["cdouble"] = 1
+    module.globalnames["complexfloating"] = 1
+    module.globalnames["csingle"] = 1
+    module.globalnames["double"] = 1
+    module.globalnames["longdouble"] = 1
+    module.globalnames["float32"] = 1
+    module.globalnames["float64"] = 1
+    module.globalnames["float_"] = 1
+    module.globalnames["inexact"] = 1
+    module.globalnames["integer"] = 1
+    module.globalnames["intc"] = 1
+    module.globalnames["int32"] = 1
+    module.globalnames["number"] = 1
+    module.globalnames["single"] = 1
 
 def hook_numpy_core(finder, module):
     finder.ignore("numpy.core._dotblas")

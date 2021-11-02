@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 ##import modulefinder
-import py2exe.mf34 as modulefinder
+import py2exe.mf310 as modulefinder
 
 TEST_DIR = 'synthetic'
 TEST_PATH = [TEST_DIR]#, os.path.dirname(tempfile.__file__)]
@@ -269,7 +269,7 @@ class ModuleFinderTest(unittest.TestCase):
             self.assertEqual(found, modules)
 
             # check for missing and maybe missing modules
-            bad, maybe = mf.missing_maybe()
+            bad, maybe = mf.any_missing_maybe()
             bad = sorted(bad)
             maybe = sorted(maybe)
             self.assertEqual(bad, missing)
