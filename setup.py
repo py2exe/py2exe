@@ -187,6 +187,6 @@ if __name__ == "__main__":
               },
           interpreters = interpreters,
           py_modules=['zipextimporter'],
-          packages=['py2exe'],
+          packages=['py2exe', 'py2exe.vendor'],
           package_data={'py2exe':['MIT-License.txt', 'MPL2-License.txt']},
           )
