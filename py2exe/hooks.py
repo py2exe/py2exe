@@ -646,6 +646,12 @@ del patch_Crypto
 
 def hook_scipy(finder, module):
     #add numpy external DLLs to the bundle
+    depth = getattr(finder,"recursion_depth_scipy",0)
+    if depth==0:
+        finder.recursion_depth_scipy = depth + 1
+        finder.import_package("scipy._lib")
+        finder.import_package("scipy.spatial.transform")
+        finder.recursion_depth_scipy = depth
     scipy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
     if os.path.isdir(scipy_libs_path):
         from os import listdir
