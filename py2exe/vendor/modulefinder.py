@@ -99,7 +99,9 @@ def _find_module(name, path=None):
     else:  # Should never happen.
         return None, None, ("", "", _SEARCH_ERROR)
 
-    file = io.open_code(file_path)
+    ### BEGIN CODE MODIFIED IN VENDOR ###
+    file = io.open(file_path, "rb")
+    ### END CODE MODIFIED IN VENDOR ###
     suffix = os.path.splitext(file_path)[-1]
 
     return file, file_path, (suffix, "rb", kind)
@@ -166,14 +168,18 @@ class ModuleFinder:
 
     def run_script(self, pathname):
         self.msg(2, "run_script", pathname)
-        with io.open_code(pathname) as fp:
+        ### BEGIN CODE MODIFIED IN VENDOR ###
+        with io.open(pathname, "rb") as fp:
+        ### END CODE MODIFIED IN VENDOR ###
             stuff = ("", "rb", _PY_SOURCE)
             self.load_module('__main__', fp, pathname, stuff)
 
     def load_file(self, pathname):
         dir, name = os.path.split(pathname)
         name, ext = os.path.splitext(name)
-        with io.open_code(pathname) as fp:
+        ### BEGIN CODE MODIFIED IN VENDOR ###
+        with io.open(pathname, "rb") as fp:
+        ### END CODE MODIFIED IN VENDOR ###
             stuff = (ext, "rb", _PY_SOURCE)
             self.load_module(name, fp, pathname, stuff)
 
