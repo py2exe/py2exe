@@ -167,6 +167,7 @@ jobs:
           python test_modulefinder.py
 
       - name: Test (functional)
+        if: ${{ matrix.cfg.run-tests == 'true' }}
         run: |
           cd tests
           cd functional
