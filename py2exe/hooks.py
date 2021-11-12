@@ -598,6 +598,7 @@ def hook_pkg_resources(finder, module):
     if depth==0:
         finder.recursion_depth_pkg_resources = depth + 1
         finder.import_package("pkg_resources._vendor")
+        finder.import_package("pkg_resources._vendor.packaging")
         finder.recursion_depth_pkg_resources = depth
 
 def hook_Cryptodome(finder, module):
