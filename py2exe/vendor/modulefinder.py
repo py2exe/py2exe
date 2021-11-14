@@ -1,6 +1,25 @@
 """Find modules used by a script, using introspection."""
 """Latest update: CPython 3.10.0: 90549676e063c2c818cfc14213d3adb7edcc2bd5"""
 
+"""
+Copyright © 2001-2021 Python Software Foundation; All Rights Reserved
+
+In agreement to the PSF LICENSE AGREEMENT FOR PYTHON 3.10.0, clause 3.,
+hereby there is a brief summary of the changes made to this code:
+- new constant `_PY_NAMESPACE` to mark implicit namespace packages
+  (PEP 420).
+- `_find_module` returns a valid spec for implicit namespace packages.
+- calls to `io.open_code(f)` were replaced with `io.open(f, "rb") to
+  retain compatibility with Python 3.6+.
+- `ModuleFinder.load_module`: add a branch to import implicit namespace
+  packages.
+- `ModuleFinder.load_module`: call to `self.add_module` now passes
+  `file=pathname` as argument instead of setting it after.
+- `ModuleFinder.load_package`: call to `self.add_module` now passes
+  `file=pathname` and `path=[pathname]` as arguments instead of setting
+  them after.
+"""
+
 import dis
 import importlib._bootstrap_external
 import importlib.machinery
