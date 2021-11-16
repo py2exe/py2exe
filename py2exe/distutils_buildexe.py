@@ -146,6 +146,7 @@ class py2exe(Command):
         self.excludes = None
         self.ignores = None
         self.packages = None
+        self.recursive_packages = None
         self.dist_dir = None
         self.dll_excludes = None
         self.typelibs = None
@@ -154,6 +155,7 @@ class py2exe(Command):
         self.ascii = 0
         self.custom_boot_script = None
         self.use_assembly = False
+        self.report = False
 
     def finalize_options (self):
         self.optimize = int(self.optimize)
@@ -176,6 +178,7 @@ class py2exe(Command):
             if m in self.excludes:
                 self.excludes.remove(m)
         self.packages = fancy_split(self.packages)
+        self.recursive_packages = fancy_split(self.recursive_packages)
         self.set_undefined_options('bdist',
                                    ('dist_dir', 'dist_dir'))
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
@@ -239,6 +242,7 @@ class py2exe(Command):
                             excludes = self.excludes,
                             ignores = self.ignores,
                             packages = self.packages,
+                            recursive_packages = self.recursive_packages,
                             dist_dist = self.dist_dir,
                             dll_excludes = self.dll_excludes,
                             typelibs = self.typelibs,
@@ -255,12 +259,12 @@ class py2exe(Command):
                             libname = dist.zipfile,
 
                             verbose = self.verbose,
-                            report = False,
+                            report = self.report,
                             summary = False,
                             show_from = None,
 
                             data_files = self.distribution.data_files,
-                            
+
                             compress = self.compressed,
                             use_assembly = self.use_assembly,
                             )
@@ -1216,7 +1220,7 @@ class py2exe(Command):
 ##             item.__pydfile__ = fname
 ##         else:
 ##             fname = os.path.basename(item.__file__)
-            
+
 ##         # and what about dry_run?
 ##         if self.verbose:
 ##             print "creating python loader for extension '%s' (%s -> %s)" % (item.__name__,item.__file__,fname)
@@ -1647,7 +1651,7 @@ class py2exe(Command):
 ##     import win32com
 ##     from win32com.client import gencache, makepy
 ##     from distutils.file_util import copy_file
-    
+
 ##     old_gen_path = win32com.__gen_path__
 ##     num = 0
 ##     try:

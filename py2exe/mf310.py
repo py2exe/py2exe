@@ -1,6 +1,7 @@
 from .vendor.modulefinder import ModuleFinder as PythonMF
 
 import importlib.util
+import pkgutil
 
 from importlib.machinery import DEBUG_BYTECODE_SUFFIXES, OPTIMIZED_BYTECODE_SUFFIXES
 
@@ -138,10 +139,18 @@ class ModuleFinder(PythonMF):
         self.ignores.append(name)
 
     def import_package(self, name):
-        """Import a complete package.
-
+        """Import a package and all its modules.
         """
         self.import_hook(name,  None, ["*"])
+
+    def import_package_recursively(self, name):
+        """Import a package, all its modules, all its subpackages with
+        their submodules, recursively."""
+        p = self.import_hook(name)
+        self.import_package(name)
+
+        for sub in pkgutil.walk_packages(p.__path__, p.__name__ + '.'):
+            self.import_hook(sub.name)
 
     def missing(self):
         """Return a set of modules that appear to be missing. Use

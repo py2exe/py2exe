@@ -171,6 +171,10 @@ class Runtime(object):
             for modname in self.options.packages:
                 mf.import_package(modname)
 
+        if self.options.recursive_packages:
+            for modname in self.options.recursive_packages:
+                mf.import_package_recursively(modname)
+
         for target in self.targets:
             if target.exe_type == "ctypes_comdll":
                 mf.import_hook("_ctypes")
