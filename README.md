@@ -17,6 +17,10 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.11.0.1:
+- Show again relative paths in Tracebacks that happen from the frozen application
+  (#12 and #114)
+
 Version 0.11.0.0:
 - New module finder `mf310` written as a wrapper around CPython `modulefinder.ModuleFinder`
 - Add support for Python 3.10
