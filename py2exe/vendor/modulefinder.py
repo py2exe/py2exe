@@ -18,6 +18,9 @@ hereby there is a brief summary of the changes made to this code:
 - `ModuleFinder.load_package`: call to `self.add_module` now passes
   `file=pathname` and `path=[pathname]` as arguments instead of setting
   them after.
+- `ModuleFinder.load_module`: call to `compile` passes `m.__dest_file__` as
+  `path` to obtain error traces with relative paths (#12, #114)
+
 """
 
 import dis
@@ -376,9 +379,12 @@ class ModuleFinder:
             m = self.add_module(fqname, file=None, path=[pathname])
             self.msgout(2, "load_module ->", m)
             return m
+        m = self.add_module(fqname, file=pathname)
         ### END CODE MODIFIED IN VENDOR ###
         if type == _PY_SOURCE:
-            co = compile(fp.read(), pathname, 'exec')
+            ### BEGIN CODE MODIFIED IN VENDOR ###
+            co = compile(fp.read(), m.__dest_file__, 'exec')
+            ### END CODE MODIFIED IN VENDOR ###
         elif type == _PY_COMPILED:
             try:
                 data = fp.read()
@@ -389,9 +395,6 @@ class ModuleFinder:
             co = marshal.loads(memoryview(data)[16:])
         else:
             co = None
-        ### BEGIN CODE MODIFIED IN VENDOR ###
-        m = self.add_module(fqname, file=pathname)
-        ### END CODE MODIFIED IN VENDOR ###
         if co:
             if self.replace_paths:
                 co = self.replace_paths_in_code(co)
