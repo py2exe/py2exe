@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """setup script for py2exe.
 """
@@ -10,8 +10,8 @@ import sys
 if platform.system() != 'Windows':
     raise RuntimeError("This package requires Windows")
 
-if sys.version_info < (3, 6):
-    raise RuntimeError("This package requires Python 3.6 or later")
+if sys.version_info < (3, 7):
+    raise RuntimeError("This package requires Python 3.7 or later")
 
 ############################################################################
 
@@ -21,12 +21,8 @@ from py2exe_distutils import Dist, Interpreter, BuildInterpreters
 
 ############################################################################
 
-if sys.version_info < (3, 9):
-    python_dll_name = '\\"python%d%d.dll\\"' % sys.version_info[:2]
-    python_dll_name_debug = '\\"python%d%d_d.dll\\"' % sys.version_info[:2]
-else:
-    python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
-    python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
+python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
 
 def _is_debug_build():
     import imp
@@ -157,7 +153,7 @@ if __name__ == "__main__":
           setup_requires=["wheel"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
-          python_requires='>=3.6, <3.11',
+          python_requires='>=3.7, <3.11',
 
           classifiers=[
               "Development Status :: 4 - Beta",
@@ -167,7 +163,6 @@ if __name__ == "__main__":
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: C",
               "Programming Language :: Python :: 3",
-              "Programming Language :: Python :: 3.6",
               "Programming Language :: Python :: 3.7",
               "Programming Language :: Python :: 3.8",
               "Programming Language :: Python :: 3.9",
