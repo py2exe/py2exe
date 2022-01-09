@@ -347,7 +347,7 @@ def hook_six(finder, module):
                 raise AttributeError(name)
 
     m = SixImporter(finder,
-                    "six.moves", None, finder._optimize)
+                    "six.moves", file=None, path=None, optimize=finder._optimize)
     finder._add_module("six.moves", m)
 
 def hook_infi(finder, module):
