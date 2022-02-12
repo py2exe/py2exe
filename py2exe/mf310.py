@@ -126,7 +126,7 @@ class ModuleFinder(PythonMF):
     def add_module(self, fqname, file=None, path=None):
         if fqname in self.modules:
             return self.modules[fqname]
-        m = Module(fqname, file, path, self._optimize)
+        m = Module(fqname, file, path, optimize=self._optimize)
         self._add_module(fqname, m)
         return m
 

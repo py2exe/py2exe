@@ -19,7 +19,8 @@ hereby there is a brief summary of the changes made to this code:
   `file=pathname` and `path=[pathname]` as arguments instead of setting
   them after.
 - `ModuleFinder.load_module`: call to `compile` passes `m.__dest_file__` as
-  `path` to obtain error traces with relative paths (#12, #114)
+  `path` to obtain error traces with relative paths (#12, #114). Same call
+  passes the correct `optimize` flag (#125).
 
 """
 
@@ -383,7 +384,7 @@ class ModuleFinder:
         ### END CODE MODIFIED IN VENDOR ###
         if type == _PY_SOURCE:
             ### BEGIN CODE MODIFIED IN VENDOR ###
-            co = compile(fp.read(), m.__dest_file__, 'exec')
+            co = compile(fp.read(), m.__dest_file__, 'exec', optimize=self._optimize)
             ### END CODE MODIFIED IN VENDOR ###
         elif type == _PY_COMPILED:
             try:

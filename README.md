@@ -19,6 +19,7 @@ Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/rel
 Version 0.11.1.0:
 - Drop support for Python 3.6
 - Fixed a bug that prevented to use the `optimize` option when `six` was in the bundle
+- Fixed a bug that ignored the `optimize` flag for some packages
 
 Version 0.11.0.1:
 - Show again relative paths in Tracebacks that happen from the frozen application
