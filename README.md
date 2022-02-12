@@ -3,10 +3,9 @@ py2exe for Python 3
 
 `py2exe` is a distutils extension which allows to build standalone
 Windows executable programs (32-bit and 64-bit) from Python scripts.
-Python versions included in the  official development cycle are supported
-(from 3.6 to 3.9 included). `py2exe` can build console executables
-and windows (GUI) executables. Building windows services, and DLL/EXE
-COM servers might work but it is not actively supported.
+Python versions included in the [official development cycle](https://devguide.python.org/#status-of-python-branches)
+are supported. `py2exe` can build console executables and windows
+(GUI) executables.
 
 Development of `py2exe` is hosted here:
 https://github.com/py2exe/py2exe.
@@ -16,6 +15,10 @@ Changes
 ----------------------------
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
+
+Version 0.11.1.0:
+- Drop support for Python 3.6
+- Fixed a bug that prevented to use the `optimize` option when `six` was in the bundle
 
 Version 0.11.0.1:
 - Show again relative paths in Tracebacks that happen from the frozen application
