@@ -18,6 +18,7 @@ Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/rel
 
 Version 0.11.1.0:
 - Drop support for Python 3.6
+- Include package metadata in the bundle archive (to be used by e.g. `importlib.metadata`)
 - Fixed a bug that prevented to use the `optimize` option when `six` was in the bundle
 - Fixed a bug that ignored the `optimize` flag for some packages
 

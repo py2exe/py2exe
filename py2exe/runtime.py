@@ -1,5 +1,6 @@
 #!/usr/bin/python3.3-32
 # -*- coding: utf-8 -*-
+import pkg_resources
 from .dllfinder import Scanner, pydll
 
 import imp
@@ -8,10 +9,13 @@ import logging
 import marshal
 import os
 import pkgutil
+import pkg_resources
 import shutil
 import struct
 import sys
 import zipfile
+
+from glob import glob
 
 from .resources import UpdateResources
 from .versioninfo import Version
@@ -477,6 +481,25 @@ class Runtime(object):
                 stream.write(b"\0\0\0\0") # null size
                 marshal.dump(code, stream)
                 arc.writestr(path, stream.getvalue())
+
+            # copy egg-info
+            if mod.__path__ is not None and mod.__name__[0] != '_': # attempt to select valid packages
+                try:
+                    dist = pkg_resources.get_distribution(mod.__name__)
+                    dist_path = dist._provider.egg_info
+                    base = dist_path.rsplit('\\', 1)[0]
+                    name = dist_path.split(base + '\\')[1]
+
+                    if self.options.verbose > 1:
+                        print("Add distribution metadata for package %s from %s" % (mod.__name__, dist_path))
+                    arc.write(dist_path, name)
+
+                    paths = glob(dist_path + '\\*')
+                    for p in paths:
+                        name = p.split(base + '\\')[1]
+                        arc.write(p, name)
+                except pkg_resources.DistributionNotFound:
+                    pass
 
         # data files to be zipped from modulefinder
         for name, src in self.mf.data_files_to_zip():

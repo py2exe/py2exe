@@ -598,6 +598,10 @@ def hook_pkg_resources(finder, module):
     if depth==0:
         finder.recursion_depth_pkg_resources = depth + 1
         finder.import_package("pkg_resources._vendor")
+        finder.import_package("pkg_resources._vendor.importlib_resources")
+        finder.import_package("pkg_resources._vendor.jaraco")
+        finder.import_package("pkg_resources._vendor.jaraco.text")
+        finder.import_package("pkg_resources._vendor.more_itertools")
         finder.import_package("pkg_resources._vendor.packaging")
         finder.recursion_depth_pkg_resources = depth
 
