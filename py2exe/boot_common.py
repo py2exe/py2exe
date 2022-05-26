@@ -71,8 +71,11 @@ if sys.frozen == "windows_exe":
                                     "Errors in %r" % os.path.basename(sys.executable),
                                     0)
             if self._file is not None:
-                self._file.write(text)
+                n_written = self._file.write(text)
                 self._file.flush()
+                return n_written
+            else:
+                return len(text)
         def flush(self):
             if self._file is not None:
                 self._file.flush()
@@ -82,7 +85,7 @@ if sys.frozen == "windows_exe":
     class Blackhole(object):
         softspace = 0
         def write(self, text):
-            pass
+            return len(text)
         def flush(self):
             pass
     sys.stdout = Blackhole()
