@@ -27,6 +27,7 @@ py2exe options, to be specified in the options keyword to the setup function:
 
     unbuffered - if true, use unbuffered binary stdout and stderr
     optimize - string or int (0, 1, or 2)
+    legacy_windows_stdio - if true, don't use Windows console functions for stdio
 
     includes - list of module names to include
     packages - list of packages to include with subpackages

@@ -142,6 +142,7 @@ class py2exe(Command):
         self.compressed = 0
         self.unbuffered = 0
         self.optimize = 0
+        self.legacy_windows_stdio = 0
         self.includes = None
         self.excludes = None
         self.ignores = None
@@ -235,6 +236,7 @@ class py2exe(Command):
                             comppressed = self.compressed,
                             unbuffered = self.unbuffered,
                             optimize = self.optimize,
+                            legacy_windows_stdio = self.legacy_windows_stdio,
                             includes = self.includes,
                             excludes = self.excludes,
                             ignores = self.ignores,

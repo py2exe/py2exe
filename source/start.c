@@ -36,6 +36,7 @@ struct scriptinfo {
 	int tag;
 	int optimize;
 	int unbuffered;
+	int legacy_windows_stdio;
 	int data_bytes;
 
 	char zippath[0];
@@ -265,6 +266,9 @@ void set_vars(HMODULE hmod_pydll)
 		else
 			*pflag = 0;
 	}
+
+	pflag = (int *)MyGetProcAddress(hmod_pydll, "Py_LegacyWindowsStdioFlag");
+	if (pflag) *pflag = p_script_info->legacy_windows_stdio;
 }
 
 /*
