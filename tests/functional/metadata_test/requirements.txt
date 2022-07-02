@@ -1,1 +1,2 @@
-semantic_version
+semantic_version<2.9.0; python_version < '3.8'
+semantic_version; python_version >= '3.8'
