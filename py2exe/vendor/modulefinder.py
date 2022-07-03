@@ -21,6 +21,9 @@ hereby there is a brief summary of the changes made to this code:
 - `ModuleFinder.load_module`: call to `compile` passes `m.__dest_file__` as
   `path` to obtain error traces with relative paths (#12, #114). Same call
   passes the correct `optimize` flag (#125).
+- `ModuleFinder.find_head_package`: at the end of the method, if no module
+  is found, raise different error message if the module name is in
+  `self.excludes` (#132).
 
 """
 
@@ -277,7 +280,10 @@ class ModuleFinder:
                 self.msgout(4, "find_head_package ->", (q, tail))
                 return q, tail
         self.msgout(4, "raise ImportError: No module named", qname)
-        raise ImportError("No module named " + qname)
+        if name in self.excludes:
+            raise ImportError(f'Module {name} is in the "excludes" list')
+        else:
+            raise ImportError("No module named " + qname)
 
     def load_tail(self, q, tail):
         self.msgin(4, "load_tail", q, tail)
