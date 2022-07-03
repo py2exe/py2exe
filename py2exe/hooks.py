@@ -603,6 +603,7 @@ def hook_pkg_resources(finder, module):
         finder.import_package("pkg_resources._vendor.jaraco.text")
         finder.import_package("pkg_resources._vendor.more_itertools")
         finder.import_package("pkg_resources._vendor.packaging")
+        finder.import_package("pkg_resources._vendor.pyparsing")
         finder.recursion_depth_pkg_resources = depth
 
 def hook_Cryptodome(finder, module):
