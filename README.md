@@ -16,6 +16,12 @@ Changes
 
 Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.11.1.1:
+- The log file for windows apps is now stored in `%APPDATA%` by default
+- `ModuleFinder` now raises an explicit error if a required module is in `excludes`
+- Restore hook functionality for `pkg_resources`
+- The `Stderr.write` method used for windows apps now returns the number of written bytes
+
 Version 0.11.1.0:
 - Drop support for Python 3.6
 - Include package metadata in the bundle archive (to be used by e.g. `importlib.metadata`)
