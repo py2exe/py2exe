@@ -52,22 +52,24 @@ if sys.frozen == "windows_exe":
     class Stderr(object):
         _file = None
         _error = None
-        def write(self, text, alert=ctypes.windll.user32.MessageBoxW,
-                  fname=os.path.splitext(sys.executable)[0] + '.log'):
+        _alert = ctypes.windll.user32.MessageBoxW
+        _fname = os.path.join(os.environ["APPDATA"],
+                                os.path.splitext(os.path.basename(sys.executable))[0] + '.log')
+        def write(self, text):
             if self._file is None and self._error is None:
                 import atexit, os, sys
                 try:
-                    self._file = open(fname, 'a')
+                    self._file = open(self._fname, 'a')
                 except Exception as details:
                     self._error = details
-                    atexit.register(alert, 0,
+                    atexit.register(self._alert, 0,
                                     "The logfile '%s' could not be opened:\n %s" % \
-                                    (fname, details),
+                                    (self._fname, details),
                                     "Errors in %r" % os.path.basename(sys.executable),
                                     0)
                 else:
-                    atexit.register(alert, 0,
-                                    "See the logfile '%s' for details" % fname,
+                    atexit.register(self._alert, 0,
+                                    "See the logfile '%s' for details" % self._fname,
                                     "Errors in %r" % os.path.basename(sys.executable),
                                     0)
             if self._file is not None:
