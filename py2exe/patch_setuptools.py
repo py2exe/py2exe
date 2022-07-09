@@ -61,26 +61,28 @@ keys in the dictionary are recognized, most are optional:
 #
 
 def patch_setuptools():
-    import setuptools.dist
-    import setuptools.command
-    import sys
-    from . import setuptools_buildexe
+    pass
+    #import setuptools
+    # import distutils.command
+    # import sys
+    # from . import setuptools_buildexe
 
-    class Distribution(setuptools.dist.Distribution):
+    # # class Distribution(setuptools.dist.Distribution):
 
-        def __init__(self, attrs):
-            self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
-            self.com_server = attrs.pop("com_server", [])
-            self.service = attrs.pop("service", [])
-            self.windows = attrs.pop("windows", [])
-            self.console = attrs.pop("console", [])
-            self.isapi = attrs.pop("isapi", [])
-            self.zipfile = attrs.pop("zipfile", "library.zip")
+    # #     def __init__(self, attrs):
+    # #         super().__init__(self, attrs)
 
-            setuptools.dist.Distribution.__init__(self, attrs)
+    # #         self.ctypes_com_server = attrs.pop("ctypes_com_server", [])
+    # #         self.com_server = attrs.pop("com_server", [])
+    # #         self.service = attrs.pop("service", [])
+    # #         self.windows = attrs.pop("windows", [])
+    # #         self.console = attrs.pop("console", [])
+    # #         self.isapi = attrs.pop("isapi", [])
+    # #         self.zipfile = attrs.pop("zipfile", "library.zip")
 
-    setuptools.dist.Distribution = Distribution
 
-    setuptools.command.__all__.append('py2exe')
+    # # setuptools.dist.Distribution = Distribution
 
-    sys.modules['setuptools.command.py2exe'] = setuptools_buildexe
+    # distutils.command.__all__.append('py2exe')
+
+    # sys.modules['distutils.command.py2exe'] = setuptools_buildexe

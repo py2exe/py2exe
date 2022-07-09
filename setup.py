@@ -179,7 +179,11 @@ if __name__ == "__main__":
           cmdclass = cmdclass,
 ##          scripts = ["build_exe.py"],
           entry_points = {
-              'console_scripts': ['build_exe = py2exe.build_exe:main'],
+              #'console_scripts': ['build_exe = py2exe.build_exe:main'],
+              'distutils.commands': ['py2exe = py2exe.setuptools_buildexe:py2exe'],
+              'setuptools.finalize_distribution_options': ['py2exe = py2exe.setuptools_buildexe:finalize_distribution_options'],
+              'distutils.setup_keywords': ['console = py2exe.setuptools_buildexe:validate_target',
+                                           'windows = py2exe.setuptools_buildexe:validate_target']
               },
           interpreters = interpreters,
           py_modules=['zipextimporter'],

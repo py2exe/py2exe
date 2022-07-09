@@ -133,7 +133,7 @@ class Runtime(object):
     def __init__(self, options):
         self.options = options
 
-        self.targets = self.options.script + self.options.service + self.options.com_servers
+        self.targets = self.options.script #+ self.options.service + self.options.com_servers
 
 ##         # build the executables
 ##         for target in dist.console:

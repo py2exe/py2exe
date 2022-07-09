@@ -1,9 +1,60 @@
 import sys
 import warnings
 
-from setuptools import Command
+from setuptools import Command, dist
 
 from . import runtime
+
+def fancy_split(str, sep=","):
+    # a split which also strips whitespace from the items
+    # passing a list or tuple will return it unchanged
+    if str is None:
+        return []
+    if hasattr(str, "split"):
+        return [item.strip() for item in str.split(sep)]
+    return str
+
+def finalize_distribution_options(dist):
+    """
+    setuptools.finalize_distribution_options extension
+    point for py2app, to deal with autodiscovery in
+    setuptools 61.
+    This addin will set the name and py_modules attributes
+    when a py2app distribution is detected that does not
+    yet have these attributes.
+    are not already set
+    """
+    if getattr(dist, "console", None) is None and getattr(dist, "windows", None) is None:
+        return
+
+    if getattr(dist.metadata, "py_modules", None) is None:
+        dist.py_modules = []
+
+    dist.console = runtime.fixup_targets(dist.console, "script")
+    for target in dist.console:
+        target.exe_type = "console_exe"
+
+    dist.windows = runtime.fixup_targets(dist.windows, "script")
+    for target in dist.windows:
+        target.exe_type = "windows_exe"
+
+    # name = getattr(dist.metadata, "name", None)
+    # if name is None or name == "UNKNOWN":
+    #     if dist.app:
+    #         targets = fixup_targets(dist.app, "script")
+    #     else:
+    #         targets = fixup_targets(dist.plugin, "script")
+
+    #     if not targets:
+    #         return
+
+    #     base = targets[0].get_dest_base()
+    #     name = os.path.basename(base)
+
+    #     dist.metadata.name = name
+
+def validate_target(dist, attr, value):
+    runtime.fixup_targets(value, "script")
 
 class py2exe(Command):
     description = ""
@@ -129,14 +180,6 @@ class py2exe(Command):
         for target in dist.windows:
             target.exe_type = "windows_exe"
 
-        dist.service = runtime.fixup_targets(dist.service, "modules")
-        for target in dist.service:
-            target.exe_type = "service"
-
-        dist.ctypes_com_server = runtime.fixup_targets(dist.ctypes_com_server, "modules")
-        for target in dist.ctypes_com_server:
-            target.exe_type = "ctypes_comdll"
-
 ##         # Convert our args into target objects.
 ##         dist.com_server = FixupTargets(dist.com_server, "modules")
 ##         dist.ctypes_com_server = FixupTargets(dist.ctypes_com_server, "modules")
@@ -162,11 +205,11 @@ class py2exe(Command):
                             custom_boot_script = self.custom_boot_script,
 
                             script = dist.console + dist.windows,
-                            service = dist.service,
-                            com_servers = dist.ctypes_com_server,
+                            #service = dist.service,
+                            #com_servers = dist.ctypes_com_server,
 
                             destdir = self.dist_dir,
-                            libname = dist.zipfile,
+                            libname = "library.zip",
 
                             verbose = self.verbose,
                             report = False,

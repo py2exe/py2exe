@@ -1,6 +1,6 @@
-import setuptools
+from setuptools import setup
 import py2exe
 
-setuptools.setup(console=[{ "script": "numpy_test.py"}],
+setup(console=[{ "script": "numpy_test.py"}],
                  options={"py2exe": {
                               "packages": ['numpy']}})
