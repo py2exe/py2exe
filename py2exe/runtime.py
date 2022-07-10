@@ -296,7 +296,7 @@ class Runtime(object):
                     shutil.copy2(src, dst)
 
     def get_runstub_bytes(self, target):
-        from distutils.util import get_platform
+        from setuptools._distutils.util import get_platform
         if target.exe_type in ("console_exe", "service"):
             run_stub = 'run-py%s.%s-%s.exe' % (sys.version_info[0], sys.version_info[1], get_platform())
         elif target.exe_type == "windows_exe":
