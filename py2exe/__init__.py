@@ -4,7 +4,3 @@
 """
 
 from .version import __version__
-
-from .patch_setuptools import patch_setuptools
-
-patch_setuptools()
