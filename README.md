@@ -1,7 +1,7 @@
 py2exe for Python 3
 ===================
 
-`py2exe` is a distutils extension which allows to build standalone
+`py2exe` is a setuptools extension which allows to build standalone
 Windows executable programs (32-bit and 64-bit) from Python scripts.
 Python versions included in the [official development cycle](https://devguide.python.org/#status-of-python-branches)
 are supported. `py2exe` can build console executables and windows
