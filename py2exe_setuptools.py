@@ -9,12 +9,7 @@ from setuptools.command import build_ext, build
 from setuptools.dep_util import newer_group
 from setuptools.errors import CCompilerError, CompileError, PlatformError, SetupError
 
-from setuptools._distutils.sysconfig import customize_compiler
-from setuptools._distutils.util import get_platform
-
-# We don't need a manifest in the executable, so monkeypatch the code away:
-from setuptools._distutils.msvc9compiler import MSVCCompiler
-MSVCCompiler.manifest_setup_ldargs = lambda *args: None
+from sysconfig import get_platform
 
 class Interpreter(Extension):
     def __init__(self, *args, **kw):
@@ -65,7 +60,6 @@ class BuildInterpreters(build_ext.build_ext):
                                      verbose=self.verbose,
                                      dry_run=self.dry_run,
                                      force=self.force)
-        customize_compiler(self.compiler)
         # If we are cross-compiling, init the compiler now (if we are not
         # cross-compiling, init would not hurt, but people may rely on
         # late initialization of compiler even if they shouldn't...)
