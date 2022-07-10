@@ -3,9 +3,9 @@ import os, sys
 
 import logging as log
 
-from setuptools.extension import Extension
-from setuptools.dist import Distribution
 from setuptools.command import build_ext, build
+from setuptools.dist import Distribution
+from setuptools.extension import Extension
 from setuptools.dep_util import newer_group
 from setuptools.errors import CCompilerError, CompileError, PlatformError, SetupError
 

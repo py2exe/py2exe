@@ -17,8 +17,7 @@ if sys.version_info < (3, 7):
 
 from setuptools import setup
 
-#from py2exe_distutils import Dist, Interpreter, BuildInterpreters, Extension
-from distutils.core import Extension
+from setuptools.extension import Extension
 
 ############################################################################
 
