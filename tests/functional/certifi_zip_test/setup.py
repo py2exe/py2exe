@@ -1,4 +1,4 @@
-from distutils.core import setup
+from setuptools import setup
 import py2exe
 
 setup(console=[{ "script": "certifi_zip_test.py"}],

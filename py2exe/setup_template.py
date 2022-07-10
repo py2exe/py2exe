@@ -10,7 +10,7 @@ HEADER = """\
 # -*- coding: utf-8 -*-
 # Created by: $created_by
 
-from distutils.core import setup
+from setuptools import setup
 import py2exe
 
 class Target(object):
@@ -22,10 +22,10 @@ class Target(object):
 
         # the VersionInfo resource, uncomment and fill in those items
         # that make sense:
-        
+
         # The 'version' attribute MUST be defined, otherwise no versioninfo will be built:
         # self.version = "1.0"
-        
+
         # self.company_name = "Company Name"
         # self.copyright = "Copyright Company Name © 2013"
         # self.legal_copyright = "Copyright Company Name © 2013"
