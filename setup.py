@@ -183,7 +183,8 @@ if __name__ == "__main__":
               'distutils.commands': ['py2exe = py2exe.setuptools_buildexe:py2exe'],
               'setuptools.finalize_distribution_options': ['py2exe = py2exe.setuptools_buildexe:finalize_distribution_options'],
               'distutils.setup_keywords': ['console = py2exe.setuptools_buildexe:validate_target',
-                                           'windows = py2exe.setuptools_buildexe:validate_target']
+                                           'windows = py2exe.setuptools_buildexe:validate_target',
+                                           'zipfile = py2exe.setuptools_buildexe:validate_zipfile',]
               },
           interpreters = interpreters,
           py_modules=['zipextimporter'],

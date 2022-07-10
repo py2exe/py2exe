@@ -15,15 +15,6 @@ def fancy_split(str, sep=","):
     return str
 
 def finalize_distribution_options(dist):
-    """
-    setuptools.finalize_distribution_options extension
-    point for py2app, to deal with autodiscovery in
-    setuptools 61.
-    This addin will set the name and py_modules attributes
-    when a py2app distribution is detected that does not
-    yet have these attributes.
-    are not already set
-    """
     if getattr(dist, "console", None) is None and getattr(dist, "windows", None) is None:
         return
 
@@ -37,6 +28,9 @@ def finalize_distribution_options(dist):
     dist.windows = runtime.fixup_targets(dist.windows, "script")
     for target in dist.windows:
         target.exe_type = "windows_exe"
+
+    if dist.zipfile is None:
+        dist.zipfile = "library.zip"
 
     # name = getattr(dist.metadata, "name", None)
     # if name is None or name == "UNKNOWN":
@@ -55,6 +49,9 @@ def finalize_distribution_options(dist):
 
 def validate_target(dist, attr, value):
     runtime.fixup_targets(value, "script")
+
+def validate_zipfile(dist, attr, value):
+    dist.zipfile = value
 
 class py2exe(Command):
     description = ""
@@ -209,7 +206,7 @@ class py2exe(Command):
                             #com_servers = dist.ctypes_com_server,
 
                             destdir = self.dist_dir,
-                            libname = "library.zip",
+                            libname = dist.zipfile,
 
                             verbose = self.verbose,
                             report = False,
