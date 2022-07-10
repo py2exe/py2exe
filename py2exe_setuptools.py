@@ -1,18 +1,19 @@
 # This file is only used when BUILDING py2exe.
 import os, sys
 
-from distutils.core import Extension
-from distutils.dist import Distribution
-from distutils.command import build_ext, build
-from distutils.sysconfig import customize_compiler
-from distutils.dep_util import newer_group
-from distutils.errors import DistutilsError, DistutilsSetupError, DistutilsPlatformError
-from distutils.errors import CCompilerError, CompileError
-from distutils.util import get_platform
-from distutils import log
+import logging as log
+
+from setuptools.extension import Extension
+from setuptools.dist import Distribution
+from setuptools.command import build_ext, build
+from setuptools.dep_util import newer_group
+from setuptools.errors import CCompilerError, CompileError, PlatformError, SetupError
+
+from setuptools._distutils.sysconfig import customize_compiler
+from setuptools._distutils.util import get_platform
 
 # We don't need a manifest in the executable, so monkeypatch the code away:
-from distutils.msvc9compiler import MSVCCompiler
+from setuptools._distutils.msvc9compiler import MSVCCompiler
 MSVCCompiler.manifest_setup_ldargs = lambda *args: None
 
 class Interpreter(Extension):
@@ -104,7 +105,7 @@ class BuildInterpreters(build_ext.build_ext):
     def build_interp(self, ext):
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
-            raise DistutilsSetupError(
+            raise SetupError(
                   "in 'interpreters' option (extension '%s'), "
                   "'sources' must be present and must be "
                   "a list of source filenames" % ext.name)
