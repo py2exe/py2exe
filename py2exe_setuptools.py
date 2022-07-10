@@ -3,7 +3,8 @@ import os, sys
 
 import logging as log
 
-from setuptools.command import build_ext, build
+from setuptools.command import build
+from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
 from setuptools.extension import Extension
 from setuptools.dep_util import newer_group
@@ -38,28 +39,24 @@ class Dist(Distribution):
         return self.has_interpreters()
 
 
-class BuildInterpreters(build_ext.build_ext):
+class BuildInterpreters(build_ext):
     description = "build special python interpreter stubs"
 
     def finalize_options(self):
         super().finalize_options()
         self.interpreters = self.distribution.interpreters
+        self.extensions = [Extension("unused", ["unused.c"])] # dummy extension needed to have a compiler
 
     def run(self):
         # Copied from build_ext.run() except that we use
         # self.interpreters instead of self.extensions and
         # self.build_interpreters() instead of self.build_extensions()
-        from distutils.ccompiler import new_compiler
 
         if not self.interpreters:
             return
 
-        # Setup the CCompiler object that we'll use to do all the
-        # compiling and linking
-        self.compiler = new_compiler(compiler=self.compiler,
-                                     verbose=self.verbose,
-                                     dry_run=self.dry_run,
-                                     force=self.force)
+        super().run()
+
         # If we are cross-compiling, init the compiler now (if we are not
         # cross-compiling, init would not hurt, but people may rely on
         # late initialization of compiler even if they shouldn't...)
@@ -192,6 +189,9 @@ class BuildInterpreters(build_ext.build_ext):
                            export_symbols=ext.export_symbols,
                            extra_postargs=extra_args,
                            debug=self.debug)
+
+    def build_extensions(self):
+        """Empty to skip actual extension compilation"""
 
 
     # -- Name generators -----------------------------------------------
