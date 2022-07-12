@@ -10,8 +10,7 @@ HEADER = """\
 # -*- coding: utf-8 -*-
 # Created by: $created_by
 
-from setuptools import setup
-import py2exe
+from py2exe import setup
 
 class Target(object):
     '''Target is the baseclass for all executables that are created.

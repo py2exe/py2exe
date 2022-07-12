@@ -1,5 +1,4 @@
-from setuptools import setup
-import py2exe
+from py2exe import setup
 
 setup(console=[{ "script": "bundlefiles0_sqlite_test.py"}],
     options={"py2exe": {
