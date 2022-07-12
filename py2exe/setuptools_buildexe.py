@@ -29,9 +29,6 @@ def finalize_distribution_options(dist):
     for target in dist.windows:
         target.exe_type = "windows_exe"
 
-    if dist.zipfile is None:
-        dist.zipfile = "library.zip"
-
     # name = getattr(dist.metadata, "name", None)
     # if name is None or name == "UNKNOWN":
     #     if dist.app:
