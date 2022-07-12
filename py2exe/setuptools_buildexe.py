@@ -44,11 +44,11 @@ def finalize_distribution_options(dist):
 
     #     dist.metadata.name = name
 
-def validate_target(dist, attr, value):
-    runtime.fixup_targets(value, "script")
+# def validate_target(dist, attr, value):
+#     runtime.fixup_targets(value, "script")
 
-def validate_zipfile(dist, attr, value):
-    dist.zipfile = value
+# def validate_zipfile(dist, attr, value):
+#     dist.zipfile = value
 
 class py2exe(Command):
     description = ""
