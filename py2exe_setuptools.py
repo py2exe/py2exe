@@ -1,8 +1,6 @@
 # This file is only used when BUILDING py2exe.
 import os, sys
 
-import logging as log
-
 from setuptools.command import build
 from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
@@ -11,6 +9,9 @@ from setuptools.dep_util import newer_group
 from setuptools.errors import CCompilerError, CompileError, PlatformError, SetupError
 
 from sysconfig import get_platform
+
+from py2exe.log import Log
+log = Log()
 
 class Interpreter(Extension):
     def __init__(self, *args, **kw):
@@ -111,10 +112,10 @@ class BuildInterpreters(build_ext):
 
         depends = sources + ext.depends
         if not (self.force or newer_group(depends, ext_path, 'newer')):
-            log.debug("skipping '%s' extension (up-to-date)", ext.name)
+            log.debug("skipping {} extension (up-to-date)".format(ext.name))
             return
         else:
-            log.info("building '%s' extension", ext.name)
+            log.info("building {} extension".format(ext.name))
 
         # First, compile the source code to object files.
 

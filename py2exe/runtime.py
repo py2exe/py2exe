@@ -5,7 +5,6 @@ from .dllfinder import Scanner, pydll
 
 import imp
 import io
-import logging
 import marshal
 import os
 import pkgutil
@@ -20,8 +19,9 @@ from glob import glob
 from .resources import UpdateResources
 from .versioninfo import Version
 from .icons import BuildIcons
+from .log import Log
 
-logger = logging.getLogger("runtime")
+logger = Log()
 
 from importlib.machinery import EXTENSION_SUFFIXES
 if '.pyd' in EXTENSION_SUFFIXES:
@@ -186,8 +186,8 @@ class Runtime(object):
         mf.finish()
 
         missing, maybe = mf.any_missing_maybe()
-        logger.info("Found %d modules, %d are missing, %d may be missing",
-                    len(mf.modules), len(missing), len(maybe))
+        logger.info("Found {} modules, {} are missing, {} may be missing".format(
+                    len(mf.modules), len(missing), len(maybe)))
 
         if self.options.report:
             self.mf.report()
@@ -315,7 +315,6 @@ class Runtime(object):
     def build_exe(self, target, exe_path, libname):
         """Build the exe-file."""
         print("Building '%s'." % exe_path)
-##        logger.info("Building exe '%s'", exe_path)
 
         exe_bytes = self.get_runstub_bytes(target)
         with open(exe_path, "wb") as ofi:

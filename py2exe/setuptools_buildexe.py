@@ -1,7 +1,7 @@
 import sys
 import warnings
 
-from setuptools import Command, dist
+from setuptools import Command
 
 from . import runtime
 
