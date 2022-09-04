@@ -735,6 +735,20 @@ def hook__ssl(finder, module):
             dll_name = os.path.basename(dll_path)
             finder.add_dll(dll_path)
 
+def hook_winrt(finder, module):
+    """winrt uses the `_winrt.__file__` attribute in its import chain. This attribute is,
+    however, not present when the module is imported from a .pyd file. This hook
+    recreates the missing attribute."""
+    finder.add_bootcode("""
+def patch_winrt():
+    from winrt import _winrt
+
+    _winrt.__file__ = _winrt.__spec__.origin
+
+patch_winrt()
+del patch_winrt
+""")
+
 def hook_wx(finder, module):
     """
     Avoid `wxPyDeprecationWarning: wx.lib.pubsub has been deprecated` and
