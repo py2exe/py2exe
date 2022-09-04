@@ -1,6 +1,7 @@
 *.py[co]
 .*.sw[po]
 *.exe
+*.dll
 *.whl
 venv
 
