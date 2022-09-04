@@ -41,18 +41,17 @@ True
 >>>
 
 """
-import imp
-import importlib
 import sys
 import zipimport
 
-import _imp
+from importlib import machinery
+from importlib import util
 
 # _memimporter is a module built into the py2exe runstubs.
 import _memimporter
 
 class ZipExtensionImporter(zipimport.zipimporter):
-    _suffixes = [s[0] for s in imp.get_suffixes() if s[2] == imp.C_EXTENSION]
+    _suffixes = machinery.EXTENSION_SUFFIXES
 
     def find_loader(self, fullname, path=None):
         """We need to override this method for Python 3.x.
@@ -79,7 +78,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
     def find_spec(self, name, path=None):
         module = self.find_module(name, path)
         if module is not None:
-            return importlib.util.spec_from_loader(name, module)
+            return util.spec_from_loader(name, module)
         else:
             return None
 
@@ -117,7 +116,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
                     if verbose > 1:
                         sys.stderr.write("# found %s in zipfile %s\n"
                                          % (path, self.archive))
-                    spec = importlib.util.find_spec(fullname, path)
+                    spec = util.find_spec(fullname, path)
                     mod = _memimporter.import_module(fullname, path,
                                                      initname,
                                                      self.get_data, spec)

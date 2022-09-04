@@ -14,6 +14,7 @@ import struct
 import sys
 import zipfile
 
+from importlib.util import MAGIC_NUMBER
 from glob import glob
 
 from .resources import UpdateResources
@@ -426,7 +427,7 @@ class Runtime(object):
             if mod.get_code_runtime():
                 path = mod.__dest_file__
                 stream = io.BytesIO()
-                stream.write(imp.get_magic())
+                stream.write(MAGIC_NUMBER)
                 if sys.version_info >= (3,7,0):
                     stream.write(b"\0\0\0\0") # null flags
                 stream.write(b"\0\0\0\0") # null timestamp
@@ -459,7 +460,7 @@ class Runtime(object):
                                    optimize=self.options.optimize)
                     path = mod.__dest_file__
                     stream = io.BytesIO()
-                    stream.write(imp.get_magic())
+                    stream.write(MAGIC_NUMBER)
                     if sys.version_info >= (3,7,0):
                         stream.write(b"\0\0\0\0") # null flags
                     stream.write(b"\0\0\0\0") # null timestamp
@@ -473,7 +474,7 @@ class Runtime(object):
                 path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
                 code = compile(r"", path, "exec", optimize=self.options.optimize)
                 stream = io.BytesIO()
-                stream.write(imp.get_magic())
+                stream.write(MAGIC_NUMBER)
                 if sys.version_info >= (3,7,0):
                     stream.write(b"\0\0\0\0") # null flags
                 stream.write(b"\0\0\0\0") # null timestamp
