@@ -36,7 +36,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install -U pip setuptools wheel
+          python -m pip install -U pip setuptools==62.6.0 wheel
           python -m pip install -U cachetools pefile
 
       - name: Build
@@ -72,11 +72,6 @@ jobs:
         with:
           python-version: ${{ matrix.cfg.python-version }}
           architecture: ${{ matrix.cfg.python-arch }}
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install -U pip setuptools wheel
-          python -m pip install -U cachetools pefile
 
       - name: Check Python install
         run: |
@@ -172,4 +167,4 @@ jobs:
           cd tests
           cd functional
           python .\enable_tests.py
-          .\runner.ps1
+          .\runner_freeze.ps1
