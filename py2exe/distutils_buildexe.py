@@ -3,6 +3,16 @@ import warnings
 
 from distutils.core import Command
 
+DEPRECATION_MESSAGE = """
+The `setup.py py2exe` command line interface is deprecated and
+will be removed in the next major release.
+
+Please adapt your code to use the new `py2exe.freeze` API.
+
+Further information can be found at
+https://github.com/py2exe/py2exe/blob/master/README.md
+"""
+
 ## from distutils.spawn import spawn
 ## from distutils.errors import *
 ## import sys, os, imp, types, stat
@@ -155,7 +165,7 @@ class py2exe(Command):
         self.custom_boot_script = None
         self.use_assembly = False
 
-    def finalize_options (self):
+    def finalize_options(self):
         self.optimize = int(self.optimize)
         self.excludes = fancy_split(self.excludes)
         self.includes = fancy_split(self.includes)
@@ -181,6 +191,8 @@ class py2exe(Command):
         self.dll_excludes = [x.lower() for x in fancy_split(self.dll_excludes)]
 
     def run(self):
+        warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning, stacklevel=7)
+
         build = self.reinitialize_command('build')
         build.run()
         sys_old_path = sys.path[:]
@@ -260,7 +272,7 @@ class py2exe(Command):
                             show_from = None,
 
                             data_files = self.distribution.data_files,
-                            
+
                             compress = self.compressed,
                             use_assembly = self.use_assembly,
                             )
@@ -1216,7 +1228,7 @@ class py2exe(Command):
 ##             item.__pydfile__ = fname
 ##         else:
 ##             fname = os.path.basename(item.__file__)
-            
+
 ##         # and what about dry_run?
 ##         if self.verbose:
 ##             print "creating python loader for extension '%s' (%s -> %s)" % (item.__name__,item.__file__,fname)
@@ -1647,7 +1659,7 @@ class py2exe(Command):
 ##     import win32com
 ##     from win32com.client import gencache, makepy
 ##     from distutils.file_util import copy_file
-    
+
 ##     old_gen_path = win32com.__gen_path__
 ##     num = 0
 ##     try:
