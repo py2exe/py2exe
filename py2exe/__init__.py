@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """py2exe package
 """
+import logging
 
 from argparse import Namespace
 
@@ -45,6 +46,9 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
                         data_files = data_files,
 
                     )
+
+    level = logging.INFO
+    logging.basicConfig(level=level)
 
     builder = runtime.Runtime(runtime_options)
     builder.analyze()
