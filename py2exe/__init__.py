@@ -13,6 +13,15 @@ from .patch_distutils import patch_distutils
 
 patch_distutils()
 
+def fancy_split(str, sep=","):
+    # a split which also strips whitespace from the items
+    # passing a list or tuple will return it unchanged
+    if str is None:
+        return []
+    if hasattr(str, "split"):
+        return [item.strip() for item in str.split(sep)]
+    return str
+
 def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", options={}):
     console_targets = runtime.fixup_targets(console, "script")
     for target in console_targets:
@@ -30,10 +39,10 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
                         compress = options.get("compressed", 0),
                         unbuffered = options.get("unbuffered", 0),
                         optimize = options.get("optimize", 0),
-                        includes = options.get("includes", None),
-                        excludes = options.get("excludes", None),
-                        packages = options.get("packages", None),
-                        dll_excludes = options.get("dll_excludes", None),
+                        includes = fancy_split(options.get("includes", None)),
+                        excludes = fancy_split(options.get("excludes", None)),
+                        packages = fancy_split(options.get("packages", None)),
+                        #dll_excludes = options.get("dll_excludes", None),
                         bundle_files = options.get("bundle_files", 3),
 
                         script = console_targets + windows_targets,
