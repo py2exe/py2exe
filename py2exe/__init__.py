@@ -22,6 +22,10 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
     for target in windows_targets:
         target.exe_type = "windows_exe"
 
+    # support the old dictionary structure with a global 'py2exe' key
+    if 'py2exe' in options:
+        options = options['py2exe']
+
     runtime_options = Namespace(
                         compress = getattr(options, "compressed", 0),
                         unbuffered = getattr(options, "unbuffered", 0),
