@@ -27,23 +27,23 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         options = options['py2exe']
 
     runtime_options = Namespace(
-                        compress = getattr(options, "compressed", 0),
-                        unbuffered = getattr(options, "unbuffered", 0),
-                        optimize = getattr(options, "optimize", 0),
-                        includes = getattr(options, "includes", None),
-                        excludes = getattr(options, "excludes", None),
-                        packages = getattr(options, "packages", None),
-                        dll_excludes = getattr(options, "dll_excludes", None),
-                        bundle_files = getattr(options, "bundle_files", 3),
+                        compress = options.get("compressed", 0),
+                        unbuffered = options.get("unbuffered", 0),
+                        optimize = options.get("optimize", 0),
+                        includes = options.get("includes", None),
+                        excludes = options.get("excludes", None),
+                        packages = options.get("packages", None),
+                        dll_excludes = options.get("dll_excludes", None),
+                        bundle_files = options.get("bundle_files", 3),
 
                         script = console_targets + windows_targets,
                         service = [],
                         com_servers = [],
 
-                        destdir = getattr(options, "dist_dir", "dist"),
+                        destdir = options.get("dist_dir", "dist"),
                         libname = zipfile,
 
-                        verbose = getattr(options, "verbose", False),
+                        verbose = options.get("verbose", False),
                         report = False,
                         summary = False,
 
