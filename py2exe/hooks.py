@@ -203,6 +203,14 @@ def hook_multiprocessing(finder, module):
     module.globalnames["Queue"] = 1
     module.globalnames["freeze_support"] = 1
 
+def hook_passlib(finder, module):
+    # see #144
+    depth = getattr(finder,"recursion_depth_passlib", 0)
+    if depth == 0:
+        finder.recursion_depth_passlib = depth + 1
+        finder.import_package("passlib.handlers")
+        finder.recursion_depth_passlib = depth
+
 def import_psutil(finder, module):
     """Exclude stuff for other operating systems."""
     finder.excludes.append("_psutil_bsd")
