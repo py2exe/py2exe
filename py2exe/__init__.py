@@ -14,6 +14,88 @@ from .patch_distutils import patch_distutils
 patch_distutils()
 
 def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", options={}, version_info={}):
+    """Create a frozen executable from the passed Python script(s).
+
+    Arguments:
+        console (list of str): paths of the Python files that will be frozen
+            as console (CLI) executables.
+        windows (list of str): paths of the Python files that will be frozen
+            as windows (GUI) executables.
+        data_files (list): non-Python files that have to be added in the frozen
+            bundle. Each element of the list is a tuple containing the destination
+            path in the bundle and the source path of the data files.
+        zipfile (str): target path of the archive that will contain all the Python
+            packages and modules required by the frozen bundle.
+            If this parameter is set to `None`, the archive will be attached
+            to the target executable file.
+        options (dict): options used to configure and customize the bundle.
+            Supported values are listed below.
+        version_info (dict): version strings and other information can be attached
+            to the Windows executable file by configuring this dictionary.
+            Supported values are listed below.
+
+    Options (`options`):
+        includes (list): list of modules to include in the bundle.
+        excludes (list): list of modules to exclude from the bundle.
+        packages (list): list of packages to include in the bundle. Note: this option
+            is NOT recursive. Only the modules in the first level of the package will
+            be included.
+        dll_excludes (list): list of DLLs to exclude from the bundle.
+        dest_dir (str): target path of the bundle, default `.\dist`.
+        compressed (int): if `1`, create a compressed destination library archive.
+        unbuffered (int): if `1`, use unbuffered binary stdout and stderr.
+        optimize (int): optimization level of the Python files embedded in the bundle
+            default: `0`. Use `0` for `-O0`, `1` for `-O`, `2` for `-OO`.
+        verbose (int): verbosity level of the freezing process, default `0`. Supported
+            levels are `0--4`.
+        bundle_files (int): select how to bundle the Python and extension DLL files,
+            default `3` (all the files are copied alongside the frozen executable)/
+            Supported values are `3--0`. See below for further information on this
+            parameter.
+
+    Bundle files levels (`bundle_files`): The py2exe runtime *can* use extension module
+        by directly importing the from a zip-archive - without the need to unpack them
+        to the file system. The bundle_files option specifies where the extension modules,
+        the python DLL itself, and other needed DLLs are put.
+        bundle_files == 3: Extension modules, the Python DLL and other needed DLLs are
+            copied into the directory where the zipfile or the EXE/DLL files
+            are created, and loaded in the normal way.
+        bundle_files == 2: Extension modules are put into the library ziparchive and loaded
+            from it directly. The Python DLL and any other needed DLLs are copied into the
+            directory where the zipfile or the EXE/DLL files are created, and loaded
+            in the normal way.
+        bundle_files == 1: Extension modules and the Python DLL are put into
+            the zipfile or the EXE/DLL files, and everything is loaded without unpacking to
+            the file system.  This does not work for some DLLs, so use with
+            caution.
+        bundle_files == 0: Extension modules, the Python DLL, and other needed DLLs are put
+            into the zipfile or the EXE/DLL files, and everything is loaded
+            without unpacking to the file system.  This does not work for
+            some DLLs, so use with caution.
+
+    Version information (`version_info`): Information passed in this dictionary are attached
+        to the frozen executable and displayed in its Properties -> Details view.
+        Supported keys:
+        version (str): version number
+        description (str): -
+        comments (str): -
+        company_name (str): -
+        copyright (str): -
+        trademarks (str): -
+        product_name (str): -
+        product_version (str): -
+        internal_name (str): -
+        private_build (str): -
+        special_build (str): -
+
+    Support limitations:
+       `bundle_files <=2`: these values are supported only for packages in the Python
+            standard library. Issues occurring with external packages and lower values
+            of `bundle_files` will not be investigated.
+        `zipfile = None`: is not actively supported. Issues occurring when this
+            option is used will not be investigated.
+
+    """
     console_targets = runtime.fixup_targets(console, "script")
     for target in console_targets:
         target.exe_type = "console_exe"

@@ -1,20 +1,25 @@
 py2exe for Python 3
 ===================
 
-`py2exe` is a distutils extension which allows to build standalone
-Windows executable programs (32-bit and 64-bit) from Python scripts.
-Python versions included in the [official development cycle](https://devguide.python.org/#status-of-python-branches)
-are supported. `py2exe` can build console executables and windows
-(GUI) executables.
+`py2exe` is a software to build standalone Windows executable
+programs (32-bit and 64-bit) from Python scripts. `py2exe` can build console
+executables and windows (GUI) executables.
+`py2exe` supports the Python versions included in the [official development cycle](https://devguide.python.org/#status-of-python-branches).
 
-Development of `py2exe` is hosted here:
-https://github.com/py2exe/py2exe.
+Development of `py2exe` is hosted here: https://github.com/py2exe/py2exe.
 
 
 Changes
 ----------------------------
 
-Detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
+The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
+
+Version 0.12.0.0:
+- Introduce the new `py2exe.freeze` API. Documentation can be found [here](docs/py2exe.freeze.md).
+- Use of the `setup.py py2exe` command and of `distutils` is deprecated as per PEP 632. Both
+  these interfaces will be removed in the next major release. See [here](docs/migration.md)
+  for a migration guide.
+- Add two hooks to fix the bundling of `winrt` and `passlib`.
 
 Version 0.11.1.1:
 - The log file for windows apps is now stored in `%APPDATA%` by default
@@ -87,26 +92,24 @@ Installation
 
 ```pip install py2exe```
 
-
-Using a setup-script
---------------------
-
-Documentation about the setup-script and other usage tips are in the
-wiki pages at http://www.py2exe.org.
+Usage
+---------------
+Use the `py2exe.freeze` function as documented [here](docs/py2exe.freeze.md).
 
 
-Using the builder
+Using a `setup.py` script or the builder
 -----------------
 
-The `build_exe` CLI is not actively supported at the moment. Users are
-encouraged to create their own `setup.py` files. Documentation
-on how to use the CLI can be found [here](https://github.com/py2exe/py2exe/blob/master/README_ORIGINAL.rst).
+Using a `setup.py` script with `py2exe` is deprecated. Please adapt your
+scripts to use the new `freeze` API. This interface will be removed in the
+next major release.
 
+The `build_exe` CLI is not supported and will be removed in the next major
+release.
 
 Known issues
 ------------
 
-- Building isapi extensions is not supported.
 - High-level methods or hooks to embed Qt plugins in the bundle (needed by
 PySide2/PyQt5) are missing.
 
