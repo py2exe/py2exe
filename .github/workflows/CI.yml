@@ -36,7 +36,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install -U pip setuptools==62.6.0 wheel
+          python -m pip install -U pip setuptools wheel
           python -m pip install -U cachetools pefile
 
       - name: Build
@@ -83,7 +83,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install -U pip setuptools==62.6.0 wheel
+          python -m pip install -U pip setuptools wheel
           python -m pip install -U cachetools pefile
 
       - name: Build
