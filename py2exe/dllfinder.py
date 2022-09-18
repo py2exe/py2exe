@@ -12,6 +12,7 @@ import platform
 import sys
 
 from fnmatch import fnmatch
+from functools import wraps
 
 from cachetools import cached, LFUCache
 
@@ -230,7 +231,7 @@ class Scanner(ModuleFinder):
     """A ModuleFinder subclass which allows to find binary
     dependencies.
     """
-    def __init__(self, path=None, verbose=0, excludes=[], optimize=0):
+    def __init__(self, path=None, verbose=0, excludes=[], optimize=0, dll_excludes=[]):
         super().__init__(path=path, verbose=verbose, excludes=excludes, optimize=optimize)
         self.dllfinder = DllFinder()
         self._data_directories = {}
@@ -241,7 +242,20 @@ class Scanner(ModuleFinder):
         self._import_package_later = []
         self._safe_import_hook_later = []
         self._boot_code = []
+        self._dll_excludes = dll_excludes
         hooks.init_finder(self)
+
+    def discard_dll_excludes(f):
+        @wraps(f)
+        def wrapper(self, *args, **kwargs):
+            original_dlls = f(self)
+            returned_dlls = set()
+            for dll in original_dlls:
+                dll_basename = os.path.basename(dll)
+                if dll_basename not in self._dll_excludes:
+                    returned_dlls.add(dll)
+            return returned_dlls
+        return wrapper
 
     def add_bootcode(self, code):
         """Add some code that the exe will execute when bootstrapping."""
@@ -270,12 +284,16 @@ class Scanner(ModuleFinder):
 
 ##    def required_dlls(self):
 ##        return self.dllfinder.required_dlls()
+
+    @discard_dll_excludes
     def all_dlls(self):
         return self.dllfinder.all_dlls()
 
+    @discard_dll_excludes
     def real_dlls(self):
         return self.dllfinder.real_dlls()
 
+    @discard_dll_excludes
     def extension_dlls(self):
         return self.dllfinder.extension_dlls()
 

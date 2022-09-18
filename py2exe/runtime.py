@@ -154,12 +154,14 @@ class Runtime(object):
 
         self.options.excludes = self.options.excludes if self.options.excludes else []
         self.options.optimize = self.options.optimize if self.options.optimize else 0
+        self.options.dll_excludes = self.options.dll_excludes if self.options.dll_excludes else []
 
     def analyze(self):
         logger.info("Analyzing the code")
 
         mf = self.mf = Scanner(excludes=self.options.excludes,
-                               optimize=self.options.optimize)
+                               optimize=self.options.optimize,
+                               dll_excludes=self.options.dll_excludes)
 
         for modname in self.bootstrap_modules:
             if modname.endswith(".*"):
