@@ -79,14 +79,14 @@ class VS_FIXEDFILEINFO:
                            self.dwFileSubtype,
                            self.dwFileDateMS,
                            self.dwFileDateLS)
-                    
+
 def align(data):
     pad = - len(data) % 4
     return data + b'\000' * pad
 
 class VS_STRUCT:
     items = ()
-    
+
     def tobytes(self):
         szKey = w32_uc(self.name)
         ulen = len(szKey)+2
@@ -154,7 +154,7 @@ class Var(VS_STRUCT):
     # values indicating the language and code page combinations
     # supported by this file. The low-order word of each DWORD must
     # contain a Microsoft language identifier, and the high-order word
-    # must contain the IBM® code page number. Either high-order or
+    # must contain the IBM code page number. Either high-order or
     # low-order word can be zero, indicating that the file is language
     # or code page independent. If the Var structure is omitted, the
     # file will be interpreted as both language and code page
@@ -174,7 +174,7 @@ class VarFileInfo(VS_STRUCT):
 
     def __init__(self, *names):
         self.items = map(Var, names)
-        
+
     def get_value(self):
         return b""
 
@@ -190,20 +190,22 @@ class VS_VERSIONINFO(VS_STRUCT):
         return self.value.tobytes()
 
 class Version(object):
-    def __init__(self,
-                 version,
-                 comments = None,
-                 company_name = None,
-                 file_description = None,
-                 internal_name = None,
-                 legal_copyright = None,
-                 legal_trademarks = None,
-                 original_filename = None,
-                 private_build = None,
-                 product_name = None,
-                 product_version = None,
-                 special_build = None):
+    def __init__(self, version_info):
+        version = version_info.version
+        comments = version_info.comments
+        company_name = version_info.company_name
+        file_description = version_info.file_description
+        internal_name = version_info.internal_name
+        legal_copyright = version_info.legal_copyright
+        legal_trademarks = version_info.legal_trademarks
+        original_filename = version_info.original_filename
+        private_build = version_info.private_build
+        product_name = version_info.product_name
+        product_version = version_info.product_version
+        special_build = version_info.special_build
+
         self.version = version
+
         strings = []
         if comments is not None:
             strings.append(("Comments", comments))
@@ -230,7 +232,7 @@ class Version(object):
         from . import __version__
         strings.append(("Creator", "py2exe %s" % __version__))
         self.strings = strings
-        
+
     def resource_bytes(self):
         vs = VS_VERSIONINFO(self.version,
                             [StringFileInfo("040904B0",
@@ -240,20 +242,23 @@ class Version(object):
 
 def test():
     import sys
+    from argparse import Namespace
     sys.path.append("c:/tmp")
-    version = Version("1, 0, 0, 1",
-                      comments = "ümläut comments",
+    version_info = Namespace(
+                      version = "1, 0, 0, 1",
+                      comments = "ÃœmlÃ¤ut comments",
                       company_name = "No Company",
                       file_description = "silly application",
                       internal_name = "silly",
-                      legal_copyright = u"Copyright © 2003",
-##                      legal_trademark = "",
+                      legal_copyright = u"Copyright Â© 2003",
+                      legal_trademarks = None,
                       original_filename = "silly.exe",
                       private_build = "test build",
                       product_name = "silly product",
                       product_version = None,
-##                      special_build = ""
-                      )
+                      special_build = None,
+                    )
+    version = Version(version_info)
     print(version.resource_bytes())
 
 if __name__ == '__main__':

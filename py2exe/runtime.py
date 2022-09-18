@@ -361,24 +361,9 @@ class Runtime(object):
                 res_writer.add(type=res_type, name=res_name, value=res_data)
 
             # Build and add a versioninfo resource
-
-            # XXX better use resource.add_version(target) ???  would look nicer...
-            if hasattr(target, "version"):
-                def get(name):
-                    return getattr(target, name, None)
-                version = Version(target.version,
-                                  file_description = get("description"),
-                                  comments = get("comments"),
-                                  company_name = get("company_name"),
-                                  legal_copyright = get("copyright"),
-                                  legal_trademarks = get("trademarks"),
-                                  original_filename = os.path.basename(exe_path),
-                                  product_name = get("product_name"),
-                                  product_version = get("product_version") or target.version,
-                                  internal_name = get("internal_name"),
-                                  private_build = get("private_build"),
-                                  special_build = get("special_build"))
-
+            if self.options.version_info:
+                self.options.version_info.original_filename = os.path.basename(exe_path)
+                version = Version(self.options.version_info)
 
                 from ._wapi import RT_VERSION
                 res_writer.add(type=RT_VERSION,
