@@ -14,10 +14,13 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.12.0.1:
+- Fixed an issue that prevented builds via the deprecated `setup.py` API.
+
 Version 0.12.0.0:
-- Introduce the new `py2exe.freeze` API. Documentation can be found [here](docs/py2exe.freeze.md).
+- Introduce the new `py2exe.freeze` API. Documentation can be found [here](https://github.com/py2exe/py2exe/blob/master/docs/py2exe.freeze.md).
 - Use of the `setup.py py2exe` command and of `distutils` is deprecated as per PEP 632. Both
-  these interfaces will be removed in the next major release. See [here](docs/migration.md)
+  these interfaces will be removed in the next major release. See [here](https://github.com/py2exe/py2exe/blob/master/docs/migration.md)
   for a migration guide.
 - Add two hooks to fix the bundling of `winrt` and `passlib`.
 
