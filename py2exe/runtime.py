@@ -15,6 +15,7 @@ import struct
 import sys
 import zipfile
 
+from argparse import Namespace
 from importlib.util import MAGIC_NUMBER
 from glob import glob
 
@@ -360,8 +361,8 @@ class Runtime(object):
                     res_data = res_data.encode("utf-8")
                 res_writer.add(type=res_type, name=res_name, value=res_data)
 
-            # Build and add a versioninfo resource
-            if self.options.version_info:
+            # Build and add a versioninfo resource - freeze interface only
+            if hasattr(self.options, "version_info") and self.options.version_info:
                 self.options.version_info.original_filename = os.path.basename(exe_path)
                 version = Version(self.options.version_info)
 

@@ -14,7 +14,7 @@ This document includes suggestion on how to migrate your existing freezing code 
 | Freeze function             | `setup(console=...)`                               | `freeze(console=...)`                    |
 | Pass options                | `options = {"py2exe": {"packages": ...}}`          | `options = {"packages": ...}`            |
 | Use `includes` and similar  | `"includes": "os, time, requests"`                 | `"includes": ["os", "time", "requests"]` |
-| Pass version info           | `setup(version=...)`                               | Use the `version_info` argument          |
+| Pass version info           | N/A                                                | Use the `version_info` argument          |
 | `distutils` parameters      | `setup(maintainer=..., classifiers=...)`           | Do not pass these arguments to `freeze`  |
 
 ## Freezing script
@@ -32,6 +32,6 @@ A few details on how to go from a `setup` call to `freeze`:
 - The `console`, `windows`, `data_files`, and `zipfile` arguments can be used with `freeze` as in `setup`.
 - The `option` dictionary can also be re-used as it is, but we encourage to drop the `py2exe` extra key as support for it will be removed in the future.
 - The `includes`, `excludes`, `packages`, and `dll_excludes` options should now be lists instead of comma-separated strings. The current syntax is still supported, but will be removed in the future.
-- The `version_info` dictionary supports writing some information in the Properties of the frozen executable. This feature was previously using other `distutils` arguments, which should now be converted to use this dictionary as input.
+- The `version_info` dictionary supports writing some information in the Properties of the frozen executable. This feature, despite advertised, was not working with older versions of `py2exe`. If you intend to use this feature, please convert your freezing script to the new API.
 - All the other `distutils`-specific arguments, including but not limited to `name`, `author`, `version`, `url`, etc., are not supported by `freeze` and will raise `TypeError` if passed. Please remove these extra arguments from a call to `freeze` as `py2exe` is not designed to use them.
 
