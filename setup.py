@@ -150,6 +150,11 @@ if __name__ == "__main__":
           maintainer="Alberto Sottile",
           maintainer_email="alby128@gmail.com",
           url="http://www.py2exe.org/",
+          project_urls={
+                'Source': 'https://github.com/py2exe/py2exe',
+                'Tracker': 'https://github.com/py2exe/py2exe/issues',
+                'Documentation': 'https://github.com/py2exe/py2exe/blob/master/docs/py2exe.freeze.md',
+          },
           license="MIT/X11",
           setup_requires=["wheel", "cachetools", "pefile"],
           install_requires=["cachetools", "pefile"],
