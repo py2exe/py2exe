@@ -100,7 +100,7 @@ BOOL calc_dirname(HMODULE hmod)
 
 /*
   The executable contains a scriptinfo structure as a resource.
-  
+
   This structure contains some flags for the Python interpreter, the pathname
   of the library relative to the executable (if the pathname is empty the
   executable is the library itself), and marshalled byte string which is a
@@ -108,7 +108,7 @@ BOOL calc_dirname(HMODULE hmod)
 
   The first code objects contain some bootstrap code for py2exe, the last
   one contains the main script that should be run.
-  
+
   This function loads the structure from the resource, sets the pScript
   pointer to the start of the marshalled byte string, and fills in the global
   variable 'libfilename' with the absolute pathname of the library file.
@@ -270,7 +270,7 @@ void set_vars(HMODULE hmod_pydll)
 /*
   Load the Python DLL, either from the resource in the library file (if found),
   or from the file system.
-  
+
   This function should also be used to get all the function pointers that
   python3.c needs at once.
  */
@@ -345,7 +345,7 @@ int init_with_instance(HMODULE hmod_exe, char *frozen)
 	/*
 	  Start the ball rolling.
 	*/
-	Py_SetProgramName(modulename);
+	Py_SetProgramName((const wchar_t *)modulename);
 	Py_SetPath(libfilename);
 	Py_Initialize();
 

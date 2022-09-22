@@ -256,7 +256,7 @@ FARPROC MyGetProcAddress(HMODULE module, LPCSTR procname)
 	else {
 		SetLastError(0);
 		proc = GetProcAddress(module, procname);
-		if (proc == &GetModuleHandleExW)
+		if (proc == (FARPROC)&GetModuleHandleExW)
 			proc = (FARPROC)MyGetModuleHandleExW;
 	}
 	return proc;

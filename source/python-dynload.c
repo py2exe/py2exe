@@ -163,9 +163,9 @@ void PyErr_Print(void)
   proc();
 }
 
-void Py_SetProgramName(wchar_t *name)
+void Py_SetProgramName(const wchar_t *name)
 {
-  FUNC(void, Py_SetProgramName, (wchar_t *));
+  FUNC(void, Py_SetProgramName, (const wchar_t *));
   proc(name);
 }
 
