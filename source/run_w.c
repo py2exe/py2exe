@@ -31,15 +31,15 @@ void SystemError(int error, char *msg)
 
 	if (error) {
 		LPVOID lpMsgBuf;
-		FormatMessageA( 
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		FormatMessageA(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
 			error,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPSTR)&lpMsgBuf,
 			0,
-			NULL 
+			NULL
 			);
 		strncpy(Buffer, lpMsgBuf, sizeof(Buffer));
 		LocalFree(lpMsgBuf);
@@ -50,8 +50,8 @@ void SystemError(int error, char *msg)
 	MessageBoxA(GetFocus(), Buffer, NULL, MB_OK | MB_ICONSTOP);
 }
 
-extern int init(char *);
-extern int start(int argc, wchar_t **argv);
+extern int init(char *, int, wchar_t **);
+extern int start();
 
 /*
   The main function for our exe.
@@ -65,8 +65,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 	LPWSTR *argv;
 	LPWSTR cmdline = GetCommandLineW();
 	argv = CommandLineToArgvW(cmdline, &argc);
-	result = init("windows_exe");
+	result = init("windows_exe", argc, argv);
 	if (result)
 		return result;
-	return start(argc, argv);
+	return start();
 }

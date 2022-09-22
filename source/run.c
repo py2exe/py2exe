@@ -32,15 +32,15 @@ void SystemError(int error, char *msg)
 		fprintf(stderr, msg);
 	if (error) {
 		LPVOID lpMsgBuf;
-		FormatMessageA( 
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		FormatMessageA(
+			FORMAT_MESSAGE_ALLOCATE_BUFFER |
 			FORMAT_MESSAGE_FROM_SYSTEM,
 			NULL,
 			error,
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 			(LPSTR)&lpMsgBuf,
 			0,
-			NULL 
+			NULL
 			);
 		strncpy(Buffer, lpMsgBuf, sizeof(Buffer));
 		LocalFree(lpMsgBuf);
@@ -48,8 +48,8 @@ void SystemError(int error, char *msg)
 	}
 }
 
-extern int init(char *);
-extern int start(int argc, wchar_t **argv);
+extern int init(char *, int, wchar_t **);
+extern int start();
 
 /*
   The main function for our exe.
@@ -57,8 +57,8 @@ extern int start(int argc, wchar_t **argv);
 int wmain (int argc, wchar_t **argv)
 {
 	int result;
-	result = init("console_exe");
+	result = init("console_exe", argc, argv);
 	if (result)
 		return result;
-	return start(argc, argv);
+	return start();
 }

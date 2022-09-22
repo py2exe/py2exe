@@ -301,7 +301,7 @@ HMODULE load_pythondll(void)
 	return hmod_pydll;
 }
 
-int init_with_instance(HMODULE hmod_exe, char *frozen)
+int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 {
 
 	int rc = 0;
@@ -345,10 +345,35 @@ int init_with_instance(HMODULE hmod_exe, char *frozen)
 	/*
 	  Start the ball rolling.
 	*/
-	Py_SetProgramName((const wchar_t *)modulename);
-	Py_SetPath(libfilename);
-	Py_Initialize();
+    PyStatus status;
 
+    PyConfig config;
+    PyConfig_InitIsolatedConfig(&config);
+
+	config.site_import = 0;
+	config.parse_argv = 0;
+	config.module_search_paths_set = 1;
+
+    status = PyConfig_SetArgv(&config, argc, argv);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+
+    status = PyConfig_SetString(&config, &config.program_name, modulename);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+
+	status = PyWideStringList_Append(&config.module_search_paths, libfilename);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+
+    status = Py_InitializeFromConfig(&config);
+    if (PyStatus_Exception(status)) {
+        goto exception;
+    }
+    PyConfig_Clear(&config);
 
 	/* Set sys.frozen so apps that care can tell.  If the caller did pass
 	   NULL, sys.frozen will be set to 'True'.  If a string is passed this
@@ -368,11 +393,21 @@ int init_with_instance(HMODULE hmod_exe, char *frozen)
 		}
 	}
 	return rc;
+
+exception:
+    PyConfig_Clear(&config);
+    if (PyStatus_IsExit(status)) {
+        return status.exitcode;
+    }
+    /* Display the error message and exit the process with
+       non-zero exit code */
+    Py_ExitStatusException(status);
+
 }
 
-int init(char *frozen)
+int init(char *frozen, int argc, wchar_t **argv)
 {
-	return init_with_instance(NULL, frozen);
+	return init_with_instance(NULL, frozen, argc, argv);
 }
 
 static PyObject *Py_MessageBox(PyObject *self, PyObject *args)
@@ -403,11 +438,10 @@ PyMethodDef method[] = {
 };
 
 
-int start(int argc, wchar_t **argv)
+int start()
 {
 	int rc;
 	PyObject *mod;
-	PySys_SetArgvEx(argc, argv, 0);
 
 	mod = PyImport_ImportModule("sys");
 	if (mod) {
