@@ -390,6 +390,11 @@ int _PyImport_FixupExtensionObject(PyObject *m, PyObject *a, PyObject *b)
 
 #endif
 
+int PyMapping_HasKeyString(PyObject *o, const char *key)
+{
+  FUNC(int, PyMapping_HasKeyString, (PyObject *, const char *));
+  return proc(o, key);
+}
 
 int PySys_SetObject(const char *name, PyObject *v)
 {

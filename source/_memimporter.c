@@ -60,8 +60,8 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 	if (name == NULL)
 		return -1;
 
-	m = _PyImport_FindExtensionObject(name, name);
-	if (m != NULL) {
+	PyObject *sysmodules = PyImport_GetModuleDict();
+	if (PyMapping_HasKeyString(sysmodules, (const char *)name)) {
 		Py_DECREF(name);
 		return 0;
 	}
