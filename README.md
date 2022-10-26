@@ -14,6 +14,10 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.12.0.2:
+- Support `scipy` versions newer than 1.9.2.
+- Fixed documentation for the `py2exe.freeze` API.
+
 Version 0.12.0.1:
 - Fixed an issue that prevented builds via the deprecated `setup.py` API.
 
