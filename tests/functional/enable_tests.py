@@ -17,6 +17,14 @@ try:
 except ValueError:
     pass
 
+# disable scipy tests on x86 (no wheels)
+is_64bits = sys.maxsize > 2**32
+if not is_64bits:
+    try:
+        tests.remove('scipy_test')
+    except ValueError:
+        pass
+
 print(f'Enabled tests: {tests}')
 
 with open('enabled_tests.txt', 'w') as f:
