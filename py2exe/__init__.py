@@ -17,10 +17,10 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
     """Create a frozen executable from the passed Python script(s).
 
     Arguments:
-        console (list of str): paths of the Python files that will be frozen
-            as console (CLI) executables.
-        windows (list of str): paths of the Python files that will be frozen
-            as windows (GUI) executables.
+        console (list of dict): paths of the Python files that will be frozen
+            as console (CLI) executables. See below for the target dict syntax.
+        windows (list of dict): paths of the Python files that will be frozen
+            as windows (GUI) executables. See below for the target dict syntax.
         data_files (list): non-Python files that have to be added in the frozen
             bundle. Each element of the list is a tuple containing the destination
             path in the bundle and the source path of the data files.
@@ -33,6 +33,17 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         version_info (dict): version strings and other information can be attached
             to the Windows executable file by configuring this dictionary.
             Supported values are listed below.
+
+    Target dictionaries (to be used for `console` or `windows`):
+        script (str): path of the Python module of the executable target.
+        dest_base (str): optional, directory and basename of the executable.
+            If a directory is contained, must be the same for all targets
+        bitmap_resources (list): list of 2-tuples `(id, pathname)`.
+            Bitmap files added in the bundle.
+        icon_resources (list): list of 2-tuples `(id, pathname)`
+            Icon used for the executable.
+        other_resources (list): list of 3-tuples `(resource_type, id, datastring)`
+            Other files added in the bundle.
 
     Options (`options`):
         includes (list): list of modules to include in the bundle.
@@ -89,11 +100,16 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         special_build (str): -
 
     Support limitations:
-       `bundle_files <=2`: these values are supported only for packages in the Python
+        `bundle_files <=2`: these values are supported only for packages in the Python
             standard library. Issues occurring with external packages and lower values
             of `bundle_files` will not be investigated.
         `zipfile = None`: is not actively supported. Issues occurring when this
             option is used will not be investigated.
+        Please use CPython from python.org: freezing from non-standard CPython installations,
+            such as `conda` or Windows Store is not supported.
+        `venv`: freezing from a virtual environment can cause unexpected errors for some
+            scripts. We encourage the use of Docker Windows Containers for isolating
+            the freezing environment.
 
     """
     console_targets = runtime.fixup_targets(console, "script")

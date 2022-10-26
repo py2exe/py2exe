@@ -19,12 +19,19 @@ Create a frozen executable from the passed Python script(s).
 
 **Arguments:**
  
- - <b>`console`</b> (list of str):  paths of the Python files that will be frozen  as console (CLI) executables. 
- - <b>`windows`</b> (list of str):  paths of the Python files that will be frozen  as windows (GUI) executables. 
+ - <b>`console`</b> (list of dict):  paths of the Python files that will be frozen  as console (CLI) executables. See below for the target dict syntax. 
+ - <b>`windows`</b> (list of dict):  paths of the Python files that will be frozen  as windows (GUI) executables. See below for the target dict syntax. 
  - <b>`data_files`</b> (list):  non-Python files that have to be added in the frozen  bundle. Each element of the list is a tuple containing the destination  path in the bundle and the source path of the data files. 
  - <b>`zipfile`</b> (str):  target path of the archive that will contain all the Python  packages and modules required by the frozen bundle.  If this parameter is set to `None`, the archive will be attached  to the target executable file. 
  - <b>`options`</b> (dict):  options used to configure and customize the bundle.  Supported values are listed below. 
  - <b>`version_info`</b> (dict):  version strings and other information can be attached  to the Windows executable file by configuring this dictionary.  Supported values are listed below. 
+
+Target dictionaries (to be used for `console` or `windows`): 
+ - <b>`script`</b> (str):  path of the Python module of the executable target. 
+ - <b>`dest_base`</b> (str):  optional, directory and basename of the executable.  If a directory is contained, must be the same for all targets 
+ - <b>`bitmap_resources`</b> (list):  list of 2-tuples `(id, pathname)`.  Bitmap files added in the bundle. 
+ - <b>`icon_resources`</b> (list):  list of 2-tuples `(id, pathname)`  Icon used for the executable. 
+ - <b>`other_resources`</b> (list):  list of 3-tuples `(resource_type, id, datastring)`  Other files added in the bundle. 
 
 Options (`options`): 
  - <b>`includes`</b> (list):  list of modules to include in the bundle. 
@@ -61,6 +68,8 @@ Version information (`version_info`): Information passed in this dictionary are 
 Support limitations: 
  - <b>``bundle_files <=2``</b>:  these values are supported only for packages in the Python  standard library. Issues occurring with external packages and lower values  of `bundle_files` will not be investigated. 
  - <b>``zipfile = None``</b>:  is not actively supported. Issues occurring when this  option is used will not be investigated. 
+ - <b>`Please use CPython from python.org`</b>:  freezing from non-standard CPython installations,  such as `conda` or Windows Store is not supported. 
+ - <b>``venv``</b>:  freezing from a virtual environment can cause unexpected errors for some  scripts. We encourage the use of Docker Windows Containers for isolating  the freezing environment. 
 
 
 ---
