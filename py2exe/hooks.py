@@ -659,21 +659,52 @@ del patch_Crypto
 """)
 
 def hook_scipy(finder, module):
-    #add numpy external DLLs to the bundle
     depth = getattr(finder,"recursion_depth_scipy",0)
     if depth==0:
         finder.recursion_depth_scipy = depth + 1
         finder.import_package("scipy._lib")
         finder.import_package("scipy.spatial.transform")
         finder.recursion_depth_scipy = depth
-    scipy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
-    if os.path.isdir(scipy_libs_path):
-        from os import listdir
-        dlls = [os.path.join(scipy_libs_path, fln)
-                for fln in listdir(scipy_libs_path)
-                if fln.endswith('.dll')]
-        for dll in dlls:
-            finder.add_dll(dll)
+
+    import scipy
+    from pkg_resources._vendor.packaging import version as pkgversion
+    scp_version = pkgversion.parse(scipy.__version__)
+    if scp_version >= pkgversion.parse('1.9.2'):
+        # scipy requires a patch in its __init__
+        import ast
+
+        tree = ast.parse(module.__source__)
+        node_to_be_patched = '_delvewheel_init_patch'
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if node_to_be_patched in node.name:
+                    node.body = ast.parse('pass').body
+                return node
+
+        t = ChangeDef()
+        patched_tree = t.visit(tree)
+
+        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
+
+        # copy DLLs
+        scipy_libs_path = os.path.abspath(os.path.join(os.path.dirname(scipy.__file__), os.pardir, 'scipy.libs'))
+        if os.path.isdir(scipy_libs_path):
+            from os import listdir
+            dlls = [os.path.join(scipy_libs_path, fln)
+                    for fln in listdir(scipy_libs_path)
+                    if fln.endswith('.dll')]
+            for dll in dlls:
+                finder.add_dll(dll)
+    else:
+        scipy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
+        if os.path.isdir(scipy_libs_path):
+            from os import listdir
+            dlls = [os.path.join(scipy_libs_path, fln)
+                    for fln in listdir(scipy_libs_path)
+                    if fln.endswith('.dll')]
+            for dll in dlls:
+                finder.add_dll(dll)
 
 def hook_scipy_special(finder, module):
     #import pdb;pdb.set_trace()
