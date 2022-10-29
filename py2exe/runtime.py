@@ -691,10 +691,15 @@ class Runtime(object):
 
 LOAD_FROM_DIR = r"""\
 def __load():
-    import imp, os
+    import importlib.machinery
+    import os.path
+    from importlib._bootstrap import _load
     dllpath = os.path.join(os.path.dirname(__loader__.archive), r'{0}')
     try:
-        mod = imp.load_dynamic(__name__, dllpath)
+        loader = importlib.machinery.ExtensionFileLoader(__name__, dllpath)
+        spec = importlib.machinery.ModuleSpec(
+            name=__name__, loader=loader, origin=dllpath)
+        mod = _load(spec)
     except ImportError as details:
         raise ImportError('(%s) %r' % (details, dllpath)) from None
     mod.frozen = 1
