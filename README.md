@@ -4,7 +4,7 @@ py2exe for Python 3
 `py2exe` is a software to build standalone Windows executable
 programs (32-bit and 64-bit) from Python scripts. `py2exe` can build console
 executables and windows (GUI) executables.
-`py2exe` supports the Python versions included in the [official development cycle](https://devguide.python.org/#status-of-python-branches).
+`py2exe` supports the Python versions* included in the [official development cycle](https://devguide.python.org/#status-of-python-branches).
 
 Development of `py2exe` is hosted here: https://github.com/py2exe/py2exe.
 
@@ -114,12 +114,13 @@ next major release.
 The `build_exe` CLI is not supported and will be removed in the next major
 release.
 
-Known issues
+Known issues and notes
 ------------
 
 - High-level methods or hooks to embed Qt plugins in the bundle (needed by
 PySide2/PyQt5) are missing.
-
+- (*) `win32` wheels are provided without testing. Users are encouraged to
+use the `win_amd64` wheels (see #157).
 
 Credits
 --------
