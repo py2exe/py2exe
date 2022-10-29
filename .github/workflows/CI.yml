@@ -12,7 +12,7 @@ jobs:
       - id: set-matrix
         run: |
           TASKS=$(echo $(cat .github/workflows/matrix.json) | sed 's/ //g' )
-          echo "::set-output name=matrix::$TASKS"
+          echo "matrix=$TASKS" >> $GITHUB_OUTPUT
 
   sdist:
     name: Source distribution
