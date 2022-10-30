@@ -3,7 +3,7 @@ Migrate from `distutils.setup` to `py2exe.freeze`
 
 `py2exe` v0.12.0.0 introduced a new `freeze` API for using the software and deprecated the former `distutils.setup` and `setup.py py2exe` interfaces. Both these interfaces will be removed in the next major release of `py2exe` (see [PEP 632](https://peps.python.org/pep-0632), [the setuptools documentation](https://setuptools.pypa.io/en/latest/userguide/extension.html#final-remarks) and issue #127 for further information about this decision).
 
-This document includes suggestion on how to migrate your existing freezing code to the new `freeze` API. Documentation for `freeze` is available [here](docs/py2exe.freeze.md).
+This document includes suggestion on how to migrate your existing freezing code to the new `freeze` API. Documentation for `freeze` is available [here](https://github.com/py2exe/py2exe/blob/master/docs/py2exe.freeze.md).
 
 ## Migration table
 
@@ -19,11 +19,11 @@ This document includes suggestion on how to migrate your existing freezing code 
 
 ## Freezing script
 
-Up to now, `py2exe` re-used the project `setup.py` script. With the `freeze` API you are free to use any Python script code you prefer. In this documentation and in the functional test of this repository, we use `freeze.py` for this purpose, but this is a mere suggestion.
+Up to now, `py2exe` re-used the project `setup.py` script. With the `freeze` API you are free to use any Python script code you prefer. In this documentation and in the functional tests of this repository, we use `freeze.py` for this purpose, but this is a mere suggestion.
 
 ## Import statement
 
-The `freeze` API has to be imported directly as in `from py2exe import freeze`. No need of importing `distutils` or `setuptools` as before.
+The `freeze` API has to be imported directly as in `from py2exe import freeze`. No need to import `distutils` or `setuptools` as before.
 
 ## Migrate the function call
 
