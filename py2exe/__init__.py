@@ -2,7 +2,17 @@
 # -*- coding: utf-8 -*-
 """py2exe package
 """
+DEPRECATION_MESSAGE_WIN32 = """
+py2exe `win32` wheels are provided without support. Issues experienced when
+using these wheels will not be investigated. Please upgrade your Python
+interpreter to `win_amd64` whenever possible.
+
+See https://github.com/py2exe/py2exe/discussions/157 for further
+information.
+"""
+
 import logging
+import sys
 
 from argparse import Namespace
 
@@ -10,6 +20,11 @@ from . import runtime
 from .version import __version__
 
 from .patch_distutils import patch_distutils
+
+is_64bits = sys.maxsize > 2**32
+if not is_64bits:
+    import warnings
+    warnings.warn(DEPRECATION_MESSAGE_WIN32, DeprecationWarning, stacklevel=2)
 
 patch_distutils()
 
