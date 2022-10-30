@@ -1,9 +1,8 @@
 py2exe for Python 3
 ===================
 
-`py2exe` is a software to build standalone Windows executable
-programs (32-bit and 64-bit) from Python scripts. `py2exe` can build console
-executables and windows (GUI) executables.
+`py2exe` is a software to build standalone Windows executable programs from Python
+scripts. `py2exe` can build console executables and windows (GUI) executables.
 `py2exe` supports the Python versions* included in the [official development cycle](https://devguide.python.org/#status-of-python-branches).
 
 Development of `py2exe` is hosted here: https://github.com/py2exe/py2exe.
@@ -13,6 +12,14 @@ Changes
 ----------------------------
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
+
+Version 0.13.0.0:
+- Add support for Python 3.11
+- Drop support for Python 3.7
+- Drop support for `win32` wheels
+  - `win32` wheels are still built and shipped but are provided untested. Issues
+    experienced when using these wheels will not be investigated.
+    See https://github.com/py2exe/py2exe/discussions/157 for further information.
 
 Version 0.12.0.2:
 - Support `scipy` versions newer than 1.9.2.
