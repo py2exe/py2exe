@@ -86,7 +86,7 @@ if __name__ == "__main__":
           setup_requires=["wheel", "cachetools", "pefile"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
-          python_requires='>=3.7, <3.12',
+          python_requires='>=3.8, <3.12',
 
           classifiers=[
               "Development Status :: 4 - Beta",
@@ -96,7 +96,6 @@ if __name__ == "__main__":
               "Operating System :: Microsoft :: Windows",
               "Programming Language :: C",
               "Programming Language :: Python :: 3",
-              "Programming Language :: Python :: 3.7",
               "Programming Language :: Python :: 3.8",
               "Programming Language :: Python :: 3.9",
               "Programming Language :: Python :: 3.10",
