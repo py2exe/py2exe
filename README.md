@@ -20,6 +20,7 @@ Version 0.13.0.0:
   - `win32` wheels are still built and shipped but are provided untested. Issues
     experienced when using these wheels will not be investigated.
     See https://github.com/py2exe/py2exe/discussions/157 for further information.
+- Remove `build_exe` command line interface. Please use the `py2exe.freeze` API.
 
 Version 0.12.0.2:
 - Support `scipy` versions newer than 1.9.2.
@@ -118,8 +119,7 @@ Using a `setup.py` script with `py2exe` is deprecated. Please adapt your
 scripts to use the new `freeze` API. This interface will be removed in the
 next major release.
 
-The `build_exe` CLI is not supported and will be removed in the next major
-release.
+The `build_exe` (or `-m py2exe`) CLI was removed in version 0.13.0.0.
 
 Known issues and notes
 ------------

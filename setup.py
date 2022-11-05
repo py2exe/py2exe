@@ -184,10 +184,6 @@ if __name__ == "__main__":
 
           distclass = Dist,
           cmdclass = cmdclass,
-##          scripts = ["build_exe.py"],
-          entry_points = {
-              'console_scripts': ['build_exe = py2exe.build_exe:main'],
-              },
           interpreters = interpreters,
           py_modules=['zipextimporter'],
           packages=['py2exe', 'py2exe.vendor'],
