@@ -619,6 +619,27 @@ def hook_pkg_resources(finder, module):
                 finder.import_package(f"pkg_resources._vendor.jaraco.text")
         finder.recursion_depth_pkg_resources = depth
 
+def hook_PySide6(finder, module):
+    import ast
+    tree = ast.parse(module.__source__)
+    node_to_be_patched_1 = '_find_all_qt_modules'
+    node_to_be_patched_2 = '_setupQtDirectories'
+
+    class ChangeDef(ast.NodeTransformer):
+        def visit_FunctionDef(self, node: ast.FunctionDef):
+            if node.name == node_to_be_patched_1:
+                node.body = ast.parse('return __all__').body
+            if node.name == node_to_be_patched_2:
+                node.body = ast.parse('pass').body
+            return node
+
+    t = ChangeDef()
+    patched_tree = t.visit(tree)
+
+    module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
+
+    finder.import_hook("shiboken6")
+
 def hook_Cryptodome(finder, module):
     """pycryptodomex distributes the same package as pycryptodome under a different package name"""
     hook_Crypto(finder, module)
