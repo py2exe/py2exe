@@ -38,7 +38,7 @@ Options (`options`):
  - <b>`excludes`</b> (list):  list of modules to exclude from the bundle. 
  - <b>`packages`</b> (list):  list of packages to include in the bundle. Note: this option  is NOT recursive. Only the modules in the first level of the package will  be included. 
  - <b>`dll_excludes`</b> (list):  list of DLLs to exclude from the bundle. 
- - <b>`dest_dir`</b> (str):  target path of the bundle, default `.\dist`. 
+ - <b>`dist_dir`</b> (str):  target path of the bundle, default `.\dist`. 
  - <b>`compressed`</b> (int):  if `1`, create a compressed destination library archive. 
  - <b>`unbuffered`</b> (int):  if `1`, use unbuffered binary stdout and stderr. 
  - <b>`optimize`</b> (int):  optimization level of the Python files embedded in the bundle 

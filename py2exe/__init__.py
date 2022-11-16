@@ -67,7 +67,7 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             is NOT recursive. Only the modules in the first level of the package will
             be included.
         dll_excludes (list): list of DLLs to exclude from the bundle.
-        dest_dir (str): target path of the bundle, default `.\dist`.
+        dist_dir (str): target path of the bundle, default `.\dist`.
         compressed (int): if `1`, create a compressed destination library archive.
         unbuffered (int): if `1`, use unbuffered binary stdout and stderr.
         optimize (int): optimization level of the Python files embedded in the bundle
