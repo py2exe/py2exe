@@ -305,6 +305,18 @@ PyObject *PyUnicode_FromString(const char *u)
   return proc(u);
 }
 
+#ifdef Py_REF_DEBUG
+
+Py_ssize_t _Py_RefTotal;
+
+void _Py_NegativeRefcount(const char *filename, int lineno, PyObject *op)
+{
+  FUNC(void, _Py_NegativeRefcount, (const char *, int, PyObject *));
+  proc(filename, lineno, op);
+}
+
+#endif
+
 #undef _Py_Dealloc
 
 void _Py_Dealloc(PyObject *op)
