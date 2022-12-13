@@ -26,7 +26,11 @@ from .icons import BuildIcons
 logger = logging.getLogger("runtime")
 
 from importlib.machinery import EXTENSION_SUFFIXES
-if '.pyd' in EXTENSION_SUFFIXES:
+if '_d.pyd' in EXTENSION_SUFFIXES:
+    SUFFIX = '_d'
+    EXTENSION_TARGET_SUFFIX = '_d.pyd'
+elif '.pyd' in EXTENSION_SUFFIXES:
+    SUFFIX = ''
     EXTENSION_TARGET_SUFFIX = '.pyd'
 else:
     raise AssertionError
@@ -262,7 +266,8 @@ class Runtime(object):
             if not os.path.exists(os.path.dirname(libpath)):
                 os.mkdir(os.path.dirname(libpath))
 
-            dll_bytes = pkgutil.get_data("py2exe", "resources.dll")
+            filename = "resources%s.dll" % (SUFFIX)
+            dll_bytes = pkgutil.get_data("py2exe", filename)
             with open(libpath, "wb") as ofi:
                   ofi.write(dll_bytes)
             if options.verbose:
@@ -302,11 +307,11 @@ class Runtime(object):
     def get_runstub_bytes(self, target):
         from sysconfig import get_platform
         if target.exe_type in ("console_exe", "service"):
-            run_stub = 'run-py%s.%s-%s.exe' % (sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run%s-py%s.%s-%s.exe' % (SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
         elif target.exe_type == "windows_exe":
-            run_stub = 'run_w-py%s.%s-%s.exe' % (sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_w%s-py%s.%s-%s.exe' % (SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
         elif target.exe_type == "ctypes_comdll":
-            run_stub = 'run_ctypes_dll-py%s.%s-%s.dll' % (sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_ctypes_dll%s-py%s.%s-%s.dll' % (SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
         else:
             raise ValueError("Unknown exe_type %r" % target.exe_type)
         ## if self.options.verbose:
