@@ -276,6 +276,16 @@ def hook_pywintypes(finder, module):
     import pywintypes
     finder.add_dll(pywintypes.__file__)
 
+def hook_charset_normalizer(finder, module):
+    """charset_normalizer.md imports charset_normalizer.md__mypyc.
+    """
+    import charset_normalizer
+    if charset_normalizer.VERSION[0] == "3":
+        finder.add_module(
+            "charset_normalizer.md__mypyc",
+            charset_normalizer.md__mypyc.__file__
+        )
+
 def hook_win32com(finder, module):
     """The win32com package extends it's __path__ at runtime.
     """
