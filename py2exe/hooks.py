@@ -675,14 +675,13 @@ def hook_pandas(finder, module):
 def hook_pkg_resources(finder, module):
     depth = getattr(finder,"recursion_depth_pkg_resources", 0)
     if depth==0:
+        import pkg_resources.extern
         finder.recursion_depth_pkg_resources = depth + 1
         finder.import_package("pkg_resources._vendor")
-        finder.import_package("pkg_resources._vendor.importlib_resources")
-        finder.import_package("pkg_resources._vendor.jaraco")
-        finder.import_package("pkg_resources._vendor.jaraco.text")
-        finder.import_package("pkg_resources._vendor.more_itertools")
-        finder.import_package("pkg_resources._vendor.packaging")
-        finder.import_package("pkg_resources._vendor.pyparsing")
+        for name in pkg_resources.extern.names:
+            finder.import_package(f"pkg_resources._vendor.{name}")
+            if name == "jaraco":
+                finder.import_package(f"pkg_resources._vendor.jaraco.text")
         finder.recursion_depth_pkg_resources = depth
 
 def hook_Cryptodome(finder, module):
