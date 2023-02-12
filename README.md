@@ -109,7 +109,7 @@ Installation
 
 Usage
 ---------------
-Use the `py2exe.freeze` function as documented [here](docs/py2exe.freeze.md).
+Use the `py2exe.freeze` function as documented [here](https://github.com/py2exe/py2exe/blob/master/docs/py2exe.freeze.md).
 
 
 Using a `setup.py` script or the builder
