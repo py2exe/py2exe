@@ -390,10 +390,6 @@ def hook_matplotlib(finder, module):
     mpl_data_path = matplotlib.get_data_path()
     finder.add_datadirectory("mpl-data", mpl_data_path, recursive=True)
 
-    finder.excludes.append("wx")
-    # XXX matplotlib requires tkinter which modulefinder does not
-    # detect because of the six bug.
-
     # matplotlib requires a patch in its __init__ to correctly locate the `mpi-data` folder from where we put it
     # see issue #71 fof further details
     tree = ast.parse(module.__source__)
