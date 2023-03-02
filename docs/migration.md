@@ -12,6 +12,7 @@ This document includes suggestion on how to migrate your existing freezing code 
 | Run a freeze script         | `python setup.py py2exe`                           | `python freeze.py`                       |
 | Import statements           | `from distutils.core import setup`<br/>`import py2exe` | `from py2exe import freeze`          |
 | Freeze function             | `setup(console=...)`                               | `freeze(console=...)`                    |
+| Service                     | `setup(service=...)`                               | `freeze(console=[myservice])`            |
 | Pass options                | `options = {"py2exe": {"packages": ...}}`          | `options = {"packages": ...}`            |
 | Use `includes` and similar  | `"includes": "os, time, requests"`                 | `"includes": ["os", "time", "requests"]` |
 | Pass version info           | N/A                                                | Use the `version_info` argument          |
@@ -30,6 +31,7 @@ The `freeze` API has to be imported directly as in `from py2exe import freeze`. 
 A few details on how to go from a `setup` call to `freeze`:
 
 - The `console`, `windows`, `data_files`, and `zipfile` arguments can be used with `freeze` as in `setup`.
+- The `service` option has been removed. Instead use `freeze(console=[myservice])` and in your Target use `Target(script="myservice.py")`
 - The `option` dictionary can also be re-used as it is, but we encourage to drop the `py2exe` extra key as support for it will be removed in the future.
 - The `includes`, `excludes`, `packages`, and `dll_excludes` options should now be lists instead of comma-separated strings. The current syntax is still supported, but will be removed in the future.
 - The `version_info` dictionary supports writing some information in the Properties of the frozen executable. This feature, despite advertised, was not working with older versions of `py2exe`. If you intend to use this feature, please convert your freezing script to the new API.
