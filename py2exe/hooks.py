@@ -377,6 +377,10 @@ def hook_infi(finder, module):
 def hook_matplotlib(finder, module):
     """matplotlib requires data files in a 'mpl-data' subdirectory in
     the same directory as the executable.
+
+    Also, matplotlib >= 3.7.0 moved .dlls to a matplotlib.libs directory,
+    requiring that we override the '_delvewheel_init_patch_1_3_3' function
+    so that those .dlls can be found in the same directory as the executable.
     """
     import ast
     from pkg_resources._vendor.packaging import version as pkgversion
@@ -397,20 +401,80 @@ def hook_matplotlib(finder, module):
     # matplotlib <=3.3.4 requires '_get_data_path' to be patched
     # matplotlib >= 3.4.0 requires 'get_data_path' to be patched
     mpl_version = pkgversion.parse(matplotlib.__version__)
-    node_to_be_patched = 'get_data_path' if mpl_version >= pkgversion.parse('3.4.0') else '_get_data_path'
+    get_data_node_to_be_patched = 'get_data_path' if mpl_version >= pkgversion.parse('3.4.0') else '_get_data_path'
 
-    class ChangeDef(ast.NodeTransformer):
-        def visit_FunctionDef(self, node: ast.FunctionDef):
-            if node.name == node_to_be_patched:
-                node.body = ast.parse('return os.path.join(os.path.dirname(sys.executable), "mpl-data")').body
-            return node
+    # matplotlib >= 3.7.0 requires patching '_delvewheel_init_patch_1_3_3'
+    if mpl_version >= pkgversion.parse('3.7.0'):
+
+        tree = ast.parse(module.__source__)
+        devel_node_to_be_patched = '_delvewheel_init_patch_1_3_3'
+
+        mpl_libs_path = os.path.abspath(os.path.join(os.path.dirname(matplotlib.__file__), os.pardir, 'matplotlib.libs'))
+        if os.path.isdir(mpl_libs_path):
+            from os import listdir
+            dlls = [os.path.join(mpl_libs_path, fln)
+                    for fln in listdir(mpl_libs_path)
+                    if fln.endswith('.dll')]
+            for dll in dlls:
+                finder.add_dll(dll)
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if devel_node_to_be_patched in node.name:
+                    node.body = ast.parse('pass').body
+                elif get_data_node_to_be_patched in node.name:
+                    node.body = ast.parse('return os.path.join(os.path.dirname(sys.executable), "mpl-data")').body
+                return node
+
+    else:
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if get_data_node_to_be_patched in node.name:
+                    node.body = ast.parse('return os.path.join(os.path.dirname(sys.executable), "mpl-data")').body
+                return node
+
+        finder.import_hook("mpl_toolkits")
+
 
     t = ChangeDef()
     patched_tree = t.visit(tree)
 
     module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
-    finder.import_hook("mpl_toolkits")
+
+def hook_mpl_toolkits(finder, module):
+    """matplotlib  >= 3.7.0 moved .dlls to a matplotlib.libs directory,
+    requiring that we override the '_delvewheel_init_patch_1_3_3' function
+    in mpl_tollkits so that those .dlls can be found in the same directory
+    as the executable.
+    """
+    import ast
+    from pkg_resources._vendor.packaging import version as pkgversion
+
+    import matplotlib
+    mpl_version = pkgversion.parse(matplotlib.__version__)
+
+    if mpl_version >= pkgversion.parse('3.7.0'):
+
+        import mpl_toolkits
+
+        tree = ast.parse(module.__source__)
+        devel_node_to_be_patched = '_delvewheel_init_patch_1_3_3'
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if devel_node_to_be_patched in node.name:
+                    node.body = ast.parse('pass').body
+                return node
+
+        t = ChangeDef()
+        patched_tree = t.visit(tree)
+
+        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
+
+    else:
+        finder.import_hook("mpl_toolkits")
 
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
@@ -805,3 +869,41 @@ def hook_wx(finder, module):
     when importing the full wx package
     """
     finder.excludes.append("wx.lib.pubsub")
+
+
+def hook_zmq(finder, module):
+    """pyzmq  >= 3.7.0 moved .dlls to a matplotlib.libs directory,
+    requiring that we override the '_delvewheel_init_patch_1_3_3' function
+    in mpl_tollkits so that those .dlls can be found in the same directory
+    as the executable.
+    """
+    import ast
+    from pkg_resources._vendor.packaging import version as pkgversion
+
+    import zmq
+    zmq_version = pkgversion.parse(zmq.__version__)
+
+    if zmq_version >= pkgversion.parse('23.0.0'):
+
+        tree = ast.parse(module.__source__)
+        devel_node_to_be_patched = '_delvewheel_init_patch_0_0_22'
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if devel_node_to_be_patched in node.name:
+                    node.body = ast.parse('pass').body
+                return node
+
+        t = ChangeDef()
+        patched_tree = t.visit(tree)
+
+        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
+
+        zmp_libs_path = os.path.abspath(os.path.join(os.path.dirname(zmq.__file__), os.pardir, 'pyzmq.libs'))
+        if os.path.isdir(zmp_libs_path):
+            from os import listdir
+            dlls = [os.path.join(zmp_libs_path, fln)
+                    for fln in listdir(zmp_libs_path)
+                    if fln.endswith('.dll')]
+            for dll in dlls:
+                finder.add_dll(dll)
