@@ -53,7 +53,7 @@ import _memimporter
 __all__ = ["ZipExtensionImporter"]
 
 
-# Makes order as same as non-zip
+# Makes order as same as import from Non-Zip.
 _searchorder = (
     *[(f"\\__init__{suffix}", True, True) for suffix in EXTENSION_SUFFIXES],
     ("\\__init__.pyc", False, True),
@@ -62,7 +62,7 @@ _searchorder = (
     (".pyc", False, False),
     (".py", False, False),
 )
-# Handle pywin32 DLLs
+# Handle pywin32 DLLs.
 _names_pywin32 = frozenset(["pywintypes", "pythoncom"])
 _searchorder_pywin32 = (
     *_searchorder[:-2],
@@ -78,7 +78,7 @@ class _ModuleInfo:
         self.path, self.is_ext, self.is_package = args
 
 
-# Return some information about a module
+# Return some information about a module.
 def _get_module_info(self, fullname, *, _raise=False, _tempcache=[None, None]):
     _fullname, mi = _tempcache
     if _fullname == fullname:
@@ -102,11 +102,18 @@ def _get_module_info(self, fullname, *, _raise=False, _tempcache=[None, None]):
         raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
 
 
-# Return the path if it represent a directory
+# Return the path if it represent a directory.
 def _get_dir_path(self, fullname):
     path = self.prefix + fullname.rpartition(".")[2]
     if f"{path}\\" in self._files:
         return f"{self.archive}\\{path}"
+
+
+# Does this specification represent an extension module?
+def _is_ext(self, spec):
+    if isinstance(spec.origin, str):
+        return not spec.origin.endswith((".py", ".pyc"))
+    return _get_module_info(self, spec.name, _raise=True).is_ext
 
 
 class ZipExtensionImporter(zipimporter):
@@ -121,9 +128,7 @@ class ZipExtensionImporter(zipimporter):
                 if dirpath:
                     return None, [dirpath]
                 return None, []
-            if mi.is_ext:
-                return self, []
-            return super().find_loader(fullname, path)
+            return self, []
 
     if hasattr(zipimporter, "find_spec"):
         def find_spec(self, fullname, target=None):
@@ -151,20 +156,19 @@ class ZipExtensionImporter(zipimporter):
                 return super().load_module(fullname)
 
             # Will never enter here, raise error for developers
-            raise NotImplementedError("load_module() is not implemented for "
-                                      "extension, use create_module() instead.")
+            raise NotImplementedError(
+                    "load_module() is not implemented for extension modules, "
+                    "use create_module() & exec_module() instead.")
 
     def create_module(self, spec):
         fullname = spec.name
-        mi = _get_module_info(self, fullname, _raise=True)
-        if not mi.is_ext:
+        if not _is_ext(self, spec):
             if hasattr(zipimporter, "create_module"):
                 return super().create_module(spec)
             else:
                 return super().load_module(fullname)
 
         spec._set_fileattr = True  # has_location, use for reload
-        origin = spec.origin
 
         # PEP 489 multi-phase initialization / Export Hook Name
         name = fullname.rpartition(".")[2]
@@ -176,7 +180,7 @@ class ZipExtensionImporter(zipimporter):
         else:
             initname = "PyInit_" + name
 
-        mod = _memimporter.import_module(fullname, origin, initname,
+        mod = _memimporter.import_module(fullname, spec.origin, initname,
                                          self.get_data, spec)
         if self.verbose or sys.flags.verbose:
             print(f"import {fullname} # loaded from zipfile {self.archive}",
@@ -185,8 +189,7 @@ class ZipExtensionImporter(zipimporter):
 
     def exec_module(self, module):
         if hasattr(zipimporter, "exec_module"):
-            mi = _get_module_info(self, module.__name__, _raise=True)
-            if mi.is_ext:
+            if _is_ext(self, module.__spec__):
                 # All has been done in create_module(),
                 # also skip importlib.reload()
                 pass
@@ -212,7 +215,7 @@ class ZipExtensionImporter(zipimporter):
         return mi.is_package
 
     def __repr__(self):
-        return super().__repr__().replace("zipimporter", self.__class__.__name__)
+        return f'<{self.__class__.__name__} object "{self.archive}\\{self.prefix}">'
 
 
 def install():
