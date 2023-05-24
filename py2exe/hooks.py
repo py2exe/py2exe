@@ -407,13 +407,12 @@ def hook_matplotlib(finder, module):
     if mpl_version >= pkgversion.parse('3.7.0'):
 
         tree = ast.parse(module.__source__)
-        devel_node_to_be_patched = '_delvewheel_init_patch_1_3_3'
+        devel_node_to_be_patched = '_delvewheel_init_patch'
 
         mpl_libs_path = os.path.abspath(os.path.join(os.path.dirname(matplotlib.__file__), os.pardir, 'matplotlib.libs'))
         if os.path.isdir(mpl_libs_path):
-            from os import listdir
             dlls = [os.path.join(mpl_libs_path, fln)
-                    for fln in listdir(mpl_libs_path)
+                    for fln in os.listdir(mpl_libs_path)
                     if fln.endswith('.dll')]
             for dll in dlls:
                 finder.add_dll(dll)
@@ -451,16 +450,16 @@ def hook_mpl_toolkits(finder, module):
     """
     import ast
     from pkg_resources._vendor.packaging import version as pkgversion
-
     import matplotlib
+
     mpl_version = pkgversion.parse(matplotlib.__version__)
 
     if mpl_version >= pkgversion.parse('3.7.0'):
 
-        import mpl_toolkits
+        #import mpl_toolkits
 
         tree = ast.parse(module.__source__)
-        devel_node_to_be_patched = '_delvewheel_init_patch_1_3_3'
+        devel_node_to_be_patched = '_delvewheel_init_patch'
 
         class ChangeDef(ast.NodeTransformer):
             def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -473,8 +472,6 @@ def hook_mpl_toolkits(finder, module):
 
         module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
-    else:
-        finder.import_hook("mpl_toolkits")
 
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
@@ -872,21 +869,21 @@ def hook_wx(finder, module):
 
 
 def hook_zmq(finder, module):
-    """pyzmq  >= 3.7.0 moved .dlls to a matplotlib.libs directory,
-    requiring that we override the '_delvewheel_init_patch_1_3_3' function
-    in mpl_tollkits so that those .dlls can be found in the same directory
+    """pyzmq  >= 23.0.0 moved .dlls to a pzmq.libs directory,
+    requiring that we override the '_delvewheel_init_patchh_0_0_22' function
+    in so that those .dlls can be found in the same directory
     as the executable.
     """
     import ast
-    from pkg_resources._vendor.packaging import version as pkgversion
-
     import zmq
+    from pkg_resources._vendor.packaging import version as pkgversion
     zmq_version = pkgversion.parse(zmq.__version__)
 
     if zmq_version >= pkgversion.parse('23.0.0'):
 
+
         tree = ast.parse(module.__source__)
-        devel_node_to_be_patched = '_delvewheel_init_patch_0_0_22'
+        devel_node_to_be_patched = '_delvewheel_init_patch'
 
         class ChangeDef(ast.NodeTransformer):
             def visit_FunctionDef(self, node: ast.FunctionDef):
@@ -907,3 +904,56 @@ def hook_zmq(finder, module):
                     if fln.endswith('.dll')]
             for dll in dlls:
                 finder.add_dll(dll)
+
+
+def hook_babel_localedata(finder, module):
+    """ babel >= 2.8.0 has a collection of .dat files in a babel.locale-data
+    directory. If this is included in the .zip file babel won't be able to find them.
+    This hook moves locale-data to the base directory and then sets the babel.localedata._dirname
+    attribute to find the directory at run time.
+    """
+    import ast
+    import babel
+    from pkg_resources._vendor.packaging import version as pkgversion
+
+    babel_version = pkgversion.parse(babel.__version__)
+    # babel >= 2.8.0 requires patching the _dirname variable
+    if babel_version >= pkgversion.parse('2.8.0'):
+
+        #from babel import localedata
+
+        locale_data_path = os.path.join(os.path.dirname(babel.__file__), 'locale-data')
+        finder.add_datadirectory("locale-data", locale_data_path, recursive=True)
+
+        tree = ast.parse(module.__source__)
+        node_to_be_patched = '_dirname'
+
+        class ReplaceDirnameVisitor(ast.NodeTransformer):
+
+            def visit_Assign(self, node: ast.Assign):
+                for t in  node.targets:
+                    try:
+                        if node_to_be_patched in t.id:
+                            newNode =  ast.parse("_dirname = os.path.join(os.path.dirname(sys.executable), 'locale-data')").body[0]
+                            for on, nn in zip(ast.walk(node), ast.walk(newNode)):
+                                try:
+                                    nn.lineno = on.lineno
+                                    nn.end_lineno = on.end_lineno
+                                except AttributeError:
+                                    pass
+                            return newNode
+
+                    except AttributeError:
+                        pass
+
+                return node
+
+        # add sys import
+        importNode =  ast.parse('import sys').body[0]
+        tree.body.insert(0, importNode)
+        ast.fix_missing_locations(tree)
+
+        t = ReplaceDirnameVisitor()
+        patched_tree = t.visit(tree)
+
+        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
