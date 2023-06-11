@@ -80,8 +80,8 @@ class _ModuleInfo:
 
 # Return some information about a module.
 def _get_module_info(self, fullname, *, _raise=False, _tempcache=[None, None]):
-    _fullname, mi = _tempcache
-    if _fullname == fullname:
+    key, mi = _tempcache
+    if key == (fullname, self.archive):
         return mi
     name = fullname.rpartition(".")[2]
     if name in _names_pywin32:
@@ -92,11 +92,11 @@ def _get_module_info(self, fullname, *, _raise=False, _tempcache=[None, None]):
     for suffix, is_ext, is_package in searchorder:
         path = _path + suffix
         if path in self._files:
-            if is_ext and max(self.verbose, sys.flags.verbose) >= 2:
-                print(f"# zipextimporter: found {path} in zipfile {self.archive}",
-                      file=sys.stderr)
+            if is_ext:
+                _verbose_msg("# zipextimporter: "
+                            f"found {path} in zipfile {self.archive}", 2)
             mi = _ModuleInfo(f"{self.archive}\\{path}", is_ext, is_package)
-            _tempcache[:] = fullname, mi
+            _tempcache[:] = (fullname, self.archive), mi
             return mi
     if _raise:
         raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
@@ -117,7 +117,6 @@ def _is_ext(self, spec):
 
 
 class ZipExtensionImporter(zipimporter):
-    verbose = sys.flags.verbose
     __doc__ = zipimporter.__doc__.replace("zipimporter", "ZipExtensionImporter")
 
     if hasattr(zipimporter, "find_loader"):
@@ -182,9 +181,7 @@ class ZipExtensionImporter(zipimporter):
 
         mod = _memimporter.import_module(fullname, spec.origin, initname,
                                          self.get_data, spec)
-        if self.verbose or sys.flags.verbose:
-            print(f"import {fullname} # loaded from zipfile {self.archive}",
-                  file=sys.stderr)
+        _verbose_msg(f"import {fullname} # loaded from zipfile {self.archive}")
         return mod
 
     def exec_module(self, module):
@@ -239,3 +236,15 @@ def install():
     ## # Not sure if this is needed...
     ## import importlib
     ## importlib.invalidate_caches()
+
+
+verbose = sys.flags.verbose
+
+def _verbose_msg(msg, verbosity=1):
+    if max(verbose, sys.flags.verbose) >= verbosity:
+        print(msg, file=sys.stderr)
+
+def set_verbose(i):
+    "Set verbose, the argument as same as built-in function int's."
+    global verbose
+    verbose = int(i)
