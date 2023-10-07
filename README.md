@@ -13,6 +13,12 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.13.0.1:
+- improved the hook for `pkg_resources` to detect its vendored content automatically
+- the `matplotlib` hook now does not exclude `wx` automatically
+- adapted the hook for `matplotlib` to support their use of `delvewheel`
+- adapted the hooks for `numpy` and `pandas` to support the new `.libs` location
+
 Version 0.13.0.0:
 - Add support for Python 3.11
 - Drop support for Python 3.7
