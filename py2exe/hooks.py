@@ -472,7 +472,6 @@ def hook_mpl_toolkits(finder, module):
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
     exclude them."""
-    import ast
     from pkg_resources._vendor.packaging import version as pkgversion
 
     # I'm not sure if we can safely exclude these:
@@ -501,22 +500,6 @@ def hook_numpy(finder, module):
                 if fln.endswith('.dll')]
         for dll in dlls:
             finder.add_dll(dll)
-
-    # patch for delvewheel
-    if numpy_version >= pkgversion.parse('1.25.0'):
-        tree = ast.parse(module.__source__)
-        devel_node_to_be_patched = '_delvewheel_init_patch'
-
-        class ChangeDef(ast.NodeTransformer):
-            def visit_FunctionDef(self, node: ast.FunctionDef):
-                if devel_node_to_be_patched in node.name:
-                    node.body = ast.parse('pass').body
-                return node
-
-        t = ChangeDef()
-        patched_tree = t.visit(tree)
-
-        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
 
 def hook_nose(finder, module):
@@ -689,6 +672,8 @@ def hook_numpy_core(finder, module):
         finder.add_dll(dll)
 
 def hook_pandas(finder, module):
+    from pkg_resources._vendor.packaging import version as pkgversion
+
     #pd_lib_path = os.path.join(os.path.dirname(module.__loader__.path), "_libs")
     #finder.add_datadirectory("mpl-data", mpl_data_path, recursive=True)
     depth = getattr(finder,"recursion_depth_pandas", 0)
@@ -696,6 +681,22 @@ def hook_pandas(finder, module):
         finder.recursion_depth_pandas = depth + 1
         finder.import_hook("pandas._libs.tslibs.base")
         finder.recursion_depth_pandas = depth
+
+    from pandas import __version__ as pandas_version_str
+    pandas_version = pkgversion.parse(pandas_version_str)
+
+    # add pandas external DLLs to the bundle
+
+    if pandas_version >= pkgversion.parse('2.1.0'):
+        pandas_libs_path = os.path.dirname(module.__loader__.path) + '.libs'
+
+        if os.path.isdir(pandas_libs_path):
+            from os import listdir
+            dlls = [os.path.join(pandas_libs_path, fln)
+                    for fln in listdir(pandas_libs_path)
+                    if fln.endswith('.dll')]
+            for dll in dlls:
+                finder.add_dll(dll)
 
 def hook_pkg_resources(finder, module):
     depth = getattr(finder,"recursion_depth_pkg_resources", 0)
