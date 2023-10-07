@@ -1,6 +1,12 @@
 $testfailed = 0
 
-Get-Content .\enabled_tests.txt | ForEach-Object {
+if ($args[0]) {
+    $teststoexecute = ,$args[0]
+} else {
+    $teststoexecute = Get-Content .\enabled_tests.txt
+}
+
+$teststoexecute | ForEach-Object {
     $testname = $_
 
     Write-Host "Running $testname..."
@@ -17,10 +23,18 @@ Get-Content .\enabled_tests.txt | ForEach-Object {
         $testexe = $testname
     }
 
-    & ".\$testexe.exe"
-    $testfailed = $LastExitcode
-    Write-Host "$testname exited with $testfailed"
-
+    ForEach ($executablename in Get-ChildItem -path "." -name -file | Where-Object {$_ -match "^$testexe(_[0-9])?\.exe$"}) {
+        & ".\$executablename"
+        $testfailed = $LastExitcode
+        if ($executablename.TrimEnd(".exe") -eq $testname) {
+            Write-Host "$testname exited with $testfailed"
+        } else {
+            Write-Host "Executable $executablename  for test $testname exited with $testfailed"
+        }
+        if ($testfailed -ne 0 ) {
+            break
+        }
+    }
     cd ..
     Remove-Item -LiteralPath "dist" -Force -Recurse
     if (Test-Path -path .\requirements.txt -PathType Leaf) {
