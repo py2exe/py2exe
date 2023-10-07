@@ -472,6 +472,9 @@ def hook_mpl_toolkits(finder, module):
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
     exclude them."""
+    import ast
+    from pkg_resources._vendor.packaging import version as pkgversion
+
     # I'm not sure if we can safely exclude these:
     finder.ignore("Numeric")
     finder.ignore("numarray")
@@ -480,8 +483,17 @@ def hook_numpy(finder, module):
     finder.ignore("Pyrex")
     finder.ignore("nose")
     finder.ignore("scipy")
-    #add numpy external DLLs to the bundle
-    numpy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
+
+    from numpy import __version__ as numpy_version_str
+    numpy_version = pkgversion.parse(numpy_version_str)
+
+    # add numpy external DLLs to the bundle
+
+    if numpy_version >= pkgversion.parse('1.25.0'):
+        numpy_libs_path = os.path.dirname(module.__loader__.path) + '.libs'
+    else:
+        numpy_libs_path = os.path.join(os.path.dirname(module.__loader__.path), '.libs')
+
     if os.path.isdir(numpy_libs_path):
         from os import listdir
         dlls = [os.path.join(numpy_libs_path, fln)
@@ -489,6 +501,23 @@ def hook_numpy(finder, module):
                 if fln.endswith('.dll')]
         for dll in dlls:
             finder.add_dll(dll)
+
+    # patch for delvewheel
+    if numpy_version >= pkgversion.parse('1.25.0'):
+        tree = ast.parse(module.__source__)
+        devel_node_to_be_patched = '_delvewheel_init_patch'
+
+        class ChangeDef(ast.NodeTransformer):
+            def visit_FunctionDef(self, node: ast.FunctionDef):
+                if devel_node_to_be_patched in node.name:
+                    node.body = ast.parse('pass').body
+                return node
+
+        t = ChangeDef()
+        patched_tree = t.visit(tree)
+
+        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
+
 
 def hook_nose(finder, module):
     finder.ignore("IronPython")
