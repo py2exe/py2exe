@@ -155,7 +155,12 @@ if __name__ == "__main__":
                 'Tracker': 'https://github.com/py2exe/py2exe/issues',
                 'Documentation': 'https://github.com/py2exe/py2exe/blob/master/docs/py2exe.freeze.md',
           },
-          license="MIT/X11",
+          license="MIT/X11 OR (MPL 2.0)",
+          license_files=[
+              "LICENSE.txt",
+              "MIT-License.txt",
+              "MPL2-License.txt",
+              ],
           setup_requires=["wheel", "cachetools", "pefile"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
@@ -186,5 +191,4 @@ if __name__ == "__main__":
           interpreters = interpreters,
           py_modules=['zipextimporter'],
           packages=['py2exe', 'py2exe.vendor'],
-          package_data={'py2exe':['MIT-License.txt', 'MPL2-License.txt']},
           )
