@@ -10,7 +10,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.settimeout(10)
 
 # WRAP SOCKET
-wrappedSocket = ssl.wrap_socket(sock=sock)
+wrappedSocket = ssl.SSLContext(protocol=ssl.PROTOCOL_TLS).wrap_socket(sock=sock)
 
 # CONNECT AND PRINT REPLY
 wrappedSocket.connect((HOST, PORT))
