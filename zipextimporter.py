@@ -167,7 +167,7 @@ class ZipExtensionImporter(zipimporter):
             else:
                 return super().load_module(fullname)
 
-        spec._set_fileattr = True  # has_location, use for reload
+        spec.has_location = True  # use for reload
 
         # PEP 489 multi-phase initialization / Export Hook Name
         name = fullname.rpartition(".")[2]
