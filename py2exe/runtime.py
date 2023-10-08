@@ -367,9 +367,9 @@ class Runtime(object):
                 res_writer.add(type=res_type, name=res_name, value=res_data)
 
             # Build and add a versioninfo resource - freeze interface only
-            if hasattr(self.options, "version_info") and self.options.version_info:
-                self.options.version_info.original_filename = os.path.basename(exe_path)
-                version = Version(self.options.version_info)
+            if hasattr(target, "version_info") and target.version_info:
+                target.version_info.original_filename = os.path.basename(exe_path)
+                version = Version(target.version_info)
 
                 from ._wapi import RT_VERSION
                 res_writer.add(type=RT_VERSION,

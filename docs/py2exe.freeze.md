@@ -32,6 +32,7 @@ Target dictionaries (to be used for `console` or `windows`):
  - <b>`bitmap_resources`</b> (list):  list of 2-tuples `(id, pathname)`.  Bitmap files added in the bundle. 
  - <b>`icon_resources`</b> (list):  list of 2-tuples `(id, pathname)`  Icon used for the executable. 
  - <b>`other_resources`</b> (list):  list of 3-tuples `(resource_type, id, datastring)`  Other files added in the bundle. 
+ - <b>`version_info`</b> (dict):  optionally specifies version information for a given binary.  Supported values are listed below. 
 
 Options (`options`): 
  - <b>`includes`</b> (list):  list of modules to include in the bundle. 
@@ -52,7 +53,7 @@ Bundle files levels (`bundle_files`): The py2exe runtime *can* use extension mod
  - <b>`bundle_files == 1`</b>:  Extension modules and the Python DLL are put into  the zipfile or the EXE/DLL files, and everything is loaded without unpacking to  the file system.  This does not work for some DLLs, so use with  caution. 
  - <b>`bundle_files == 0`</b>:  Extension modules, the Python DLL, and other needed DLLs are put  into the zipfile or the EXE/DLL files, and everything is loaded  without unpacking to the file system.  This does not work for  some DLLs, so use with caution. 
 
-Version information (`version_info`): Information passed in this dictionary are attached to the frozen executable and displayed in its Properties -> Details view. Supported keys: 
+Version information (`version_info`): Information passed in this dictionary are attached to all frozen executables and displayed in its Properties -> Details view. If you need to specify different version information for each of the frozen binaries you should add `version_info` dictionary to each of the `windows` and `console targets. Supported keys: 
  - <b>`version`</b> (str):  version number 
  - <b>`description`</b> (str):  - 
  - <b>`comments`</b> (str):  - 
