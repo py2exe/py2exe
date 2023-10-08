@@ -121,9 +121,9 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             some DLLs, so use with caution.
 
     Version information (`version_info`): Information passed in this dictionary are attached
-        to all frozen executables and displayed in its Properties -> Details view.
+        to all frozen executables and displayed in their Properties -> Details view.
         If you need to specify different version information for each of the frozen binaries
-        you should add `version_info` dictionary to each of the `windows` and `console targets.
+        you should add `version_info` dictionary to each of the `windows` and `console` targets.
         Supported keys:
         version (str): version number
         description (str): -
