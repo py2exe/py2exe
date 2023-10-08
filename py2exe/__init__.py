@@ -28,6 +28,25 @@ if not is_64bits:
 
 patch_distutils()
 
+
+def _fixup_version_info(version_info):
+    if version_info:
+        return Namespace(
+                            version = version_info.get("version", ""),
+                            file_description = version_info.get("description", None),
+                            comments = version_info.get("comments", None),
+                            company_name = version_info.get("company_name", None),
+                            legal_copyright = version_info.get("copyright", None),
+                            legal_trademarks = version_info.get("trademarks", None),
+                            product_name = version_info.get("product_name", None),
+                            product_version = version_info.get("product_version", version_info.get("version", "")),
+                            internal_name = version_info.get("internal_name", None),
+                            private_build = version_info.get("private_build", None),
+                            special_build = version_info.get("special_build", None),
+                        )
+    return None
+
+
 def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", options={}, version_info={}):
     """Create a frozen executable from the passed Python script(s).
 
@@ -59,6 +78,8 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             Icon used for the executable.
         other_resources (list): list of 3-tuples `(resource_type, id, datastring)`
             Other files added in the bundle.
+        version_info (dict): optionally specifies version information for a given binary.
+            Supported values are listed below.
 
     Options (`options`):
         includes (list): list of modules to include in the bundle.
@@ -100,7 +121,9 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             some DLLs, so use with caution.
 
     Version information (`version_info`): Information passed in this dictionary are attached
-        to the frozen executable and displayed in its Properties -> Details view.
+        to all frozen executables and displayed in its Properties -> Details view.
+        If you need to specify different version information for each of the frozen binaries
+        you should add `version_info` dictionary to each of the `windows` and `console targets.
         Supported keys:
         version (str): version number
         description (str): -
@@ -130,10 +153,12 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
     console_targets = runtime.fixup_targets(console, "script")
     for target in console_targets:
         target.exe_type = "console_exe"
+        target.version_info = _fixup_version_info(getattr(target, "version_info", None) or version_info)
 
     windows_targets = runtime.fixup_targets(windows, "script")
     for target in windows_targets:
         target.exe_type = "windows_exe"
+        target.version_info = _fixup_version_info(getattr(target, "version_info", None) or version_info)
 
     # support the old dictionary structure with a global 'py2exe' key
     if 'py2exe' in options:
@@ -162,26 +187,7 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
 
                         data_files = data_files,
 
-                        version_info = {},
-
                     )
-
-    if version_info:
-        runtime_version_info = Namespace(
-                            version = version_info.get("version", ""),
-                            file_description = version_info.get("description", None),
-                            comments = version_info.get("comments", None),
-                            company_name = version_info.get("company_name", None),
-                            legal_copyright = version_info.get("copyright", None),
-                            legal_trademarks = version_info.get("trademarks", None),
-                            product_name = version_info.get("product_name", None),
-                            product_version = version_info.get("product_version", version_info.get("version", "")),
-                            internal_name = version_info.get("internal_name", None),
-                            private_build = version_info.get("private_build", None),
-                            special_build = version_info.get("special_build", None),
-                        )
-
-        runtime_options.version_info = runtime_version_info
 
     level = logging.INFO
     logging.basicConfig(level=level)
