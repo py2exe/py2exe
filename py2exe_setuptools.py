@@ -7,7 +7,11 @@ from setuptools.command import build
 from setuptools.command.build_ext import build_ext
 from setuptools.dist import Distribution
 from setuptools.extension import Extension
-from setuptools.dep_util import newer_group
+try:
+    # available since setuptools v69.0.0
+    from setuptools.modified import newer_group
+except ImportError:
+    from setuptools.dep_util import newer_group
 from setuptools.errors import CCompilerError, CompileError, PlatformError, SetupError
 
 from sysconfig import get_platform
