@@ -8,7 +8,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - id: set-matrix
         run: |
           TASKS=$(echo $(cat .github/workflows/matrix.json) | sed 's/ //g' )
@@ -19,10 +19,10 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.8'
 
@@ -50,7 +50,7 @@ jobs:
           echo "SDISTNAME=$sdistname" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Deploy
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.SDISTNAME }}
           path: |
@@ -65,10 +65,10 @@ jobs:
         cfg: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.cfg.python-version }}
           architecture: ${{ matrix.cfg.python-arch }}
@@ -101,7 +101,7 @@ jobs:
           echo "WHEELNAME=$wheelname" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Deploy
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ env.WHEELNAME }}
           path: |
@@ -110,16 +110,16 @@ jobs:
   test:
     needs: [matrix, build]
     name: Test
-    runs-on: windows-2019
+    runs-on: windows-2022
     strategy:
       matrix:
         cfg: ${{ fromJson(needs.matrix.outputs.matrix) }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.cfg.python-version }}
           architecture: ${{ matrix.cfg.python-arch }}
@@ -146,7 +146,7 @@ jobs:
           echo "WHEELNAME=$wheelname" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ env.WHEELNAME }}
 
