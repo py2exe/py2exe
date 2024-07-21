@@ -354,6 +354,18 @@ int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 	config.parse_argv = 0;
 	config.module_search_paths_set = 1;
 
+	config.buffered_stdio = 0;
+	config.isolated = 1;
+	config.use_environment = 0;
+	config.user_site_directory = 0;
+	config.optimization_level = p_script_info->optimize;
+
+	if (getenv("PY2EXE_VERBOSE")) {
+		config.verbose = atoi(getenv("PY2EXE_VERBOSE"));
+	} else {
+		config.verbose = 0;
+	}
+
     status = PyConfig_SetArgv(&config, argc, argv);
     if (PyStatus_Exception(status)) {
         goto exception;
