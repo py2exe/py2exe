@@ -161,7 +161,7 @@ if __name__ == "__main__":
               "MIT-License.txt",
               "MPL2-License.txt",
               ],
-          setup_requires=["wheel", "cachetools", "pefile"],
+          setup_requires=["wheel", "cachetools", "pefile", "packaging"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
           python_requires='>=3.8, <3.12',

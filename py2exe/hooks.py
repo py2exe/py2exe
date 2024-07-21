@@ -383,7 +383,7 @@ def hook_matplotlib(finder, module):
     so that those .dlls can be found in the same directory as the executable.
     """
     import ast
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
 
     import matplotlib
 
@@ -445,7 +445,7 @@ def hook_mpl_toolkits(finder, module):
     as the executable.
     """
     import ast
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
     import matplotlib
 
     mpl_version = pkgversion.parse(matplotlib.__version__)
@@ -472,7 +472,7 @@ def hook_mpl_toolkits(finder, module):
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
     exclude them."""
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
 
     # I'm not sure if we can safely exclude these:
     finder.ignore("Numeric")
@@ -672,7 +672,7 @@ def hook_numpy_core(finder, module):
         finder.add_dll(dll)
 
 def hook_pandas(finder, module):
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
 
     #pd_lib_path = os.path.join(os.path.dirname(module.__loader__.path), "_libs")
     #finder.add_datadirectory("mpl-data", mpl_data_path, recursive=True)
@@ -763,7 +763,7 @@ def hook_scipy(finder, module):
         finder.recursion_depth_scipy = depth
 
     import scipy
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
     scp_version = pkgversion.parse(scipy.__version__)
     if scp_version >= pkgversion.parse('1.9.2'):
         # scipy requires a patch in its __init__
@@ -901,7 +901,7 @@ def hook_zmq(finder, module):
     """
     import ast
     import zmq
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
     zmq_version = pkgversion.parse(zmq.__version__)
 
     if zmq_version >= pkgversion.parse('23.0.0'):
@@ -939,7 +939,7 @@ def hook_babel_localedata(finder, module):
     """
     import ast
     import babel
-    from pkg_resources._vendor.packaging import version as pkgversion
+    from packaging import version as pkgversion
 
     babel_version = pkgversion.parse(babel.__version__)
     # babel >= 2.8.0 requires patching the _dirname variable
