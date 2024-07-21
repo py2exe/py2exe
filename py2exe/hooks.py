@@ -501,6 +501,13 @@ def hook_numpy(finder, module):
         for dll in dlls:
             finder.add_dll(dll)
 
+    if numpy_version >= pkgversion.parse('2.0.0'):
+        depth = getattr(finder,"recursion_depth_numpy_multiarray_tests", 0)
+        if depth == 0:
+            finder.recursion_depth_numpy_multiarray_tests = depth + 1
+            finder.import_hook("numpy._core._multiarray_tests")
+            finder.recursion_depth_numpy_multiarray_tests = depth
+
 
 def hook_nose(finder, module):
     finder.ignore("IronPython")
