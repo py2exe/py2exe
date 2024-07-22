@@ -13,6 +13,14 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.13.0.2:
+- reintroduce ability to specify different version info for each of the frozen binaries
+- fix a bug in `MemoryModule.c:PerformBaseRelocation`
+- fix missing initialization settings for the runtime Python interpreter
+- add support for `setuptools` v72
+- fix the `matplotlib`, `numpy`, and `scipy` hooks
+- fix `py2exe` wheels build with `setuptools` v70.0.0
+
 Version 0.13.0.1:
 - improved the hook for `pkg_resources` to detect its vendored content automatically
 - the `matplotlib` hook now does not exclude `wx` automatically
