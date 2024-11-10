@@ -86,14 +86,16 @@ class Module:
     @property
     def __dest_file__(self):
         """Gets the destination path for the module that will be used at compilation time."""
+        import os
+
         if self.__optimize__:
             bytecode_suffix = OPTIMIZED_BYTECODE_SUFFIXES[0]
         else:
             bytecode_suffix = DEBUG_BYTECODE_SUFFIXES[0]
         if self.__path__ is not None:
-            return self.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+            return self.__name__.replace(".", os.path.sep) + os.path.sep + "__init__" + bytecode_suffix
         else:
-            return self.__name__.replace(".", "\\") + bytecode_suffix
+            return self.__name__.replace(".", os.path.sep) + bytecode_suffix
 
     @property
     def __source__(self):

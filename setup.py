@@ -23,8 +23,12 @@ from py2exe_setuptools import Dist, Interpreter, BuildInterpreters
 
 ############################################################################
 
-python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
-python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+if 'MSC' in sys.version:
+    python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+else:
+    python_dll_name = '\"libpython%d.%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"libpython%d.%d_d.dll\"' % sys.version_info[:2]
 
 def _is_debug_build():
     for ext in machinery.all_suffixes():
@@ -41,14 +45,29 @@ else:
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
-macros.append(("Py_BUILD_CORE", '1'))
+macros.append(("PYTHONHOME", ''))
+macros.append(("PYTHONPATH", ''))
 
 extra_compile_args = []
 extra_link_args = []
+subsys_console = []
+subsys_windows = []
+unicode_flags = []
+dll_flags = []
 
-extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
-extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
-extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
+if 'MSC' in sys.version:
+    dll_flags = ["/DLL"]
+    extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
+    extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
+    extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
+else:
+    subsys_console = ["-mconsole"]
+    subsys_windows = ["-mwindows"]
+    unicode_flags = ["-municode"]
+    if '64 bit' in sys.version:
+        extra_link_args.append("-m64")
+    else:
+        extra_link_args.append("-m32")
 
 if 0:
     # enable this to debug a release build
@@ -88,9 +107,9 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                                              "DllUnregisterServer,PRIVATE",
                                              ],
                              target_desc = "shared_library",
-                             define_macros=macros,
+                             define_macros=macros + [("Py_BUILD_CORE", "1")],
                              extra_compile_args=extra_compile_args,
-                             extra_link_args=extra_link_args + ["/DLL"],
+                             extra_link_args=extra_link_args + dll_flags + subsys_windows,
                              )
 
 run = Interpreter("py2exe.run",
@@ -106,9 +125,9 @@ run = Interpreter("py2exe.run",
                    "source/python-dynload.c",
                    ],
                   libraries=["user32", "shell32"],
-                  define_macros=macros,
+                  define_macros=macros + [("Py_BUILD_CORE", "1")],
                   extra_compile_args=extra_compile_args,
-                  extra_link_args=extra_link_args,
+                  extra_link_args=extra_link_args + subsys_console + unicode_flags,
                   )
 
 run_w = Interpreter("py2exe.run_w",
@@ -124,9 +143,9 @@ run_w = Interpreter("py2exe.run_w",
                      "source/python-dynload.c",
                      ],
                     libraries=["user32", "shell32"],
-                    define_macros=macros,
+                    define_macros=macros + [("Py_BUILD_CORE", "1")],
                     extra_compile_args=extra_compile_args,
-                    extra_link_args=extra_link_args,
+                    extra_link_args=extra_link_args + subsys_windows,
                     )
 
 # The py2exe.resources name is special handled in BuildInterpreters;
@@ -142,7 +161,7 @@ resource_dll = Interpreter("py2exe.resources",
                            ["source/dll.c",
                             "source/icon.rc"],
                            target_desc = "shared_library",
-                           extra_link_args=["/DLL"],
+                           extra_link_args=dll_flags,
                            )
 
 interpreters = [run, run_w, resource_dll,
