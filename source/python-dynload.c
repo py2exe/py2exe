@@ -1,7 +1,7 @@
 #include <Python.h>
 #include <windows.h>
 #include "MyLoadLibrary.h"
-#include "python-dynload.h"
+#include "Python-dynload.h"
 
 /*
   This module allows us to dynamically load the python DLL.
@@ -31,7 +31,7 @@ static HMODULE hmod_pydll;
 
 #define FUNC(res, name, args) \
   static res(*proc)args; \
-  if (!proc) (FARPROC)proc = MyGetProcAddress(hmod_pydll, #name)
+  if (!proc) proc = (res(*)args)MyGetProcAddress(hmod_pydll, #name)
 
 #define DATA(type, name)				\
   static type pflag; \
@@ -261,7 +261,7 @@ int PyArg_ParseTuple(PyObject *args, const char *format, ...)
   va_start(marker, format);
   result = proc(args, format, marker);
   va_end(marker);
-  return -1;
+  return result;
 }
 
 PyObject *PyUnicode_FromFormat(const char *format, ...)
@@ -434,13 +434,13 @@ void Py_ExitStatusException(PyStatus status)
 
 int PyStatus_Exception(PyStatus status)
 {
-  FUNC(int, PyStatus_Exception, (status));
+  FUNC(int, PyStatus_Exception, (PyStatus));
   return proc(status);
 }
 
 int PyStatus_IsExit(PyStatus status)
 {
-  FUNC(int, PyStatus_IsExit, (status));
+  FUNC(int, PyStatus_IsExit, (PyStatus));
   return proc(status);
 }
 

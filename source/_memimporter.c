@@ -1,4 +1,5 @@
 // Need to define these to be able to use SetDllDirectory.
+#undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0502
 #define NTDDI_VERSION 0x05020000
 #include <Python.h>
@@ -11,7 +12,7 @@ static char module_doc[] =
 #include "actctx.h"
 
 #ifndef STANDALONE
-#include "python-dynload.h"
+#include "Python-dynload.h"
 #endif
 
 /*
@@ -153,7 +154,9 @@ import_module(PyObject *self, PyObject *args)
 	ULONG_PTR cookie = 0;
 	PyObject *findproc;
 	PyObject *spec;
+	#ifndef STANDALONE
 	BOOL res;
+	#endif
 
 	int imp_res = -1;
 	struct PyModuleDef *def;

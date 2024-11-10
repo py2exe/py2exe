@@ -65,7 +65,7 @@ void SystemError(int error, char *msg)
 			0,
 			NULL 
 			);
-		strncpy(Buffer, lpMsgBuf, sizeof(Buffer));
+		strncpy(Buffer, lpMsgBuf, sizeof(Buffer)-1);
 		LocalFree(lpMsgBuf);
 	} else
 		Buffer[0] = '\0';
