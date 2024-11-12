@@ -27,7 +27,7 @@
 #include <marshal.h>
 
 #include "MyLoadLibrary.h"
-#include "python-dynload.h"
+#include "Python-dynload.h"
 
 #include <fcntl.h>
 
@@ -128,7 +128,8 @@ BOOL locate_script(HMODULE hmod)
 		SystemError(GetLastError(), "Could not load script resource:");
 		return FALSE;
 	}
-	p_script_info = (struct scriptinfo *)pScript = LockResource(hgbl);
+	p_script_info = LockResource(hgbl);
+	pScript = LockResource(hgbl);
 	if (!pScript)  {
 		SystemError(GetLastError(), "Could not lock script resource:");
 		return FALSE;
@@ -307,8 +308,8 @@ int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 	int rc = 0;
 	HMODULE hmod_pydll;
 
-/*	Py_NoSiteFlag = 1; /* Suppress 'import site' */
-/*	Py_InspectFlag = 1; /* Needed to determine whether to exit at SystemExit */
+//	Py_NoSiteFlag = 1; /* Suppress 'import site' */
+//	Py_InspectFlag = 1; /* Needed to determine whether to exit at SystemExit */
 
 	calc_dirname(hmod_exe);
 //	wprintf(L"modulename %s\n", modulename);

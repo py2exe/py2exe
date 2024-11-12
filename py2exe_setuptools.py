@@ -113,6 +113,9 @@ class BuildInterpreters(build_ext):
         else:
             ext_path += ".dll"
 
+        if 'GCC' in sys.version:
+            ext.export_symbols = [s.replace(",", " ") for s in ext.export_symbols]
+
         depends = sources + ext.depends
         if not (self.force or newer_group(depends, ext_path, 'newer')):
             log.debug("skipping '%s' extension (up-to-date)", ext.name)
@@ -134,7 +137,7 @@ class BuildInterpreters(build_ext):
         # The environment variable should take precedence, and
         # any sensible compiler will give precedence to later
         # command line args.  Hence we combine them in order:
-        extra_args = ext.extra_compile_args or []
+        extra_compile_args = ext.extra_compile_args or []
 
         macros = ext.define_macros[:]
         for undef in ext.undef_macros:
@@ -145,7 +148,7 @@ class BuildInterpreters(build_ext):
                                          macros=macros,
                                          include_dirs=ext.include_dirs,
                                          debug=self.debug,
-                                         extra_postargs=extra_args,
+                                         extra_postargs=extra_compile_args,
                                          depends=ext.depends)
 
         # XXX -- this is a Vile HACK!
@@ -164,7 +167,7 @@ class BuildInterpreters(build_ext):
         # that go into the mix.
         if ext.extra_objects:
             objects.extend(ext.extra_objects)
-        extra_args = ext.extra_link_args or []
+        extra_link_args = ext.extra_link_args or []
 
         # Detect target language, if not provided
 ##        language = ext.language or self.compiler.detect_language(sources)
@@ -191,7 +194,7 @@ class BuildInterpreters(build_ext):
                            library_dirs=ext.library_dirs,
                            runtime_library_dirs=ext.runtime_library_dirs,
                            export_symbols=ext.export_symbols,
-                           extra_postargs=extra_args,
+                           extra_postargs=extra_link_args,
                            debug=self.debug)
 
     def build_extensions(self):
@@ -202,13 +205,14 @@ class BuildInterpreters(build_ext):
 
     def get_ext_filename (self, inter_name):
         ext_path = inter_name.split('.')
+        cpython_version_dot = '.' if 'MSC' in sys.version else ''
         if self.debug:
             fnm = os.path.join(*ext_path) + '_d'
         else:
             fnm = os.path.join(*ext_path)
         if ext_path[-1] == "resources":
             return fnm
-        return '%s-py%s.%s-%s' % (fnm, sys.version_info[0], sys.version_info[1], get_platform())
+        return '%s-py%s%s%s-%s' % (fnm, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
 
 
 def InstallSubCommands():

@@ -3,7 +3,6 @@
 import pkg_resources
 from .dllfinder import Scanner, pydll
 
-import imp
 import io
 import logging
 import marshal
@@ -306,12 +305,13 @@ class Runtime(object):
 
     def get_runstub_bytes(self, target):
         from sysconfig import get_platform
+        cpython_version_dot = '.' if 'MSC' in sys.version else ''
         if target.exe_type in ("console_exe", "service"):
-            run_stub = 'run%s-py%s.%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run%s-py%s%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         elif target.exe_type == "windows_exe":
-            run_stub = 'run_w%s-py%s.%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_w%s-py%s%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         elif target.exe_type == "ctypes_comdll":
-            run_stub = 'run_ctypes_dll%s-py%s.%s-%s.dll' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_ctypes_dll%s-py%s%s%s-%s.dll' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         else:
             raise ValueError("Unknown exe_type %r" % target.exe_type)
         ## if self.options.verbose:
@@ -436,7 +436,7 @@ class Runtime(object):
                     continue
                 if self.options.bundle_files <= 2:
                     # put .pyds into the archive
-                    arcfnm = mod.__name__.replace(".", "\\") + EXTENSION_TARGET_SUFFIX
+                    arcfnm = mod.__name__.replace(".", os.path.sep) + EXTENSION_TARGET_SUFFIX
                     if self.options.verbose > 1:
                         print("Add %s to %s" % (os.path.basename(mod.__file__), libpath))
                     arc.write(mod.__file__, arcfnm)
@@ -465,7 +465,7 @@ class Runtime(object):
                 # implicit namespace packages, create empty __init__.py for zipimport
                 if self.options.verbose > 1:
                     print("Add empty __init__ for implicit namespace package %s to %s" % (mod.__name__, libpath))
-                path = mod.__name__.replace(".", "\\") + "\\__init__" + bytecode_suffix
+                path = mod.__name__.replace(".", os.path.sep) + os.path.sep + "__init__" + bytecode_suffix
                 code = compile(r"", path, "exec", optimize=self.options.optimize)
                 stream = io.BytesIO()
                 stream.write(MAGIC_NUMBER)
@@ -481,16 +481,16 @@ class Runtime(object):
                 try:
                     dist = pkg_resources.get_distribution(mod.__name__)
                     dist_path = dist._provider.egg_info
-                    base = dist_path.rsplit('\\', 1)[0]
-                    name = dist_path.split(base + '\\')[1]
+                    base = dist_path.rsplit(os.path.sep, 1)[0]
+                    name = dist_path.split(base + os.path.sep)[1]
 
                     if self.options.verbose > 1:
                         print("Add distribution metadata for package %s from %s" % (mod.__name__, dist_path))
                     arc.write(dist_path, name)
 
-                    paths = glob(dist_path + '\\*')
+                    paths = glob(dist_path + os.path.sep + '*')
                     for p in paths:
-                        name = p.split(base + '\\')[1]
+                        name = p.split(base + os.path.sep)[1]
                         arc.write(p, name)
                 except pkg_resources.DistributionNotFound:
                     pass

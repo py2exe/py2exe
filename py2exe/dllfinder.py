@@ -79,7 +79,7 @@ class DllFinder:
 
         while todo:
             dll = todo.pop() # get one and check it
-            if dll in self._loaded_dlls:
+            if os.path.basename(dll).lower() in self._loaded_dlls.keys():
                 continue
             for dep_dll in self.bind_image(dll):
                 if dep_dll in self._loaded_dlls:

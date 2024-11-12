@@ -23,8 +23,12 @@ from setuptools.extension import Extension
 
 ############################################################################
 
-python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
-python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+if 'MSC' in sys.version:
+    python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+else:
+    python_dll_name = '\"libpython%d.%d.dll\"' % sys.version_info[:2]
+    python_dll_name_debug = '\"libpython%d.%d_d.dll\"' % sys.version_info[:2]
 
 def _is_debug_build():
     for ext in machinery.all_suffixes():
@@ -41,15 +45,16 @@ else:
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
-#macros.append(("Py_BUILD_CORE", '1'))
+macros.append(("Py_BUILD_CORE_MODULE", '1'))
 
 extra_compile_args = []
 extra_link_args = []
 
-extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
-extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
-extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
-extra_compile_args.append("/DSTANDALONE")
+if 'MSC' in sys.version:
+    extra_compile_args.append("-IC:\\Program Files\\Microsoft SDKs\\Windows\\v7.0\\Include")
+    extra_compile_args.append("-IC:\\Program Files (x86)\\Microsoft Visual Studio 14.0\\VC\\include")
+    extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
+    extra_compile_args.append("/DSTANDALONE")
 
 if 0:
     # enable this to debug a release build
