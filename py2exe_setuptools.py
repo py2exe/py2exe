@@ -113,7 +113,7 @@ class BuildInterpreters(build_ext):
         else:
             ext_path += ".dll"
 
-        if 'GCC' in sys.version and ext.name == "py2exe.run_ctypes_dll":
+        if 'GCC' in sys.version:
             ext.export_symbols = [s.replace(",", " ") for s in ext.export_symbols]
 
         depends = sources + ext.depends
@@ -205,16 +205,14 @@ class BuildInterpreters(build_ext):
 
     def get_ext_filename (self, inter_name):
         ext_path = inter_name.split('.')
+        cpython_version_dot = '.' if 'MSC' in sys.version else ''
         if self.debug:
             fnm = os.path.join(*ext_path) + '_d'
         else:
             fnm = os.path.join(*ext_path)
         if ext_path[-1] == "resources":
             return fnm
-        if 'GCC' in sys.version:
-            return '%s-py%s%s-%s' % (fnm, sys.version_info[0], sys.version_info[1], get_platform())
-        else:
-            return '%s-py%s.%s-%s' % (fnm, sys.version_info[0], sys.version_info[1], get_platform())
+        return '%s-py%s%s%s-%s' % (fnm, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
 
 
 def InstallSubCommands():
