@@ -438,37 +438,6 @@ def hook_matplotlib(finder, module):
     module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
 
-def hook_mpl_toolkits(finder, module):
-    """matplotlib  >= 3.7.0 moved .dlls to a matplotlib.libs directory,
-    requiring that we override the '_delvewheel_init_patch_1_3_3' function
-    in mpl_tollkits so that those .dlls can be found in the same directory
-    as the executable.
-    """
-    import ast
-    from packaging import version as pkgversion
-    import matplotlib
-
-    mpl_version = pkgversion.parse(matplotlib.__version__)
-
-    if mpl_version >= pkgversion.parse('3.7.0'):
-
-        #import mpl_toolkits
-
-        tree = ast.parse(module.__source__)
-        devel_node_to_be_patched = '_delvewheel_init_patch'
-
-        class ChangeDef(ast.NodeTransformer):
-            def visit_FunctionDef(self, node: ast.FunctionDef):
-                if devel_node_to_be_patched in node.name:
-                    node.body = ast.parse('pass').body
-                return node
-
-        t = ChangeDef()
-        patched_tree = t.visit(tree)
-
-        module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
-
-
 def hook_numpy(finder, module):
     """numpy for Python 3 still tries to import some Python 2 modules;
     exclude them."""
