@@ -17,7 +17,7 @@ if sys.version_info < (3, 7):
 
 ############################################################################
 
-from setuptools import Extension, setup
+from setuptools import setup
 
 from py2exe_setuptools import Dist, Interpreter, BuildInterpreters
 
@@ -75,18 +75,6 @@ if 0:
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
     macros.append(("VERBOSE", "1"))
-
-_memimporter = Extension("_memimporter",
-                         ["source/_memimporter.c",
-                          "source/MemoryModule.c",
-                          "source/MyLoadLibrary.c",
-                          "source/actctx.c",
-                         ],
-                         libraries=["user32", "shell32"],
-                         define_macros=macros + [("Py_BUILD_CORE_MODULE", "1"), ("STANDALONE", "1")],
-                         extra_compile_args=extra_compile_args,
-                         extra_link_args=extra_link_args,
-                         )
 
 run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                              ["source/run_ctypes_dll.c",
@@ -220,7 +208,6 @@ if __name__ == "__main__":
           distclass = Dist,
           cmdclass = cmdclass,
           interpreters = interpreters,
-          ext_modules = [_memimporter],
           py_modules=['zipextimporter'],
           packages=['py2exe', 'py2exe.vendor'],
           )
