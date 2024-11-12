@@ -45,6 +45,7 @@ else:
 ##              ("PYTHONCOM", '\\"pythoncom%d%d.dll\\"' % sys.version_info[:2]),
               ("_CRT_SECURE_NO_WARNINGS", '1'),]
 
+macros.append(("Py_BUILD_CORE", '1'))
 macros.append(("PYTHONHOME", ''))
 macros.append(("PYTHONPATH", ''))
 
@@ -95,7 +96,7 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                                              "DllUnregisterServer,PRIVATE",
                                              ],
                              target_desc = "shared_library",
-                             define_macros=macros + [("Py_BUILD_CORE", "1")],
+                             define_macros=macros,
                              extra_compile_args=extra_compile_args,
                              extra_link_args=extra_link_args + dll_flags + subsys_windows,
                              )
@@ -113,7 +114,7 @@ run = Interpreter("py2exe.run",
                    "source/python-dynload.c",
                    ],
                   libraries=["user32", "shell32"],
-                  define_macros=macros + [("Py_BUILD_CORE", "1")],
+                  define_macros=macros,
                   extra_compile_args=extra_compile_args,
                   extra_link_args=extra_link_args + subsys_console + unicode_flags,
                   )
@@ -131,7 +132,7 @@ run_w = Interpreter("py2exe.run_w",
                      "source/python-dynload.c",
                      ],
                     libraries=["user32", "shell32"],
-                    define_macros=macros + [("Py_BUILD_CORE", "1")],
+                    define_macros=macros,
                     extra_compile_args=extra_compile_args,
                     extra_link_args=extra_link_args + subsys_windows,
                     )
