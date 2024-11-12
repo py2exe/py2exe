@@ -305,21 +305,13 @@ class Runtime(object):
 
     def get_runstub_bytes(self, target):
         from sysconfig import get_platform
+        cpython_version_dot = '.' if 'MSC' in sys.version else ''
         if target.exe_type in ("console_exe", "service"):
-            if 'GCC' in sys.version:
-                run_stub = 'run%s-py%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
-            else:
-                run_stub = 'run%s-py%s.%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run%s-py%s%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         elif target.exe_type == "windows_exe":
-            if 'GCC' in sys.version:
-                run_stub = 'run_w%s-py%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
-            else:
-                run_stub = 'run_w%s-py%s.%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_w%s-py%s%s%s-%s.exe' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         elif target.exe_type == "ctypes_comdll":
-            if 'GCC' in sys.version:
-                run_stub = 'run_ctypes_dll%s-py%s%s-%s.dll' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
-            else:
-                run_stub = 'run_ctypes_dll%s-py%s.%s-%s.dll' % (RUNTIME_SUFFIX, sys.version_info[0], sys.version_info[1], get_platform())
+            run_stub = 'run_ctypes_dll%s-py%s%s%s-%s.dll' % (RUNTIME_SUFFIX, sys.version_info[0], cpython_version_dot, sys.version_info[1], get_platform())
         else:
             raise ValueError("Unknown exe_type %r" % target.exe_type)
         ## if self.options.verbose:
