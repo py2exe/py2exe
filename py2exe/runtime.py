@@ -3,11 +3,6 @@
 import pkg_resources
 from .dllfinder import Scanner, pydll
 
-try:
-    import imp
-except ImportError:
-    pass
-
 import io
 import logging
 import marshal
