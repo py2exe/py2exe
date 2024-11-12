@@ -113,12 +113,8 @@ class BuildInterpreters(build_ext):
         else:
             ext_path += ".dll"
 
-        if 'GCC' in sys.version:
-            if ext.name == "py2exe.run_ctypes_dll":
-                ext.export_symbols = [s.replace(",", " ") for s in ext.export_symbols]
-                ext.extra_link_args.append("-Wl,--enable-stdcall-fixup")
-            else:
-                ext.export_symbols = None
+        if 'GCC' in sys.version and ext.name == "py2exe.run_ctypes_dll":
+            ext.export_symbols = [s.replace(",", " ") for s in ext.export_symbols]
 
         depends = sources + ext.depends
         if not (self.force or newer_group(depends, ext_path, 'newer')):
