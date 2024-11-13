@@ -42,138 +42,209 @@ True
 
 """
 import sys
-import zipimport
-
-from importlib import machinery
-from importlib import util
+from zipimport import *
+from _frozen_importlib import ModuleSpec, spec_from_loader
+from _frozen_importlib_external import EXTENSION_SUFFIXES
 
 # _memimporter is a module built into the py2exe runstubs.
 import _memimporter
 
-class ZipExtensionImporter(zipimport.zipimporter):
-    _suffixes = machinery.EXTENSION_SUFFIXES
 
-    def find_loader(self, fullname, path=None):
-        """We need to override this method for Python 3.x.
-        """
-        loader, portions = super().find_loader(fullname, path)
-        if loader is None:
-            pathname = fullname.replace(".", "\\")
-            for s in self._suffixes:
-                if (pathname + s) in self._files:
-                    return self, []
-            return None, []
-        return loader, portions
+__all__ = ["ZipExtensionImporter"]
 
-    def find_module(self, fullname, path=None):
-        result = zipimport.zipimporter.find_module(self, fullname, path)
-        if result:
-            return result
-        fullname = fullname.replace(".", "\\")
-        for s in self._suffixes:
-            if (fullname + s) in self._files:
-                return self
-        return None
 
-    def find_spec(self, name, path=None):
-        module = self.find_module(name, path)
-        if module is not None:
-            return util.spec_from_loader(name, module)
-        else:
-            return None
+# Makes order as same as import from Non-Zip.
+_searchorder = (
+    *[(f"\\__init__{suffix}", True, True) for suffix in EXTENSION_SUFFIXES],
+    ("\\__init__.pyc", False, True),
+    ("\\__init__.py", False, True),
+    *[(suffix, True, False) for suffix in EXTENSION_SUFFIXES],
+    (".pyc", False, False),
+    (".py", False, False),
+)
+# Handle pywin32 DLLs.
+_names_pywin32 = frozenset(["pywintypes", "pythoncom"])
+_searchorder_pywin32 = (
+    *_searchorder[:-2],
+    (f"%d%d{'_d.pyd' in EXTENSION_SUFFIXES and '_d' or ''}.dll"
+            % sys.version_info[:2], True, False),
+    *_searchorder[-2:],
+)
 
-    def load_module(self, fullname):
-        verbose = _memimporter.get_verbose_flag()
 
-        if fullname in sys.modules:
-            mod = sys.modules[fullname]
-            if verbose:
-                sys.stderr.write(
-                    "import %s # previously loaded from zipfile %s\n"
-                    % (fullname, self.archive))
-            return mod
+class _ModuleInfo:
+    __slots__ = ("path", "is_ext", "is_package")
+    def __init__(self, *args):
+        self.path, self.is_ext, self.is_package = args
+
+
+# Return some information about a module.
+def _get_module_info(self, fullname, *, _raise=False, _tempcache=[None, None]):
+    key, mi = _tempcache
+    if key == (fullname, self.archive):
+        return mi
+    name = fullname.rpartition(".")[2]
+    if name in _names_pywin32:
+        searchorder = _searchorder_pywin32
+    else:
+        searchorder = _searchorder
+    _path = self.prefix + name
+    for suffix, is_ext, is_package in searchorder:
+        path = _path + suffix
+        if path in self._files:
+            if is_ext:
+                _verbose_msg("# zipextimporter: "
+                            f"found {path} in zipfile {self.archive}", 2)
+            mi = _ModuleInfo(f"{self.archive}\\{path}", is_ext, is_package)
+            _tempcache[:] = (fullname, self.archive), mi
+            return mi
+    if _raise:
+        raise ZipImportError(f"can't find module {fullname!r}", name=fullname)
+
+
+# Return the path if it represent a directory.
+def _get_dir_path(self, fullname):
+    path = self.prefix + fullname.rpartition(".")[2]
+    if f"{path}\\" in self._files:
+        return f"{self.archive}\\{path}"
+
+
+# Does this specification represent an extension module?
+def _is_ext(self, spec):
+    if isinstance(spec.origin, str):
+        return not spec.origin.endswith((".py", ".pyc"))
+    return _get_module_info(self, spec.name, _raise=True).is_ext
+
+
+class ZipExtensionImporter(zipimporter):
+    __doc__ = zipimporter.__doc__.replace("zipimporter", "ZipExtensionImporter")
+
+    if hasattr(zipimporter, "find_loader"):
+        def find_loader(self, fullname, path=None):
+            mi = _get_module_info(self, fullname)
+            if mi is None:
+                dirpath = _get_dir_path(self, fullname)
+                if dirpath:
+                    return None, [dirpath]
+                return None, []
+            return self, []
+
+    if hasattr(zipimporter, "find_spec"):
+        def find_spec(self, fullname, target=None):
+            mi = _get_module_info(self, fullname)
+            if mi is None:
+                dirpath = _get_dir_path(self, fullname)
+                if dirpath:
+                    spec = ModuleSpec(fullname, None)
+                    spec.submodule_search_locations = [dirpath]
+                    return spec
+                return None
+            if mi.is_ext:
+                spec = ModuleSpec(fullname, self, origin=mi.path)
+                if mi.is_package:
+                    spec.submodule_search_locations = [mi.path.rpartition("\\")[0]]
+            else:
+                spec = spec_from_loader(fullname, self, is_package=mi.is_package)
+            return spec
+
+    if hasattr(zipimporter, "load_module"):
+        def load_module(self, fullname):
+            # Will never enter here, beacuse of defined `exec_module` method
+            mi = _get_module_info(self, fullname, _raise=True)
+            if not mi.is_ext:
+                return super().load_module(fullname)
+
+            # Will never enter here, raise error for developers
+            raise NotImplementedError(
+                    "load_module() is not implemented for extension modules, "
+                    "use create_module() & exec_module() instead.")
+
+    def create_module(self, spec):
+        fullname = spec.name
+        if not _is_ext(self, spec):
+            if hasattr(zipimporter, "create_module"):
+                return super().create_module(spec)
+            else:
+                return super().load_module(fullname)
+
+        spec.has_location = True  # use for reload
+
+        # PEP 489 multi-phase initialization / Export Hook Name
+        name = fullname.rpartition(".")[2]
         try:
-            return zipimport.zipimporter.load_module(self, fullname)
-        except ImportError as err:
-            if verbose:
-                sys.stderr.write("error loading %s: %s\n"% (fullname, err))
+            name.encode("ascii")
+        except UnicodeEncodeError:
+            initname = "PyInitU_" + name.encode("punycode") \
+                                        .decode("ascii").replace("-", "_")
+        else:
+            initname = "PyInit_" + name
 
-            if sys.version_info >= (3, 0):
-                # name of initfunction
-                initname = "PyInit_" + fullname.split(".")[-1]
-            else:
-                # name of initfunction
-                initname = "init" + fullname.split(".")[-1]
-            filename = fullname.replace(".", "\\")
-            if filename in ("pywintypes", "pythoncom"):
-                filename = filename + "%d%d" % sys.version_info[:2]
-                suffixes = ('.dll',)
-            else:
-                suffixes = self._suffixes
-            for s in suffixes:
-                path = filename + s
-                if path in self._files:
-                    if verbose > 1:
-                        sys.stderr.write("# found %s in zipfile %s\n"
-                                         % (path, self.archive))
-                    spec = util.find_spec(fullname, path)
-                    mod = _memimporter.import_module(fullname, path,
-                                                     initname,
-                                                     self.get_data, spec)
-                    mod.__file__ = "%s\\%s" % (self.archive, path)
-                    mod.__loader__ = self
-                    mod.__memimported__ = True
-                    sys.modules[fullname] = mod
-                    if verbose:
-                        sys.stderr.write("import %s # loaded from zipfile %s\n"
-                                         % (fullname, mod.__file__))
-                    return mod
-            raise zipimport.ZipImportError("can't find module %s" % fullname) from err
+        mod = _memimporter.import_module(fullname, spec.origin, initname,
+                                         self.get_data, spec)
+        _verbose_msg(f"import {fullname} # loaded from zipfile {self.archive}")
+        return mod
 
-    if sys.version_info >= (3, 10):
-        def create_module(self, spec):
-            mod =  super().create_module(spec)
-            if mod is None:
-                verbose = _memimporter.get_verbose_flag()
-                fullname = spec.name
-
-                filename = fullname.replace(".", "\\")
-                suffixes = self._suffixes
-                initname = "PyInit_" + fullname.split(".")[-1]
-
-                for s in suffixes:
-                    path = filename + s
-                    if path in self._files:
-                        if verbose > 1:
-                            sys.stderr.write("# found %s in zipfile %s\n"
-                                            % (path, self.archive))
-                        mod = _memimporter.import_module(fullname, path,
-                                                        initname,
-                                                        self.get_data, spec)
-                        mod.__file__ = "%s\\%s" % (self.archive, path)
-                        mod.__loader__ = self
-                        mod.__memimported__ = True
-                        if verbose:
-                            sys.stderr.write("import %s # loaded from zipfile %s\n"
-                                            % (fullname, mod.__file__))
-                        return mod
-                # raise zipimport.ZipImportError("can't find module %s" % fullname)
-
-    if sys.version_info >= (3, 10):
-        def exec_module(self, module):
-            if hasattr(module, '__memimported__'):
+    def exec_module(self, module):
+        if hasattr(zipimporter, "exec_module"):
+            if _is_ext(self, module.__spec__):
+                # All has been done in create_module(),
+                # also skip importlib.reload()
                 pass
             else:
                 super().exec_module(module)
 
+    def get_code(self, fullname):
+        mi = _get_module_info(self, fullname, _raise=True)
+        if not mi.is_ext:
+            return super().get_code(fullname)
+
+    def get_source(self, fullname):
+        mi = _get_module_info(self, fullname, _raise=True)
+        if not mi.is_ext:
+            return super().get_source(fullname)
+
+    def get_filename(self, fullname):
+        mi = _get_module_info(self, fullname, _raise=True)
+        return mi.path
+
+    def is_package(self, fullname):
+        mi = _get_module_info(self, fullname, _raise=True)
+        return mi.is_package
+
     def __repr__(self):
-        return "<%s object %r>" % (self.__class__.__name__, self.archive)
+        return f'<{self.__class__.__name__} object "{self.archive}\\{self.prefix}">'
+
 
 def install():
-    "Install the zipextimporter"
-    sys.path_hooks.insert(0, ZipExtensionImporter)
-    # Not sure if this is needed...
+    "Install the zipextimporter to `sys.path_hooks`."
+    for importer in sys.path_hooks:
+        if isinstance(importer, type) and issubclass(importer, ZipExtensionImporter):
+            if importer is not ZipExtensionImporter:
+                import _warnings
+                _warnings.warn("Ignore zipextimporter.install(), because there "
+                               "is a sub-class of ZipExtensionImporter which "
+                               "has already been installed.",
+                               category=RuntimeWarning, stacklevel=2)
+            return
+    try:
+        i = sys.path_hooks.index(zipimporter)
+    except ValueError:
+        sys.path_hooks.insert(0, ZipExtensionImporter)
+    else:
+        sys.path_hooks[i] = ZipExtensionImporter
     sys.path_importer_cache.clear()
     ## # Not sure if this is needed...
     ## import importlib
     ## importlib.invalidate_caches()
+
+
+verbose = sys.flags.verbose
+
+def _verbose_msg(msg, verbosity=1):
+    if max(verbose, sys.flags.verbose) >= verbosity:
+        print(msg, file=sys.stderr)
+
+def set_verbose(i):
+    "Set verbose, the argument as same as built-in function int's."
+    global verbose
+    verbose = int(i)
