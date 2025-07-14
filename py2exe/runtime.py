@@ -1,23 +1,21 @@
 #!/usr/bin/python3.3-32
 # -*- coding: utf-8 -*-
-import pkg_resources
-from .dllfinder import Scanner, pydll
-
 import io
 import logging
 import marshal
 import os
 import pkgutil
-import pkg_resources
 import shutil
 import struct
 import sys
 import zipfile
 
 from argparse import Namespace
+from importlib.metadata import distribution, PackageNotFoundError
 from importlib.util import MAGIC_NUMBER
 from glob import glob
 
+from .dllfinder import Scanner, pydll
 from .resources import UpdateResources
 from .versioninfo import Version
 from .icons import BuildIcons
@@ -479,8 +477,8 @@ class Runtime(object):
             # copy egg-info
             if mod.__path__ is not None and mod.__name__[0] != '_': # attempt to select valid packages
                 try:
-                    dist = pkg_resources.get_distribution(mod.__name__)
-                    dist_path = dist._provider.egg_info
+                    dist = distribution(mod.__name__)
+                    dist_path = str(dist._path)
                     base = dist_path.rsplit(os.path.sep, 1)[0]
                     name = dist_path.split(base + os.path.sep)[1]
 
@@ -492,7 +490,7 @@ class Runtime(object):
                     for p in paths:
                         name = p.split(base + os.path.sep)[1]
                         arc.write(p, name)
-                except pkg_resources.DistributionNotFound:
+                except PackageNotFoundError:
                     pass
 
         # data files to be zipped from modulefinder
