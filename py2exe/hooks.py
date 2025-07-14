@@ -234,7 +234,7 @@ def hook__socket(finder, module):
     """
     finder.import_hook("encodings.idna")
     finder.import_hook("unicodedata")
-    if sys.version_info >= (3,6,0):
+    if sys.version_info >= (3,6,0) and sys.version_info < (3,12,0):
         finder.import_hook("imp")
 
 def hook_pyreadline(finder, module):
@@ -309,7 +309,7 @@ def hook_tkinter(finder, module):
     tk_dir = os.path.join(os.path.dirname(tcl_dir), 'tk{}'.format(TK_VERSION))
     assert os.path.isdir(tk_dir)
     finder.add_datadirectory("lib/tk", tk_dir, recursive=True)
-    if sys.version_info >= (3,6,0):
+    if sys.version_info >= (3,6,0) and sys.version_info < (3,12,0):
         finder.import_hook("imp")
 
     # add environment variables that point to the copied paths at runtime
@@ -397,6 +397,7 @@ def hook_matplotlib(finder, module):
     # matplotlib <=3.3.4 requires '_get_data_path' to be patched
     # matplotlib >= 3.4.0 requires 'get_data_path' to be patched
     mpl_version = pkgversion.parse(matplotlib.__version__)
+
     get_data_node_to_be_patched = 'get_data_path' if mpl_version >= pkgversion.parse('3.4.0') else '_get_data_path'
 
     # matplotlib >= 3.7.0 requires patching '_delvewheel_init_patch_1_3_3'
@@ -430,7 +431,6 @@ def hook_matplotlib(finder, module):
                 return node
 
         finder.import_hook("mpl_toolkits")
-
 
     t = ChangeDef()
     patched_tree = t.visit(tree)
