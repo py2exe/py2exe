@@ -477,6 +477,13 @@ def hook_numpy(finder, module):
             finder.import_hook("numpy._core._multiarray_tests")
             finder.recursion_depth_numpy_multiarray_tests = depth
 
+    if numpy_version >= pkgversion.parse('2.3.0'):
+        depth = getattr(finder,"recursion_depth_numpy_core_exceptions", 0)
+        if depth == 0:
+            finder.recursion_depth_numpy_core_exceptions = depth + 1
+            finder.import_hook("numpy._core._exceptions")
+            finder.recursion_depth_numpy_core_exceptions = depth
+
 
 def hook_nose(finder, module):
     finder.ignore("IronPython")
