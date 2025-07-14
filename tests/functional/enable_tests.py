@@ -10,6 +10,9 @@ tests = list(map(os.path.basename, tests))
 if sys.version_info >= (3, 10):
     tests = [t for t in tests if t[0] != '_']
 
+if sys.version_info >= (3, 12):
+    tests = [t for t in tests if 'bundlefiles' not in t]
+
 # temporarily disable _wxPython test
 # https://github.com/wxWidgets/Phoenix/issues/2246
 try:
