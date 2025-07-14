@@ -302,15 +302,19 @@ def hook_win32api(finder, module):
 def hook_tkinter(finder, module):
     """Recusively copy tcl and tk directories"""
     from tkinter import Tcl
-    from _tkinter import TK_VERSION
+    import _tkinter
     tcl_dir = os.path.normpath(Tcl().eval("info library"))
     assert os.path.isdir(tcl_dir)
     finder.add_datadirectory("lib/tcl", tcl_dir, recursive=True)
-    tk_dir = os.path.join(os.path.dirname(tcl_dir), 'tk{}'.format(TK_VERSION))
+    tk_dir = os.path.join(os.path.dirname(tcl_dir), 'tk{}'.format(_tkinter.TK_VERSION))
     assert os.path.isdir(tk_dir)
     finder.add_datadirectory("lib/tk", tk_dir, recursive=True)
     if sys.version_info >= (3,6,0) and sys.version_info < (3,12,0):
         finder.import_hook("imp")
+
+    if sys.version_info >= (3,12,0):
+        zlib1_path = os.path.join(os.path.dirname(_tkinter.__file__), 'zlib1.dll')
+        finder.add_libfile('zlib1.dll', zlib1_path)
 
     # add environment variables that point to the copied paths at runtime
     finder.add_bootcode("""
