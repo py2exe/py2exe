@@ -1,12 +1,12 @@
 [
-    {"python-version": "3.8", "python-arch": "x86", "run-tests": "false"},
     {"python-version": "3.9", "python-arch": "x86", "run-tests": "false"},
     {"python-version": "3.10", "python-arch": "x86", "run-tests": "false"},
     {"python-version": "3.11", "python-arch": "x86", "run-tests": "false"},
     {"python-version": "3.12", "python-arch": "x86", "run-tests": "false"},
-    {"python-version": "3.8", "python-arch": "x64", "run-tests": "true"},
+    {"python-version": "3.13", "python-arch": "x86", "run-tests": "false"},
     {"python-version": "3.9", "python-arch": "x64", "run-tests": "true"},
     {"python-version": "3.10", "python-arch": "x64", "run-tests": "true"},
     {"python-version": "3.11", "python-arch": "x64", "run-tests": "true"},
     {"python-version": "3.12", "python-arch": "x64", "run-tests": "true"},
+    {"python-version": "3.13", "python-arch": "x64", "run-tests": "true"},
 ]
