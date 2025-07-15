@@ -96,9 +96,8 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         verbose (int): verbosity level of the freezing process, default `0`. Supported
             levels are `0--4`.
         bundle_files (int): select how to bundle the Python and extension DLL files,
-            default `3` (all the files are copied alongside the frozen executable)/
-            Supported values are `3--0`. See below for further information on this
-            parameter.
+            default `3` (all the files are copied alongside the frozen executable).
+            See below for further information on this parameter.
 
     Bundle files levels (`bundle_files`): The py2exe runtime *can* use extension module
         by directly importing the from a zip-archive - without the need to unpack them
@@ -107,6 +106,10 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         bundle_files == 3: Extension modules, the Python DLL and other needed DLLs are
             copied into the directory where the zipfile or the EXE/DLL files
             are created, and loaded in the normal way.
+
+    **WARNING**: the following values are not supported in Python 3.12+! See
+    https://github.com/py2exe/py2exe/issues/225 for further details.
+
         bundle_files == 2: Extension modules are put into the library ziparchive and loaded
             from it directly. The Python DLL and any other needed DLLs are copied into the
             directory where the zipfile or the EXE/DLL files are created, and loaded
@@ -138,7 +141,8 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         special_build (str): -
 
     Support limitations:
-        `bundle_files <=2`: these values are supported only for packages in the Python
+        `bundle_files <=2`: these settings do not work in Python 3.12+. See https://github.com/py2exe/py2exe/issues/225
+            for further details. In general, these values are supported only for packages in the Python
             standard library. Issues occurring with external packages and lower values
             of `bundle_files` will not be investigated.
         `zipfile = None`: is not actively supported. Issues occurring when this
