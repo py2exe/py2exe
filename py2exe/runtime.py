@@ -152,6 +152,15 @@ class Runtime(object):
 ##                                      arcname)
 ##             self.service_exe_files.append(dst)
 
+        if sys.version_info >= (3,12,0):
+            try:
+                assert self.options.bundle_files == 3
+            except AssertionError:
+                error_msg = 'Values of bundlefiles<3 are incompatible with Python 3.12+!'
+                logger.error(error_msg)
+                logger.error('See https://github.com/py2exe/py2exe/issues/191#issuecomment-1774211437 for further details.')
+                raise RuntimeError(error_msg)
+
         if self.options.bundle_files < 3:
             self.bootstrap_modules.add("zipextimporter")
 
