@@ -446,24 +446,33 @@ class ModuleFinder:
 
     def scan_opcodes(self, co):
         # Scan the code, and yield 'interesting' opcode combinations
-        code = co.co_code
-        names = co.co_names
-        consts = co.co_consts
-        opargs = [(op, arg) for _, op, arg in dis._unpack_opargs(code)
-                  if op != EXTENDED_ARG]
-        for i, (op, oparg) in enumerate(opargs):
-            if op in STORE_OPS:
-                yield "store", (names[oparg],)
-                continue
-            if (op == IMPORT_NAME and i >= 2
-                    and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
-                level = consts[opargs[i-2][1]]
-                fromlist = consts[opargs[i-1][1]]
-                if level == 0: # absolute import
-                    yield "absolute_import", (fromlist, names[oparg])
-                else: # relative import
-                    yield "relative_import", (level, fromlist, names[oparg])
-                continue
+        if sys.version_info >= (3,13,0):
+            for name in dis._find_store_names(co):
+                yield "store", (name,)
+            for name, level, fromlist in dis._find_imports(co):
+                if level == 0:  # absolute import
+                    yield "absolute_import", (fromlist, name)
+                else:  # relative import
+                    yield "relative_import", (level, fromlist, name)
+        else:
+            code = co.co_code
+            names = co.co_names
+            consts = co.co_consts
+            opargs = [(op, arg) for _, op, arg in dis._unpack_opargs(code)
+                    if op != EXTENDED_ARG]
+            for i, (op, oparg) in enumerate(opargs):
+                if op in STORE_OPS:
+                    yield "store", (names[oparg],)
+                    continue
+                if (op == IMPORT_NAME and i >= 2
+                        and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
+                    level = consts[opargs[i-2][1]]
+                    fromlist = consts[opargs[i-1][1]]
+                    if level == 0: # absolute import
+                        yield "absolute_import", (fromlist, names[oparg])
+                    else: # relative import
+                        yield "relative_import", (level, fromlist, names[oparg])
+                    continue
 
     def scan_code(self, co, m):
         code = co.co_code
