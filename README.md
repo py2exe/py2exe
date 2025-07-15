@@ -13,6 +13,13 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.14.0.0:
+- Add support for Python 3.12 and 3.13
+- Drop support for Python 3.8
+- Values of `bundle_files` lower than `3` are not supported in Python 3.12 and newer.
+  See issue #225 for further details
+- Fixes for the `matplotlib`, `numpy`, and `tkinter` hooks
+
 Version 0.13.0.2:
 - reintroduce ability to specify different version info for each of the frozen binaries
 - fix a bug in `MemoryModule.c:PerformBaseRelocation`
