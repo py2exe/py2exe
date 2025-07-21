@@ -19,14 +19,10 @@ from argparse import Namespace
 from . import runtime
 from .version import __version__
 
-from .patch_distutils import patch_distutils
-
 is_64bits = sys.maxsize > 2**32
 if not is_64bits:
     import warnings
     warnings.warn(DEPRECATION_MESSAGE_WIN32, DeprecationWarning, stacklevel=2)
-
-patch_distutils()
 
 
 def _fixup_version_info(version_info):

@@ -4,7 +4,7 @@ set TESTFAILED=0
 
 cd %testname%
 if exist .\requirements.txt pip install -r requirements.txt
-python setup.py py2exe
+python freeze.py
 if exist .\post_build.bat .\post_build.bat
 cd dist
 %testname%.exe || set TESTFAILED=1
