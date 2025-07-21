@@ -205,7 +205,7 @@ int run_script(void)
 	return rc;
 }
 
-
+#if (PY_VERSION_HEX < 0x030C0000)
 /* XXX XXX XXX flags should be set elsewhere */
 /*
   c:\Python34\include\Python.h
@@ -301,12 +301,12 @@ HMODULE load_pythondll(void)
 	FreeLibrary(hmod);
 	return hmod_pydll;
 }
+#endif
 
 int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 {
 
 	int rc = 0;
-	HMODULE hmod_pydll;
 
 //	Py_NoSiteFlag = 1; /* Suppress 'import site' */
 //	Py_InspectFlag = 1; /* Needed to determine whether to exit at SystemExit */
@@ -321,7 +321,8 @@ int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 		return -1;
 	}
 
-	hmod_pydll = load_pythondll();
+#if (PY_VERSION_HEX < 0x030C0000)
+	HMODULE hmod_pydll = load_pythondll();
 	if (hmod_pydll == NULL) {
 		SystemError(-1, "FATAL ERROR: Could not load python library");
 //		printf("FATAL Error: could not load python library\n");
@@ -334,6 +335,7 @@ int init_with_instance(HMODULE hmod_exe, char *frozen, int argc, wchar_t **argv)
 	}
 
 	set_vars(hmod_pydll);
+#endif
 
 	/*
 	  _memimporter contains the magic which allows to load

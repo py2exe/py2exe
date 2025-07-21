@@ -1,3 +1,4 @@
+#if (PY_VERSION_HEX < 0x030C0000)
 #define Py_OptimizeFlag *(_Py_OptimizeFlag_PTR())
 #define Py_NoSiteFlag *(_Py_NoSiteFlag_PTR())
 #define Py_VerboseFlag *(_Py_VerboseFlag_PTR())
@@ -11,3 +12,4 @@ extern char **__Py_PackageContext_PTR();
 extern PyTypeObject *PyModuleDef_Type_PTR();
 
 extern int PythonLoaded(HMODULE hmod);
+#endif
