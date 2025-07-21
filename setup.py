@@ -210,6 +210,6 @@ if __name__ == "__main__":
           distclass = Dist,
           cmdclass = cmdclass,
           interpreters = interpreters,
-          py_modules=['zipextimporter'],
+          py_modules=['py2exe_setuptools', 'zipextimporter'],
           packages=['py2exe', 'py2exe.vendor'],
           )
