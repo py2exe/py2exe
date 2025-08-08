@@ -137,7 +137,8 @@ class DllFinder:
                     if img_name.decode("mbcs") == name:
                         # name binds to dllname
                         dllname = self.search_path(dllname.decode("mbcs"), path)
-                        TEMP.add(dllname)
+                        if dllname is not None:
+                            TEMP.add(dllname)
                 return True
 
             # BindImageEx uses the PATH environment variable to find
