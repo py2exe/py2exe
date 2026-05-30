@@ -2,7 +2,7 @@
 #undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0502
 #define NTDDI_VERSION 0x05020000
-#include <Python.h>
+#include "import_mini.h"
 #include <windows.h>
 
 static char module_doc[] =
@@ -55,7 +55,7 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 	PyObject* (*p)(void);
 	PyObject *m = NULL;
 	struct PyModuleDef *def;
-	char *oldcontext;
+	const char *oldcontext;
 	PyObject *name = PyUnicode_FromString(modname);
 
 	if (name == NULL)
@@ -79,15 +79,10 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 		return -1;
 	}
 
-        oldcontext = _Py_PackageContext;
-	_Py_PackageContext = modname;
-
+	oldcontext = _PyImport_SwapPackageContext(modname);
 	p = (PyObject*(*)(void))init_func;
 	m = (*p)();
-
-	_Py_PackageContext = oldcontext;
-
-
+	_PyImport_SwapPackageContext(oldcontext);
 	if (PyErr_Occurred()) {
 		Py_DECREF(name);
 		return -1;
@@ -264,7 +259,11 @@ import_module(PyObject *self, PyObject *args)
 static PyObject *
 get_verbose_flag(PyObject *self, PyObject *args)
 {
+#if (PY_VERSION_HEX >= 0x030C0000)
+	return PyLong_FromLong(_Py_GetConfig()->verbose);
+#else
 	return PyLong_FromLong(Py_VerboseFlag);
+#endif
 }
 
 static PyMethodDef methods[] = {
@@ -287,6 +286,30 @@ static struct PyModuleDef moduledef = {
 	NULL, /* m_free */
 };
 
+
+/*
+ * if EMBED_MEMIMPORTER is defined then do not export
+ * the module init function just so it can be used only
+ * within an embed exe and registered to python as a
+ * built in module via PyImport_AppendInitTab.
+ *
+ * Perfect for those wanting to have the memimport
+ * repository as a git submodule and wants to configure
+ * their build system to compile this module into their
+ * embed exe directly and to then copy the 2 python
+ * scripts that would normally get included when
+ * installing the memimporter package into a local
+ * site-packages folder that is then compiled
+ * and zipped up for the embedded interpreter to use.
+ */
+#ifdef EMBED_MEMIMPORTER
+#undef PyMODINIT_FUNC
+#if defined(__cplusplus)
+#define PyMODINIT_FUNC extern "C" PyObject*
+#else /* __cplusplus */
+#define PyMODINIT_FUNC PyObject*
+#endif /* __cplusplus */
+#endif
 
 PyMODINIT_FUNC PyInit__memimporter(void)
 {

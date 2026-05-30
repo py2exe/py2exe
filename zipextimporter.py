@@ -46,39 +46,61 @@ import zipimport
 
 from importlib import machinery
 from importlib import util
+import _frozen_importlib_external as _bootstrap_external
 
 # _memimporter is a module built into the py2exe runstubs.
 import _memimporter
 
+
+path_sep = _bootstrap_external.path_sep
+
+
+def _is_dir(self, path):
+    # See if this is a "directory". If so, it's eligible to be part
+    # of a namespace package. We test by seeing if the name, with an
+    # appended path separator, exists.
+    dirpath = path + path_sep
+    # If dirpath is present in self._files, we have a directory.
+    return dirpath in self._files
+
+
 class ZipExtensionImporter(zipimport.zipimporter):
     _suffixes = machinery.EXTENSION_SUFFIXES
 
-    def find_loader(self, fullname, path=None):
-        """We need to override this method for Python 3.x.
-        """
-        loader, portions = super().find_loader(fullname, path)
-        if loader is None:
-            pathname = fullname.replace(".", "\\")
+    if sys.version_info < (3, 12):
+        def find_loader(self, fullname, path=None):
+            """We need to override this method for Python 3.x.
+            """
+            loader, portions = super().find_loader(fullname, path)
+            if loader is None:
+                pathname = fullname.replace(".", "\\")
+                for s in self._suffixes:
+                    if (pathname + s) in self._files:
+                        return self, []
+                return None, []
+            return loader, portions
+
+        def find_module(self, fullname, path=None):
+            result = zipimport.zipimporter.find_spec(self, fullname, path)
+            if result:
+                return result
+            fullname = fullname.replace(".", "\\")
             for s in self._suffixes:
-                if (pathname + s) in self._files:
-                    return self, []
-            return None, []
-        return loader, portions
+                if (fullname + s) in self._files:
+                    return self
+            return None
 
-    def find_module(self, fullname, path=None):
-        result = zipimport.zipimporter.find_module(self, fullname, path)
-        if result:
-            return result
-        fullname = fullname.replace(".", "\\")
-        for s in self._suffixes:
-            if (fullname + s) in self._files:
-                return self
-        return None
+    def find_spec(self, name, path=None) -> machinery.ModuleSpec:
+        spec = super().find_spec(name, path)
+        if spec is None and name is not None:
+            print(f"Spec is 'None' and 'name' is '{name}'.")
 
-    def find_spec(self, name, path=None):
-        module = self.find_module(name, path)
-        if module is not None:
-            return util.spec_from_loader(name, module)
+        if spec is not None:
+            return util.spec_from_loader(name, spec.loader)
+            # return util.spec_from_loader(name, self)
+            # print(str(spec))
+            # if sys.version_info >= (3, 10):
+            # return machinery.ModuleSpec(name, self, is_package=self.is_package(name))
         else:
             return None
 
@@ -132,7 +154,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
 
     if sys.version_info >= (3, 10):
         def create_module(self, spec):
-            mod =  super().create_module(spec)
+            mod = super().create_module(spec)
             if mod is None:
                 verbose = _memimporter.get_verbose_flag()
                 fullname = spec.name
@@ -159,8 +181,8 @@ class ZipExtensionImporter(zipimport.zipimporter):
                         return mod
                 # raise zipimport.ZipImportError("can't find module %s" % fullname)
 
-    if sys.version_info >= (3, 10):
         def exec_module(self, module):
+            # print(str(module))
             if hasattr(module, '__memimported__'):
                 pass
             else:
@@ -168,6 +190,7 @@ class ZipExtensionImporter(zipimport.zipimporter):
 
     def __repr__(self):
         return "<%s object %r>" % (self.__class__.__name__, self.archive)
+
 
 def install():
     "Install the zipextimporter"

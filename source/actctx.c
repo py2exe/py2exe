@@ -10,14 +10,19 @@ PFN_RELEASEACTCTX pfnReleaseActCtx=NULL;
 void _MyLoadActCtxPointers()
 {
 	HINSTANCE hKernel32 = GetModuleHandleW(L"kernel32.dll");
-	if (hKernel32)
+	if (hKernel32) {
 		pfnGetCurrentActCtx = (PFN_GETCURRENTACTCTX) GetProcAddress(hKernel32, "GetCurrentActCtx");
-	// If we can't load GetCurrentActCtx (ie, pre XP) , don't bother with the rest.
-	if (pfnGetCurrentActCtx) {
-		pfnActivateActCtx = (PFN_ACTIVATEACTCTX) GetProcAddress(hKernel32, "ActivateActCtx");
-		pfnDeactivateActCtx = (PFN_DEACTIVATEACTCTX) GetProcAddress(hKernel32, "DeactivateActCtx");
-		pfnAddRefActCtx = (PFN_ADDREFACTCTX) GetProcAddress(hKernel32, "AddRefActCtx");
-		pfnReleaseActCtx = (PFN_RELEASEACTCTX) GetProcAddress(hKernel32, "ReleaseActCtx");
+		/*
+		 * Prevent possible problems with GetProcAddress if hKernel32 ends up being NULL
+		 * for some reason by moving the below code into its block.
+		 */
+		// If we can't load GetCurrentActCtx (ie, pre XP) , don't bother with the rest.
+		if (pfnGetCurrentActCtx) {
+			pfnActivateActCtx = (PFN_ACTIVATEACTCTX) GetProcAddress(hKernel32, "ActivateActCtx");
+			pfnDeactivateActCtx = (PFN_DEACTIVATEACTCTX) GetProcAddress(hKernel32, "DeactivateActCtx");
+			pfnAddRefActCtx = (PFN_ADDREFACTCTX) GetProcAddress(hKernel32, "AddRefActCtx");
+			pfnReleaseActCtx = (PFN_RELEASEACTCTX) GetProcAddress(hKernel32, "ReleaseActCtx");
+		}
 	}
 }
 

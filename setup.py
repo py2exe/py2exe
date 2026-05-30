@@ -26,15 +26,21 @@ from py2exe_setuptools import Dist, Interpreter, BuildInterpreters
 if 'MSC' in sys.version:
     python_dll_name = '\"python%d%d.dll\"' % sys.version_info[:2]
     python_dll_name_debug = '\"python%d%d_d.dll\"' % sys.version_info[:2]
+    python_lib_name = "python%d%d" % sys.version_info[:2]
+    python_lib_name_debug = "python%d%d_d" % sys.version_info[:2]
 else:
     python_dll_name = '\"libpython%d.%d.dll\"' % sys.version_info[:2]
     python_dll_name_debug = '\"libpython%d.%d_d.dll\"' % sys.version_info[:2]
+    python_lib_name = "libpython%d.%d" % sys.version_info[:2]
+    python_lib_name_debug = "libpython%d.%d_d" % sys.version_info[:2]
+
 
 def _is_debug_build():
     for ext in machinery.all_suffixes():
         if ext == "_d.pyd":
             return True
     return False
+
 
 if _is_debug_build():
     macros = [("PYTHONDLL", python_dll_name_debug),
@@ -48,6 +54,7 @@ else:
 macros.append(("Py_BUILD_CORE", '1'))
 macros.append(("PYTHONHOME", ''))
 macros.append(("PYTHONPATH", ''))
+macros.append(("EMBED_MEMIMPORTER", ''))
 
 extra_compile_args = []
 extra_link_args = []
@@ -86,10 +93,12 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                               "source/MyLoadLibrary.c",
                               "source/_memimporter.c",
                               "source/actctx.c",
+                              "source/import_mini.c",
 
                               "source/python-dynload.c",
                               ],
-                             libraries=["user32", "shell32"],
+                             libraries=["user32", "shell32",
+                                        python_lib_name_debug if _is_debug_build() else python_lib_name],
                              export_symbols=["DllCanUnloadNow,PRIVATE",
                                              "DllGetClassObject,PRIVATE",
                                              "DllRegisterServer,PRIVATE",
@@ -110,10 +119,11 @@ run = Interpreter("py2exe.run",
                    "source/MyLoadLibrary.c",
                    "source/_memimporter.c",
                    "source/actctx.c",
+                   "source/import_mini.c",
 
                    "source/python-dynload.c",
                    ],
-                  libraries=["user32", "shell32"],
+                  libraries=["user32", "shell32", python_lib_name_debug if _is_debug_build() else python_lib_name],
                   define_macros=macros,
                   extra_compile_args=extra_compile_args,
                   extra_link_args=extra_link_args + subsys_console + unicode_flags,
@@ -128,10 +138,11 @@ run_w = Interpreter("py2exe.run_w",
                      "source/MyLoadLibrary.c",
                      "source/_memimporter.c",
                      "source/actctx.c",
+                     "source/import_mini.c",
 
                      "source/python-dynload.c",
                      ],
-                    libraries=["user32", "shell32"],
+                    libraries=["user32", "shell32", python_lib_name_debug if _is_debug_build() else python_lib_name],
                     define_macros=macros,
                     extra_compile_args=extra_compile_args,
                     extra_link_args=extra_link_args + subsys_windows,
@@ -184,8 +195,7 @@ if __name__ == "__main__":
           setup_requires=["wheel", "cachetools", "pefile", "packaging"],
           install_requires=["cachetools", "pefile"],
           platforms="Windows",
-          python_requires='>=3.9, <3.14',
-
+          python_requires='>=3.9, <3.15',
           classifiers=[
               "Development Status :: 4 - Beta",
               "Environment :: Console",
@@ -199,6 +209,7 @@ if __name__ == "__main__":
               "Programming Language :: Python :: 3.11",
               "Programming Language :: Python :: 3.12",
               "Programming Language :: Python :: 3.13",
+              "Programming Language :: Python :: 3.14",
               "Programming Language :: Python :: Implementation :: CPython",
               "Topic :: Software Development",
               "Topic :: Software Development :: Libraries",

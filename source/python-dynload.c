@@ -4,6 +4,20 @@
 #include "Python-dynload.h"
 
 /*
+ * In Python 3.12+ dynamically loading the python core DLL
+ * is no longer supported due to needing to load TLS Data
+ * and loading the TLS Data when memory loading the core dll
+ * is impossible due to the ntdll.dll symbol known as
+ * LdrpHandleTlsData is both undocumented and is not exported.
+ * Likewise, the address to the function is not guaranteed to
+ * to stay at it's specific memory address on each revision of
+ * Windows and can result in immediate crash when trying to call
+ * that particular function from C/C++ code. That is if the function
+ * does not get removed and/or renamed at best, at worst it being a
+ * missing function. Basically it causes Undefined Behavior.
+ */
+#if (PY_VERSION_HEX < 0x030C0000)
+/*
   This module allows us to dynamically load the python DLL.
 
   We have to #define Py_BUILD_CORE when we cmpile our stuff,
@@ -529,3 +543,4 @@ PyObject *PyExc_ImportError;
 PyObject *PyExc_RuntimeError;
 
 //Py_VerboseFlag
+#endif
