@@ -3,7 +3,7 @@ py2exe for Python 3
 
 `py2exe` is a software to build standalone Windows executable programs from Python
 scripts. `py2exe` can build console executables and windows (GUI) executables.
-`py2exe` supports the Python versions* included in the [official development cycle](https://devguide.python.org/#status-of-python-branches).
+`py2exe` supports the Python versions* included in the [official development cycle](https://devguide.python.org/versions/).
 
 Development of `py2exe` is hosted here: https://github.com/py2exe/py2exe.
 
