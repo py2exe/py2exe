@@ -249,8 +249,10 @@ def hook__socket(finder, module):
 def hook_pyphen(finder, module):
     """pyphen locates its dictionary files via importlib.resources or __file__,
     neither of which works inside a frozen library.zip.
-    This hook copies hyph_*.dic files next to the executable and patches
-    pyphen.dictionaries to resolve from there at runtime.
+    This hook copies hyph_*.dic files next to the executable and injects a
+    fake pyphen.dictionaries module into sys.modules at startup so that
+    importlib.resources.files('pyphen.dictionaries') resolves to the correct
+    directory before pyphen is imported.
     """
     import pyphen
     import glob as _glob
@@ -263,11 +265,34 @@ def hook_pyphen(finder, module):
         )
     finder.add_bootcode("""
 def _patch_pyphen():
-    import pyphen
     import os
     import sys
+    import types
     from pathlib import Path
-    pyphen.dictionaries = Path(os.path.dirname(sys.executable)) / "pyphenDictionaries"
+    from importlib.machinery import ModuleSpec
+
+    dic_path = os.path.join(os.path.dirname(sys.executable), "pyphenDictionaries")
+
+    if not os.path.isdir(dic_path):
+        raise RuntimeError(
+            f"pyphen dictionaries not found at {dic_path!r}. "
+            "Check py2exe build configuration."
+        )
+
+    class _DicReader:
+        def files(self):
+            return Path(dic_path)
+
+    class _DicLoader:
+        def get_resource_reader(self, name):
+            return _DicReader()
+
+    fake = types.ModuleType('pyphen.dictionaries')
+    fake.__path__ = [dic_path]
+    fake.__package__ = 'pyphen.dictionaries'
+    fake.__spec__ = ModuleSpec('pyphen.dictionaries', loader=_DicLoader(), is_package=True)
+    fake.__spec__.submodule_search_locations = [dic_path]
+    sys.modules['pyphen.dictionaries'] = fake
 
 _patch_pyphen()
 del _patch_pyphen
