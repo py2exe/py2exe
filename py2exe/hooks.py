@@ -247,13 +247,13 @@ def hook__socket(finder, module):
         finder.import_hook("imp")
 
 def hook_pyphen(finder, module):
-    """pyphen locates its dictionary files via importlib.resources or __file__,
-    neither of which works inside a frozen library.zip.
-    This hook copies hyph_*.dic files next to the executable and injects a
-    fake pyphen.dictionaries module into sys.modules at startup so that
-    importlib.resources.files('pyphen.dictionaries') resolves to the correct
-    directory before pyphen is imported.
+    """pyphen locates its dictionary files via importlib.resources, which
+    doesn't work inside a frozen library.zip.
+    This hook copies hyph_*.dic files next to the executable and patches
+    pyphen's dictionaries assignment via AST so it resolves to the correct
+    directory at runtime.
     """
+    import ast
     import pyphen
     import glob as _glob
     DEST_DIR = "pyphenDictionaries"
@@ -263,40 +263,35 @@ def hook_pyphen(finder, module):
             os.path.join(DEST_DIR, os.path.basename(dic_file)),
             dic_file,
         )
-    finder.add_bootcode("""
-def _patch_pyphen():
-    import os
-    import sys
-    import types
-    from pathlib import Path
-    from importlib.machinery import ModuleSpec
 
-    dic_path = os.path.join(os.path.dirname(sys.executable), "pyphenDictionaries")
+    tree = ast.parse(module.__source__)
+    tree.body.insert(0, ast.parse("import os").body[0])
+    tree.body.insert(0, ast.parse("import sys").body[0])
 
-    if not os.path.isdir(dic_path):
+    class _PatchDictionaries(ast.NodeTransformer):
+        rewritten = False
+
+        def visit_Try(self, node):
+            first = node.body[0] if node.body else None
+            if (
+                isinstance(first, ast.Assign)
+                and len(first.targets) == 1
+                and getattr(first.targets[0], "id", None) == "dictionaries"
+            ):
+                self.rewritten = True
+                return ast.parse(
+                    f"dictionaries = Path(os.path.dirname(sys.executable)) / {DEST_DIR!r}"
+                ).body[0]
+            return self.generic_visit(node)
+
+    transformer = _PatchDictionaries()
+    patched_tree = ast.fix_missing_locations(transformer.visit(tree))
+    if not transformer.rewritten:
         raise RuntimeError(
-            f"pyphen dictionaries not found at {dic_path!r}. "
-            "Check py2exe build configuration."
+            "hook_pyphen: failed to rewrite dictionaries assignment in pyphen.__init__. "
+            "The upstream module may have changed its layout."
         )
-
-    class _DicReader:
-        def files(self):
-            return Path(dic_path)
-
-    class _DicLoader:
-        def get_resource_reader(self, name):
-            return _DicReader()
-
-    fake = types.ModuleType('pyphen.dictionaries')
-    fake.__path__ = [dic_path]
-    fake.__package__ = 'pyphen.dictionaries'
-    fake.__spec__ = ModuleSpec('pyphen.dictionaries', loader=_DicLoader(), is_package=True)
-    fake.__spec__.submodule_search_locations = [dic_path]
-    sys.modules['pyphen.dictionaries'] = fake
-
-_patch_pyphen()
-del _patch_pyphen
-""")
+    module.__code_object__ = compile(patched_tree, module.__file__, "exec", optimize=module.__optimize__)
 
 
 def hook_pyreadline(finder, module):
