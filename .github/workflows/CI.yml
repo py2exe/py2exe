@@ -132,7 +132,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python -m pip install -U pip
+          python -m pip install -U pip setuptools
 
       - name: Prepare for test
         run: |
@@ -142,6 +142,7 @@ jobs:
           $wheelname = python .github\helpers\get_wheel_name.py $ver
           echo $wheelname
           echo "WHEELNAME=$wheelname" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          pip uninstall setuptools -y
 
       - name: Download artifacts
         uses: actions/download-artifact@v8
