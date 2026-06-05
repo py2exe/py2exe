@@ -13,6 +13,10 @@ Changes
 
 The detailed changelog is published on [GitHub](https://github.com/py2exe/py2exe/releases/).
 
+Version 0.14.1.1:
+- Fix hook for `pyphen`
+- Add `packaging` to the runtime dependencies
+
 Version 0.14.1.0:
 - Add support for Python 3.14
 - Drop support for Python 3.9
