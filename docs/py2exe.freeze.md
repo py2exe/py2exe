@@ -6,6 +6,7 @@
 freeze(
     console=[],
     windows=[],
+    service=[],
     data_files=None,
     zipfile='library.zip',
     options={},
@@ -21,6 +22,7 @@ Create a frozen executable from the passed Python script(s).
  
  - <b>`console`</b> (list of dict):  paths of the Python files that will be frozen  as console (CLI) executables. See below for the target dict syntax. 
  - <b>`windows`</b> (list of dict):  paths of the Python files that will be frozen  as windows (GUI) executables. See below for the target dict syntax. 
+ - <b>`service`</b> (list of dict):  module names and options for Windows service  executables. See below for the target dict syntax. 
  - <b>`data_files`</b> (list):  non-Python files that have to be added in the frozen  bundle. Each element of the list is a tuple containing the destination  path in the bundle and the source path of the data files. 
  - <b>`zipfile`</b> (str):  target path of the archive that will contain all the Python  packages and modules required by the frozen bundle.  If this parameter is set to `None`, the archive will be attached  to the target executable file. 
  - <b>`options`</b> (dict):  options used to configure and customize the bundle.  Supported values are listed below. 
@@ -33,6 +35,11 @@ Target dictionaries (to be used for `console` or `windows`):
  - <b>`icon_resources`</b> (list):  list of 2-tuples `(id, pathname)`  Icon used for the executable. 
  - <b>`other_resources`</b> (list):  list of 3-tuples `(resource_type, id, datastring)`  Other files added in the bundle. 
  - <b>`version_info`</b> (dict):  optionally specifies version information for a given binary.  Supported values are listed below. 
+
+Target dictionaries (to be used for `service`): 
+ - <b>`modules`</b> (list or str):  one or more Python module names that expose service  classes (classes with `_svc_name_`). 
+ - <b>`cmdline_style`</b> (str):  service command-line behavior. Supported values are  `py2exe` (default; legacy py2exe-style install/remove command  handling), `pywin32` (uses `win32serviceutil.HandleCommandLine`; one  service class), and `custom` (calls module-level  `HandleCommandLine()`; one service module). 
+ - <b>`other_target_keys`</b> (note):  same as `console`/`windows` targets (for example `dest_base`,  `icon_resources`, `other_resources`, `version_info`). 
 
 Options (`options`): 
  - <b>`includes`</b> (list):  list of modules to include in the bundle. 

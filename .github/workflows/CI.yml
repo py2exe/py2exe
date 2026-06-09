@@ -167,3 +167,10 @@ jobs:
           cd functional
           python .\enable_tests.py
           .\runner_freeze.ps1
+
+      - name: Test (Windows service)
+        if: ${{ matrix.cfg.run-tests == 'true' }}
+        run: |
+          cd tests
+          cd service
+          .\service_test.ps1

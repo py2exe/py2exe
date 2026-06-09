@@ -43,7 +43,7 @@ def _fixup_version_info(version_info):
     return None
 
 
-def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", options={}, version_info={}):
+def freeze(console=[], windows=[], service=[], data_files=None, zipfile="library.zip", options={}, version_info={}):
     """Create a frozen executable from the passed Python script(s).
 
     Arguments:
@@ -51,6 +51,8 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             as console (CLI) executables. See below for the target dict syntax.
         windows (list of dict): paths of the Python files that will be frozen
             as windows (GUI) executables. See below for the target dict syntax.
+        service (list of dict): module names and options for Windows service
+            executables. See below for the target dict syntax.
         data_files (list): non-Python files that have to be added in the frozen
             bundle. Each element of the list is a tuple containing the destination
             path in the bundle and the source path of the data files.
@@ -76,6 +78,17 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
             Other files added in the bundle.
         version_info (dict): optionally specifies version information for a given binary.
             Supported values are listed below.
+
+    Target dictionaries (to be used for `service`):
+        modules (list or str): one or more Python module names that expose service
+            classes (classes with `_svc_name_`).
+        cmdline_style (str): service command-line behavior. Supported values are
+            `py2exe` (default; legacy py2exe-style install/remove command
+            handling), `pywin32` (uses `win32serviceutil.HandleCommandLine`; one
+            service class), and `custom` (calls module-level
+            `HandleCommandLine()`; one service module).
+        other_target_keys (note): same as `console`/`windows` targets (for example `dest_base`,
+            `icon_resources`, `other_resources`, `version_info`).
 
     Options (`options`):
         includes (list): list of modules to include in the bundle.
@@ -160,6 +173,11 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
         target.exe_type = "windows_exe"
         target.version_info = _fixup_version_info(getattr(target, "version_info", None) or version_info)
 
+    service_targets = runtime.fixup_targets(service, "modules")
+    for target in service_targets:
+        target.exe_type = "service"
+        target.version_info = _fixup_version_info(getattr(target, "version_info", None) or version_info)
+
     # support the old dictionary structure with a global 'py2exe' key
     if 'py2exe' in options:
         options = options['py2exe']
@@ -175,7 +193,7 @@ def freeze(console=[], windows=[], data_files=None, zipfile="library.zip", optio
                         bundle_files = options.get("bundle_files", 3),
 
                         script = console_targets + windows_targets,
-                        service = [],
+                        service = service_targets,
                         com_servers = [],
 
                         destdir = options.get("dist_dir", "dist"),
