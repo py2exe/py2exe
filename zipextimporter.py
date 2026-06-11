@@ -53,14 +53,28 @@ import _memimporter
 class ZipExtensionImporter(zipimport.zipimporter):
     _suffixes = machinery.EXTENSION_SUFFIXES
 
+    def _archive_files(self):
+        """Return the archive's table-of-contents dict.
+
+        zipimporter exposed this as the ``_files`` instance attribute through
+        Python 3.12; in 3.13 the attribute was removed in favour of the new
+        ``_get_files()`` method (CPython gh-103200). Use whichever this
+        interpreter provides.
+        """
+        get_files = getattr(super(), "_get_files", None)
+        if get_files is not None:
+            return get_files()
+        return self._files
+
     def find_loader(self, fullname, path=None):
         """We need to override this method for Python 3.x.
         """
         loader, portions = super().find_loader(fullname, path)
         if loader is None:
             pathname = fullname.replace(".", "\\")
+            files = self._archive_files()
             for s in self._suffixes:
-                if (pathname + s) in self._files:
+                if (pathname + s) in files:
                     return self, []
             return None, []
         return loader, portions
@@ -70,8 +84,9 @@ class ZipExtensionImporter(zipimport.zipimporter):
         if result:
             return result
         fullname = fullname.replace(".", "\\")
+        files = self._archive_files()
         for s in self._suffixes:
-            if (fullname + s) in self._files:
+            if (fullname + s) in files:
                 return self
         return None
 
@@ -87,8 +102,9 @@ class ZipExtensionImporter(zipimport.zipimporter):
         # (.pyd/.dll) stored in the archive and claim it ourselves. The actual
         # in-memory load happens in create_module() via _memimporter.
         pathname = fullname.replace(".", "\\")
+        files = self._archive_files()
         for s in self._suffixes:
-            if (pathname + s) in self._files:
+            if (pathname + s) in files:
                 return util.spec_from_loader(fullname, self)
         return None
 
@@ -120,9 +136,10 @@ class ZipExtensionImporter(zipimport.zipimporter):
                 suffixes = ('.dll',)
             else:
                 suffixes = self._suffixes
+            files = self._archive_files()
             for s in suffixes:
                 path = filename + s
-                if path in self._files:
+                if path in files:
                     if verbose > 1:
                         sys.stderr.write("# found %s in zipfile %s\n"
                                          % (path, self.archive))
@@ -151,9 +168,10 @@ class ZipExtensionImporter(zipimport.zipimporter):
                 suffixes = self._suffixes
                 initname = "PyInit_" + fullname.split(".")[-1]
 
+                files = self._archive_files()
                 for s in suffixes:
                     path = filename + s
-                    if path in self._files:
+                    if path in files:
                         if verbose > 1:
                             sys.stderr.write("# found %s in zipfile %s\n"
                                             % (path, self.archive))
