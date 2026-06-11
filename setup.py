@@ -70,8 +70,8 @@ else:
     else:
         extra_link_args.append("-m32")
 
-if 0:
-    # enable this to debug a release build
+if os.environ.get("PY2EXE_DEBUG_BUILD"):
+    # build the C stubs with debug symbols (MSVC); see SKILLS.md
     extra_compile_args.append("/Od")
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
@@ -83,6 +83,7 @@ run_ctypes_dll = Interpreter("py2exe.run_ctypes_dll",
                               "source/icon.rc",
 
                               "source/MemoryModule.c",
+                              "source/memtls.c",
                               "source/MyLoadLibrary.c",
                               "source/_memimporter.c",
                               "source/actctx.c",
@@ -107,6 +108,7 @@ run = Interpreter("py2exe.run",
                    "source/icon.rc",
 
                    "source/MemoryModule.c",
+                   "source/memtls.c",
                    "source/MyLoadLibrary.c",
                    "source/_memimporter.c",
                    "source/actctx.c",
@@ -125,6 +127,7 @@ run_w = Interpreter("py2exe.run_w",
                      "source/icon.rc",
 
                      "source/MemoryModule.c",
+                     "source/memtls.c",
                      "source/MyLoadLibrary.c",
                      "source/_memimporter.c",
                      "source/actctx.c",

@@ -56,8 +56,8 @@ if 'MSC' in sys.version:
     extra_compile_args.append("-IC:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.10586.0\\ucrt")
     extra_compile_args.append("/DSTANDALONE")
 
-if 0:
-    # enable this to debug a release build
+if os.environ.get("PY2EXE_DEBUG_BUILD"):
+    # build the C stubs with debug symbols (MSVC); see SKILLS.md
     extra_compile_args.append("/Od")
     extra_compile_args.append("/Z7")
     extra_link_args.append("/DEBUG")
@@ -66,6 +66,7 @@ if 0:
 _memimporter = Extension("_memimporter",
                         ["source/_memimporter.c",
                         "source/MemoryModule.c",
+                        "source/memtls.c",
                         "source/MyLoadLibrary.c",
                         "source/actctx.c",
                         ],

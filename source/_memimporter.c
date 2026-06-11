@@ -1,7 +1,7 @@
 // Need to define these to be able to use SetDllDirectory.
-#undef _WIN32_WINNT
 #define _WIN32_WINNT 0x0502
 #define NTDDI_VERSION 0x05020000
+#define Py_BUILD_CORE_MODULE
 #include <Python.h>
 #include <windows.h>
 
@@ -12,8 +12,49 @@ static char module_doc[] =
 #include "actctx.h"
 
 #ifndef STANDALONE
-#include "Python-dynload.h"
+/* Provides the dynload shims: the _Py_PackageContext macro (Python <= 3.11)
+   and _PyRuntime_ADDR() (Python 3.12+). Must be included before the first use
+   below. */
+#include "python-dynload.h"
 #endif
+
+/* Work arround not being able to use _Py_PackageContext in Python 3.12+. */
+#if (PY_VERSION_HEX >= 0x030C00F0)
+#include <internal/pycore_runtime.h>
+/*
+ * _Py_PackageContext became the internal _PyRuntime.imports.pkgcontext in
+ * Python 3.12. The standalone build links python3xx.lib and can reference
+ * _PyRuntime directly; the run stubs load Python dynamically and must resolve
+ * its address through the dynload shim (see source/python-dynload.c).
+ */
+#ifdef STANDALONE
+#define MEMIMP_PYRUNTIME (&_PyRuntime)
+#else
+extern void *_PyRuntime_ADDR(void);
+#define MEMIMP_PYRUNTIME ((_PyRuntimeState *)_PyRuntime_ADDR())
+#endif
+#endif
+
+const char*
+_PyImport_SwapPackageContext(const char* newcontext)
+{
+#if (PY_VERSION_HEX >= 0x030C00F0)
+	_PyRuntimeState *rt = MEMIMP_PYRUNTIME;
+#ifndef HAVE_THREAD_LOCAL
+	PyThread_acquire_lock(rt->imports.extensions.mutex, WAIT_LOCK);
+#endif
+	const char* oldcontext = rt->imports.pkgcontext;
+	rt->imports.pkgcontext = newcontext;
+#ifndef HAVE_THREAD_LOCAL
+	PyThread_release_lock(rt->imports.extensions.mutex);
+#endif
+#else
+	/* On Python 3.11 or older we do this instead. */
+	const char* oldcontext = _Py_PackageContext;
+	_Py_PackageContext = newcontext;
+#endif
+	return oldcontext;
+}
 
 /*
 static int dprintf(char *fmt, ...)
@@ -55,7 +96,7 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 	PyObject* (*p)(void);
 	PyObject *m = NULL;
 	struct PyModuleDef *def;
-	char *oldcontext;
+	const char *oldcontext;
 	PyObject *name = PyUnicode_FromString(modname);
 
 	if (name == NULL)
@@ -79,15 +120,10 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 		return -1;
 	}
 
-        oldcontext = _Py_PackageContext;
-	_Py_PackageContext = modname;
-
+	oldcontext = _PyImport_SwapPackageContext(modname);
 	p = (PyObject*(*)(void))init_func;
 	m = (*p)();
-
-	_Py_PackageContext = oldcontext;
-
-
+	_PyImport_SwapPackageContext(oldcontext);
 	if (PyErr_Occurred()) {
 		Py_DECREF(name);
 		return -1;
@@ -154,9 +190,7 @@ import_module(PyObject *self, PyObject *args)
 	ULONG_PTR cookie = 0;
 	PyObject *findproc;
 	PyObject *spec;
-	#ifndef STANDALONE
 	BOOL res;
-	#endif
 
 	int imp_res = -1;
 	struct PyModuleDef *def;

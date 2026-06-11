@@ -60,6 +60,14 @@ char **__Py_PackageContext_PTR()
   DATA(char **, _Py_PackageContext);
 }
 
+void *_PyRuntime_ADDR()
+{
+  /* _PyRuntime is exported data; MyGetProcAddress returns its address. */
+  static void *p;
+  if (!p) p = (void *)MyGetProcAddress(hmod_pydll, "_PyRuntime");
+  return p;
+}
+
 PyTypeObject *PyModuleDef_Type_PTR()
 {
   DATA(PyTypeObject *, PyModuleDef_Type);

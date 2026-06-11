@@ -61,6 +61,7 @@
 #endif
 
 #include "MemoryModule.h"
+#include "memtls.h"
 
 struct ExportNameEntry {
     LPCSTR name;
@@ -735,6 +736,16 @@ HMEMORYMODULE MemoryLoadLibraryEx(const void *data, size_t size,
     // mark memory pages depending on section headers and release
     // sections that are marked as "discardable"
     if (!FinalizeSections(result)) {
+        goto error;
+    }
+
+    // Set up implicit TLS (__declspec(thread)) for the mapped image before any
+    // TLS callback or DllMain runs: allocate the TLS index and per-thread
+    // blocks via ntdll!LdrpHandleTlsData. Modules without a TLS directory are a
+    // no-op. A hard failure here fails the load -- there is no on-disk fallback
+    // for bundle_files <= 2. See source/memtls.c.
+    if (!MemoryModuleSetupTls(result->codeBase, result->headers)) {
+        SetLastError(ERROR_DLL_INIT_FAILED);
         goto error;
     }
 

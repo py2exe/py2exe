@@ -9,8 +9,9 @@ HOST, PORT = 'www.google.com', 443
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.settimeout(10)
 
-# WRAP SOCKET
-wrappedSocket = ssl.wrap_socket(sock=sock)
+# WRAP SOCKET (ssl.wrap_socket was removed in Python 3.12)
+context = ssl.create_default_context()
+wrappedSocket = context.wrap_socket(sock, server_hostname=HOST)
 
 # CONNECT AND PRINT REPLY
 wrappedSocket.connect((HOST, PORT))

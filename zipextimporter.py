@@ -75,12 +75,22 @@ class ZipExtensionImporter(zipimport.zipimporter):
                 return self
         return None
 
-    def find_spec(self, name, path=None):
-        module = self.find_module(name, path)
-        if module is not None:
-            return util.spec_from_loader(name, module)
-        else:
-            return None
+    def find_spec(self, fullname, target=None):
+        # First let the base zipimporter handle .py/.pyc and packages. Its
+        # find_spec exists on Python 3.10+. (The old find_module/find_loader
+        # entry points were removed in Python 3.12, so we must not rely on
+        # them here.)
+        spec = super().find_spec(fullname, target)
+        if spec is not None:
+            return spec
+        # Not found by the base importer: look for an extension module
+        # (.pyd/.dll) stored in the archive and claim it ourselves. The actual
+        # in-memory load happens in create_module() via _memimporter.
+        pathname = fullname.replace(".", "\\")
+        for s in self._suffixes:
+            if (pathname + s) in self._files:
+                return util.spec_from_loader(fullname, self)
+        return None
 
     def load_module(self, fullname):
         verbose = _memimporter.get_verbose_flag()
