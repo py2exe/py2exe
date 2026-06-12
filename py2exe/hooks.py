@@ -334,17 +334,31 @@ def hook_pywintypes(finder, module):
     finder.add_dll(pywintypes.__file__)
 
 def hook_charset_normalizer(finder, module):
-    """charset_normalizer.md imports charset_normalizer.md__mypyc.
-    """
-    from packaging import version as pkgversion
-    import charset_normalizer
+    """charset_normalizer's mypyc-compiled modules import a shared mypyc
+    runtime extension that no Python source references, so the module finder
+    never sees it. Its name and location depend on the version:
 
-    chatset_version = pkgversion.parse(charset_normalizer.__version__)
-    if pkgversion.parse('3') <= chatset_version <= pkgversion.parse('3.4.4'):
-        finder.add_module(
-            "charset_normalizer.md__mypyc",
-            charset_normalizer.md__mypyc.__file__
-        )
+    - 3.0 - 3.4.4: a package submodule ``charset_normalizer.md__mypyc``.
+    - 3.4.5+: a top-level, content-hash-named ``<hash>__mypyc`` extension that
+      lives next to the package in site-packages and is imported from inside
+      both ``charset_normalizer.cd`` and ``charset_normalizer.md``.
+
+    Importing the compiled modules registers whichever shared mypyc extension
+    this build ships in ``sys.modules``; force-include every ``*__mypyc``
+    module found there. (If charset_normalizer is the pure-Python build, no
+    such module appears and this is a no-op.)
+    """
+    import sys
+
+    for name in ("charset_normalizer.md", "charset_normalizer.cd"):
+        try:
+            __import__(name)
+        except ImportError:
+            pass
+
+    for name, mod in list(sys.modules.items()):
+        if name.endswith("__mypyc") and getattr(mod, "__file__", None):
+            finder.add_module(name, mod.__file__)
 
 def hook_win32com(finder, module):
     """The win32com package extends it's __path__ at runtime.
