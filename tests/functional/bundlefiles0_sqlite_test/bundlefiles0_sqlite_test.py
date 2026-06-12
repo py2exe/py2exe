@@ -1,8 +1,6 @@
 import os
 import sqlite3
 
-print('sqlite3 version: {}'.format(sqlite3.version))
-
 conn = sqlite3.connect('test.db')
 c = conn.cursor()
 c.execute('''CREATE TABLE stocks
