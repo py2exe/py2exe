@@ -153,7 +153,43 @@ int do_import(FARPROC init_func, char *modname, PyObject *spec, PyObject **mod)
 	}
 	def->m_base.m_init = p;
 
-    #if (PY_VERSION_HEX >= 0x03070000)
+    #if (PY_VERSION_HEX >= 0x030D0000)
+
+    /*
+     * Python 3.13 removed _PyImport_FixupExtensionObject and unexported its
+     * internal replacements (gh-118203 / the per-interpreter import rework), so
+     * it can no longer be resolved from pythonXX.dll -- calling it crashed on a
+     * NULL pointer. Reproduce its essential, observable effects for a
+     * single-phase extension using only *exported* APIs:
+     *   - register the module in the interpreter's modules_by_index so
+     *     PyState_FindModule keeps working (PyState_AddModule);
+     *   - for a module without per-module state (m_size == -1), keep a copy of
+     *     its __dict__ so it can be recreated on re-import, mirroring CPython's
+     *     fix_up_extension();
+     *   - publish it in sys.modules.
+     * The full per-interpreter extensions cache (CPython's _extensions_cache_*)
+     * has no exported equivalent and is not needed for a frozen,
+     * single-interpreter application. See PR #235 and CLAUDE.md.
+     */
+    if (PyState_AddModule(m, def) < 0) {
+        Py_DECREF(name);
+        return -1;
+    }
+    if (def->m_size == -1) {
+        PyObject *dict = PyModule_GetDict(m);
+        if (dict != NULL) {
+            PyObject *copy = PyDict_Copy(dict);
+            if (copy == NULL) {
+                Py_DECREF(name);
+                return -1;
+            }
+            Py_XDECREF(def->m_base.m_copy);
+            def->m_base.m_copy = copy;
+        }
+    }
+    res = PyObject_SetItem(PyImport_GetModuleDict(), name, m);
+
+    #elif (PY_VERSION_HEX >= 0x03070000)
 
     PyObject *modules = NULL;
     modules = PyImport_GetModuleDict();

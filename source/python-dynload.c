@@ -195,6 +195,26 @@ PyObject *PyModule_GetDict(PyObject *m)
   return proc(m);
 }
 
+/* Used by _memimporter.c to re-create the effects of the (removed in 3.13)
+   _PyImport_FixupExtensionObject using only exported APIs. */
+int PyState_AddModule(PyObject *module, PyModuleDef *def)
+{
+  FUNC(int, PyState_AddModule, (PyObject *, PyModuleDef *));
+  return proc(module, def);
+}
+
+int PyObject_SetItem(PyObject *o, PyObject *key, PyObject *value)
+{
+  FUNC(int, PyObject_SetItem, (PyObject *, PyObject *, PyObject *));
+  return proc(o, key, value);
+}
+
+PyObject *PyDict_Copy(PyObject *mp)
+{
+  FUNC(PyObject *, PyDict_Copy, (PyObject *));
+  return proc(mp);
+}
+
 PyObject *PyMarshal_ReadObjectFromString(char *string, Py_ssize_t len)
 {
   FUNC(PyObject *, PyMarshal_ReadObjectFromString, (char *, Py_ssize_t));
